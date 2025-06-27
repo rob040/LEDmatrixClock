@@ -28,10 +28,10 @@ SOFTWARE.
 class OpenWeatherMapClient {
 
 private:
-  String myCityIDs = "";
+  String myCityIDs = ""; //TODO: only one cityID is allowed
   String myApiKey = "";
   String units = "";
-  
+
   const char* servername = "api.openweathermap.org";  // remote server we will connect to
 
   typedef struct {
@@ -47,24 +47,30 @@ private:
     String weatherId;
     String description;
     String icon;
-    boolean cached;
     String error;
     String pressure;
     String direction;
     String high;
     String low;
     String timeZone;
+    int sunRise;
+    int sunSet;
+    boolean cached;
   } weather;
 
+  //TODO: move to 1 weather object
   weather weathers[5];
 
   String roundValue(String value);
-  
+
 public:
-  OpenWeatherMapClient(String ApiKey, int CityIDs[], int cityCount, boolean isMetric);
+  OpenWeatherMapClient(String ApiKey, int CityIDs[], int cityCount, boolean isMetric); //deprecated, can only accept 1 cityID
+  OpenWeatherMapClient(String ApiKey, int CityID, boolean isMetric);
   void updateWeather();
-  void updateWeatherApiKey(String ApiKey);
-  void updateCityIdList(int CityIDs[], int cityCount);
+  void updateWeatherApiKey(String ApiKey) {setWeatherApiKey(ApiKey);}; //deprecated, use setWeatherApiKey() instead
+  void setWeatherApiKey(String ApiKey);
+  void updateCityIdList(int CityIDs[], int cityCount); //deprecated, can only accept 1 cityID, use setCityId() instead
+  void setCityId(int CityID);
   void setMetric(boolean isMetric);
 
   String getLat(int index);
@@ -89,9 +95,13 @@ public:
   String getDescription(int index);
   String getIcon(int index);
   boolean getCached();
-  String getMyCityIDs();
+  String getMyCityIDs(); // NOTE returns max 1 CityID
   String getWeatherIcon(int index);
   String getError();
-  String getWeekDay(int index, float offset);
-  int getTimeZone(int index);
+  String getWeekDay(int index, float offset); // Depricated
+  String getWeekDay();
+  int getTimeZone(int index=0);
+  int getTimeZoneSeconds();
+  int getSunRise();
+  int getSunSet();
 };

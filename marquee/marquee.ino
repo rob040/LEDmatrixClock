@@ -27,7 +27,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.4"
+#define VERSION "3.1.5"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
@@ -59,7 +59,7 @@ NewsApiClient newsClient(NEWS_API_KEY, NEWS_SOURCE);
 int newsIndex = 0;
 
 // Weather Client
-OpenWeatherMapClient weatherClient(APIKEY, CityIDs, 1, IS_METRIC);
+OpenWeatherMapClient weatherClient(APIKEY, CityIDs[0], IS_METRIC);
 // (some) Default Weather Settings
 //FIXME TODO: do not use uppercase for variables
 boolean SHOW_DATE = false;
@@ -1340,7 +1340,7 @@ String writeCityIds() {
   }
   f.close();
   readCityIds();
-  weatherClient.updateCityIdList(CityIDs, 1);
+  weatherClient.setCityId(CityIDs[0]);
   String cityIds = weatherClient.getMyCityIDs();
   return cityIds;
 }
@@ -1537,9 +1537,9 @@ void readCityIds() {
   fr.close();
   matrix.setIntensity(displayIntensity);
   newsClient.updateNewsClient(NEWS_API_KEY, NEWS_SOURCE);
-  weatherClient.updateWeatherApiKey(APIKEY);
+  weatherClient.setWeatherApiKey(APIKEY);
   weatherClient.setMetric(IS_METRIC);
-  weatherClient.updateCityIdList(CityIDs, 1);
+  weatherClient.setCityId(CityIDs[0]);
   printerClient.updateOctoPrintClient(OctoPrintApiKey, OctoPrintServer, OctoPrintPort, OctoAuthUser, OctoAuthPass);
 }
 

@@ -27,7 +27,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.6"
+#define VERSION "3.1.7"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
@@ -95,7 +95,7 @@ static const char WEB_ACTION3[] PROGMEM = "</a><a class='w3-bar-item w3-button' 
                        "<a class='w3-bar-item w3-button' href='/update'><i class='fas fa-wrench'></i> Firmware Update</a>"
                        "<a class='w3-bar-item w3-button' href='https://github.com/Qrome/marquee-scroller' target='_blank'><i class='fas fa-question-circle'></i> About</a>";
 
-static const char CHANGE_FORM1[] PROGMEM = "<form class='w3-container' action='/locations' method='get'><h2>Configure:</h2>"
+static const char CHANGE_FORM1[] PROGMEM = "<form class='w3-container' action='/saveconfig' method='get'><h2>Configure:</h2>"
                       "<label>OpenWeatherMap API Key (get from <a href='https://openweathermap.org/' target='_BLANK'>here</a>)</label>"
                       "<input class='w3-input w3-border w3-margin-bottom' type='text' name='openWeatherMapApiKey' value='%WEATHERKEY%' maxlength='70'>"
                       "<p><label>%CITYNAME1% (<a href='http://openweathermap.org/find' target='_BLANK'><i class='fas fa-search'></i> Search for City ID</a>)</label>"
@@ -211,7 +211,7 @@ void setup() {
   //New Line to clear from start garbage
   Serial.println();
 
-  readCityIds();
+  readConfiguration();
 
   Serial.println("Number of LED Displays: " + String(numberOfHorizontalDisplays));
   // initialize dispaly
@@ -300,7 +300,7 @@ void setup() {
   if (WEBSERVER_ENABLED) {
     server.on("/", displayWeatherData);
     server.on("/pull", handlePull);
-    server.on("/locations", handleLocations);
+    server.on("/saveconfig", handleSaveConfig);
     server.on("/savewideclock", handleSaveWideClock);
     server.on("/savenews", handleSaveNews);
     server.on("/saveoctoprint", handleSaveOctoprint);
@@ -491,7 +491,7 @@ void handleSaveWideClock() {
   }
   if (numberOfHorizontalDisplays >= 8) {
     Wide_Clock_Style = server.arg("wideclockformat");
-    writeCityIds();
+    writeConfiguration();
     matrix.fillScreen(LOW); // show black
   }
   redirectHome();
@@ -505,7 +505,7 @@ void handleSaveNews() {
   NEWS_API_KEY = server.arg("newsApiKey");
   NEWS_SOURCE = server.arg("newssource");
   matrix.fillScreen(LOW); // show black
-  writeCityIds();
+  writeConfiguration();
   newsClient.updateNews();
   redirectHome();
 }
@@ -522,7 +522,7 @@ void handleSaveOctoprint() {
   OctoAuthUser = server.arg("octoUser");
   OctoAuthPass = server.arg("octoPass");
   matrix.fillScreen(LOW); // show black
-  writeCityIds();
+  writeConfiguration();
   if (OCTOPRINT_ENABLED) {
     printerClient.getPrinterJobResults();
   }
@@ -538,7 +538,7 @@ void handleSavePihole() {
   PiHolePort = server.arg("piholePort").toInt();
   PiHoleApiKey = server.arg("piApiToken");
   Serial.println("PiHoleApiKey from save: " + PiHoleApiKey);
-  writeCityIds();
+  writeConfiguration();
   if (USE_PIHOLE) {
     piholeClient.getPiHoleData(PiHoleServer, PiHolePort, PiHoleApiKey);
     piholeClient.getGraphData(PiHoleServer, PiHolePort, PiHoleApiKey);
@@ -546,7 +546,7 @@ void handleSavePihole() {
   redirectHome();
 }
 
-void handleLocations() {
+void handleSaveConfig() {
   if (!authentication()) {
     return server.requestAuthentication();
   }
@@ -578,7 +578,7 @@ void handleLocations() {
   temp.toCharArray(www_password, sizeof(temp));
   weatherClient.setMetric(IS_METRIC);
   matrix.fillScreen(LOW); // show black
-  writeCityIds();
+  writeConfiguration();
   getWeatherData(); // this will force a data pull for new weather
   redirectHome();
 }
@@ -1304,7 +1304,7 @@ void checkDisplay() {
   }
 }
 
-String writeCityIds() {
+void writeConfiguration() {
   // Save decoded message to FS file for playback on power up.
   File f = FS.open(CONFIG, "w");
   if (!f) {
@@ -1352,16 +1352,14 @@ String writeCityIds() {
     f.println("themeColor=" + themeColor);
   }
   f.close();
-  readCityIds();
+  readConfiguration();
   weatherClient.setCityId(CityIDs[0]);
-  //String cityIds = weatherClient.getMyCityIDs();
-  return "";//cityIds;
 }
 
-void readCityIds() {
+void readConfiguration() {
   if (FS.exists(CONFIG) == false) {
     Serial.println("Settings File does not yet exists.");
-    writeCityIds();
+    writeConfiguration();
     return;
   }
   File fr = FS.open(CONFIG, "r");

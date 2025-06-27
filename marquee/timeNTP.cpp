@@ -90,9 +90,9 @@ time_t getNtpTime()
       secsSince1900 |= (unsigned long)packetBuffer[43];
       secsSince1900 -= 2208988800UL;
       secsSince1900 += timeZoneSec;
-      extern uint32_t sysTime;
+      //extern uint32_t sysTime;
       Serial.flush();
-      Serial.print(F("NTP delta system ")); Serial.println((long)(sysTime-secsSince1900));
+      //Serial.print(F("NTP delta system ")); Serial.println((long)(sysTime-secsSince1900));
       Serial.print(F("NTP timezone ")); Serial.println(timeZoneSec);
       Serial.flush();
       return secsSince1900;

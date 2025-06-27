@@ -33,35 +33,20 @@
 #define CONFIG "/conf.txt"
 #define BUZZER_PIN  D2
 
-/* Useful Constants */
-// already defined in Timelib.h
-//#define SECS_PER_MIN  (60UL)
-//#define SECS_PER_HOUR (3600UL)
-//#define SECS_PER_DAY  (SECS_PER_HOUR * 24L)
-
-/* Useful Macros for getting elapsed time */
-// already defined in Timelib.h
-//#define numberOfSeconds(_time_) (_time_ % SECS_PER_MIN)
-//#define numberOfMinutes(_time_) ((_time_ / SECS_PER_MIN) % SECS_PER_MIN)
-//#define numberOfHours(_time_) (( _time_% SECS_PER_DAY) / SECS_PER_HOUR)
-//#define elapsedDays(_time_) ( _time_ / SECS_PER_DAY)
 
 //declairing prototypes
-void configModeCallback (WiFiManager *myWiFiManager);
+void configModeCallback(WiFiManager *myWiFiManager);
 int8_t getWifiQuality();
 
 // LED Settings
 const int offset = 1;
 int refresh = 0;
-//n.u. String message = "hello";
 int spacer = 1;  // dots between letters
 int width = 5 + spacer; // The font width is 5 pixels + spacer
 Max72xxPanel matrix = Max72xxPanel(pinCS, numberOfHorizontalDisplays, numberOfVerticalDisplays);
 String Wide_Clock_Style = "1";  //1="hh:mm Temp", 2="hh:mm:ss", 3="hh:mm"
-//n.u. float UtcOffset;  //time zone offsets that correspond with the CityID above (offset from GMT)
 
 // Time
-//TimeDB TimeDB("");
 int lastMinute;
 int displayRefreshCount = 1;
 long lastEpoch = 0;
@@ -76,6 +61,7 @@ int newsIndex = 0;
 // Weather Client
 OpenWeatherMapClient weatherClient(APIKEY, CityIDs, 1, IS_METRIC);
 // (some) Default Weather Settings
+//FIXME TODO: do not use uppercase for variables
 boolean SHOW_DATE = false;
 boolean SHOW_CITY = true;
 boolean SHOW_CONDITION = true;
@@ -110,8 +96,6 @@ static const char WEB_ACTION3[] PROGMEM = "</a><a class='w3-bar-item w3-button' 
                        "<a class='w3-bar-item w3-button' href='https://github.com/Qrome/marquee-scroller' target='_blank'><i class='fas fa-question-circle'></i> About</a>";
 
 static const char CHANGE_FORM1[] PROGMEM = "<form class='w3-container' action='/locations' method='get'><h2>Configure:</h2>"
-                      //"<label>TimeZone DB API Key (get from <a href='https://timezonedb.com/register' target='_BLANK'>here</a>)</label>"
-                      //"<input class='w3-input w3-border w3-margin-bottom' type='text' name='TimeZoneDB' value='%TIMEDBKEY%' maxlength='60'>"
                       "<label>OpenWeatherMap API Key (get from <a href='https://openweathermap.org/' target='_BLANK'>here</a>)</label>"
                       "<input class='w3-input w3-border w3-margin-bottom' type='text' name='openWeatherMapApiKey' value='%WEATHERKEY%' maxlength='70'>"
                       "<p><label>%CITYNAME1% (<a href='http://openweathermap.org/find' target='_BLANK'><i class='fas fa-search'></i> Search for City ID</a>)</label>"
@@ -217,8 +201,8 @@ int externalLight = LED_BUILTIN; // LED_BUILTIN is is the built in LED on the We
 
 void setup() {
   Serial.begin(115200);
-  SPIFFS.begin();
-  //SPIFFS.remove(CONFIG);
+  FS.begin();
+  //FS.remove(CONFIG);
   delay(10);
 
   // Initialize digital pin for LED
@@ -338,6 +322,8 @@ void setup() {
     String webAddress = "http://" + WiFi.localIP().toString() + ":" + String(WEBSERVER_PORT) + "/";
     Serial.println("Use this URL : " + webAddress);
     scrollMessage(" v" + String(VERSION) + "  IP: " + WiFi.localIP().toString() + "  ");
+
+    timeNTPsetup();
   } else {
     Serial.println("Web Interface is Disabled");
     scrollMessage("Web Interface is Disabled");
@@ -487,7 +473,7 @@ String secondsIndicator(boolean isRefresh) {
   return rtnValue;
 }
 
-boolean athentication() {
+boolean authentication() {
   if (IS_BASIC_AUTH) {
     return server.authenticate(www_username, www_password);
   }
@@ -500,7 +486,7 @@ void handlePull() {
 }
 
 void handleSaveWideClock() {
-  if (!athentication()) {
+  if (!authentication()) {
     return server.requestAuthentication();
   }
   if (numberOfHorizontalDisplays >= 8) {
@@ -512,7 +498,7 @@ void handleSaveWideClock() {
 }
 
 void handleSaveNews() {
-  if (!athentication()) {
+  if (!authentication()) {
     return server.requestAuthentication();
   }
   NEWS_ENABLED = server.hasArg("displaynews");
@@ -525,7 +511,7 @@ void handleSaveNews() {
 }
 
 void handleSaveOctoprint() {
-  if (!athentication()) {
+  if (!authentication()) {
     return server.requestAuthentication();
   }
   OCTOPRINT_ENABLED = server.hasArg("displayoctoprint");
@@ -544,7 +530,7 @@ void handleSaveOctoprint() {
 }
 
 void handleSavePihole() {
-  if (!athentication()) {
+  if (!authentication()) {
     return server.requestAuthentication();
   }
   USE_PIHOLE = server.hasArg("displaypihole");
@@ -561,10 +547,9 @@ void handleSavePihole() {
 }
 
 void handleLocations() {
-  if (!athentication()) {
+  if (!authentication()) {
     return server.requestAuthentication();
   }
-  //TIMEDBKEY = server.arg("TimeZoneDB");
   APIKEY = server.arg("openWeatherMapApiKey");
   CityIDs[0] = server.arg("city1").toInt();
   flashOnSeconds = server.hasArg("flashseconds");
@@ -599,18 +584,18 @@ void handleLocations() {
 }
 
 void handleSystemReset() {
-  if (!athentication()) {
+  if (!authentication()) {
     return server.requestAuthentication();
   }
   Serial.println("Reset System Configuration");
-  if (SPIFFS.remove(CONFIG)) {
+  if (FS.remove(CONFIG)) {
     redirectHome();
     ESP.restart();
   }
 }
 
 void handleForgetWifi() {
-  if (!athentication()) {
+  if (!authentication()) {
     return server.requestAuthentication();
   }
   //WiFiManager
@@ -622,7 +607,7 @@ void handleForgetWifi() {
 }
 
 void handleWideClockConfigure() {
-  if (!athentication()) {
+  if (!authentication()) {
     return server.requestAuthentication();
   }
   digitalWrite(externalLight, LOW);
@@ -652,7 +637,7 @@ void handleWideClockConfigure() {
 }
 
 void handleNewsConfigure() {
-  if (!athentication()) {
+  if (!authentication()) {
     return server.requestAuthentication();
   }
   digitalWrite(externalLight, LOW);
@@ -683,7 +668,7 @@ void handleNewsConfigure() {
 }
 
 void handleOctoprintConfigure() {
-  if (!athentication()) {
+  if (!authentication()) {
     return server.requestAuthentication();
   }
   digitalWrite(externalLight, LOW);
@@ -722,7 +707,7 @@ void handleOctoprintConfigure() {
 }
 
 void handlePiholeConfigure() {
-  if (!athentication()) {
+  if (!authentication()) {
     return server.requestAuthentication();
   }
   digitalWrite(externalLight, LOW);
@@ -759,7 +744,7 @@ void handlePiholeConfigure() {
 }
 
 void handleConfigure() {
-  if (!athentication()) {
+  if (!authentication()) {
     return server.requestAuthentication();
   }
   digitalWrite(externalLight, LOW);
@@ -774,9 +759,7 @@ void handleConfigure() {
   sendHeader();
 
   String form = FPSTR(CHANGE_FORM1);
-  //form.replace("%TIMEDBKEY%", TIMEDBKEY);
   form.replace("%WEATHERKEY%", APIKEY);
-
 
   String cityName = "";
   if (weatherClient.getCity(0) != "") {
@@ -883,7 +866,7 @@ void handleConfigure() {
 }
 
 void handleDisplay() {
-  if (!athentication()) {
+  if (!authentication()) {
     return server.requestAuthentication();
   }
   enableDisplay(!displayOn);
@@ -1047,7 +1030,7 @@ void displayWeatherData() {
 
   String temperature = weatherClient.getTemp(0);
 
-  if ((temperature.indexOf(".") != -1) && (temperature.length() >= (temperature.indexOf(".") + 2))) {
+  if ((temperature.indexOf(".") != -1) && ((int)temperature.length() >= (temperature.indexOf(".") + 2))) {
     temperature.remove(temperature.indexOf(".") + 2);
   }
 
@@ -1066,10 +1049,6 @@ void displayWeatherData() {
   Serial.println(weatherClient.getDescription(0));
   Serial.println(temperature);
   Serial.println(dtstr);
-
-  //if (TIMEDBKEY == "") {
-  //  html += "<p>Please <a href='/configure'>Configure TimeZoneDB</a> with API key.</p>";
-  //}
 
   if (weatherClient.getCity(0) == "") {
     if (timeStatus() == timeNotSet) {
@@ -1313,13 +1292,12 @@ void checkDisplay() {
 }
 
 String writeCityIds() {
-  // Save decoded message to SPIFFS file for playback on power up.
-  File f = SPIFFS.open(CONFIG, "w");
+  // Save decoded message to FS file for playback on power up.
+  File f = FS.open(CONFIG, "w");
   if (!f) {
     Serial.println("File open failed!");
   } else {
     Serial.println("Saving settings now...");
-    //f.println("TIMEDBKEY=" + TIMEDBKEY);
     f.println("APIKEY=" + APIKEY);
     f.println("CityID=" + String(CityIDs[0]));
     f.println("marqueeMessage=" + marqueeMessage);
@@ -1368,20 +1346,15 @@ String writeCityIds() {
 }
 
 void readCityIds() {
-  if (SPIFFS.exists(CONFIG) == false) {
+  if (FS.exists(CONFIG) == false) {
     Serial.println("Settings File does not yet exists.");
     writeCityIds();
     return;
   }
-  File fr = SPIFFS.open(CONFIG, "r");
+  File fr = FS.open(CONFIG, "r");
   String line;
   while (fr.available()) {
     line = fr.readStringUntil('\n');
-    /*if (line.indexOf("TIMEDBKEY=") >= 0) {
-      TIMEDBKEY = line.substring(line.lastIndexOf("TIMEDBKEY=") + 10);
-      TIMEDBKEY.trim();
-      Serial.println("TIMEDBKEY: " + TIMEDBKEY);
-    }*/
     if (line.indexOf("APIKEY=") >= 0) {
       APIKEY = line.substring(line.lastIndexOf("APIKEY=") + 7);
       APIKEY.trim();
@@ -1572,7 +1545,7 @@ void readCityIds() {
 
 void scrollMessage(String msg) {
   msg += " "; // add a space at the end
-  for ( int i = 0 ; i < width * msg.length() + matrix.width() - 1 - spacer; i++ ) {
+  for (int i = 0; i < (width * (int)msg.length() + (matrix.width() - 1) - spacer); i++) {
     if (WEBSERVER_ENABLED) {
       server.handleClient();
     }
@@ -1587,8 +1560,8 @@ void scrollMessage(String msg) {
     int x = (matrix.width() - 1) - i % width;
     int y = (matrix.height() - 8) / 2; // center the text vertically
 
-    while ( x + width - spacer >= 0 && letter >= 0 ) {
-      if ( letter < msg.length() ) {
+    while (((x + width - spacer) >= 0) && letter >= 0) {
+      if (letter < (int)msg.length()) {
         matrix.drawChar(x, y, msg[letter], HIGH, LOW, 1);
       }
 

@@ -28,13 +28,13 @@ SOFTWARE.
  * Matrix Display:  https://amzn.to/2HtnQlD
  ******************************************************************************/
 /******************************************************************************
- * NOTE: The settings here are the default settings for the first loading.  
- * After loading you will manage changes to the settings via the Web Interface.  
- * If you want to change settings again in the settings.h, you will need to 
- * erase the file system on the Wemos or use the “Reset Settings” option in 
+ * NOTE: The settings here are the default settings for the first loading.
+ * After loading you will manage changes to the settings via the Web Interface.
+ * If you want to change settings again in the settings.h, you will need to
+ * erase the file system on the Wemos or use the “Reset Settings” option in
  * the Web Interface.
  ******************************************************************************/
- 
+
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPUpdateServer.h>
@@ -47,8 +47,10 @@ SOFTWARE.
 #include <Max72xxPanel.h> // --> https://github.com/markruys/arduino-Max72xxPanel
 #include <pgmspace.h>
 #include "OpenWeatherMapClient.h"
-#include "TimeDB.h"
-#include "NewsApiClient.h" 
+//#include "TimeDB.h"
+#include "TimeNTP.h"
+#include "TimeStr.h"
+#include "NewsApiClient.h"
 #include "OctoPrintClient.h"
 #include "PiHoleClient.h"
 
@@ -56,7 +58,7 @@ SOFTWARE.
 // Start Settings
 //******************************
 
-String TIMEDBKEY = ""; // Your API Key from https://timezonedb.com/register
+//String TIMEDBKEY = ""; // Your API Key from https://timezonedb.com/register
 String APIKEY = ""; // Your API Key from http://openweathermap.org/
 // Default City Location (use http://openweathermap.org/find to find city ID)
 int CityIDs[] = { 5304391 }; //Only USE ONE for weather marquee
@@ -79,8 +81,8 @@ String NEWS_API_KEY = ""; // Get your News API Key from https://newsapi.org
 String NEWS_SOURCE = "reuters";  // https://newsapi.org/sources to get full list of news sources available
 
 // Display Settings
-// CLK -> D5 (SCK)  
-// CS  -> D6 
+// CLK -> D5 (SCK)
+// CS  -> D6
 // DIN -> D7 (MOSI)
 const int pinCS = D6; // Attach CS to this pin, DIN to MOSI and CLK to SCK (cf http://arduino.cc/en/Reference/SPI )
 int displayIntensity = 1;  //(This can be set from 0 - 15)

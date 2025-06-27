@@ -27,22 +27,24 @@
 
 #include "Settings.h"
 
-#define VERSION "3.03"
+#define VERSION "3.1.4"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
 #define BUZZER_PIN  D2
 
 /* Useful Constants */
-#define SECS_PER_MIN  (60UL)
-#define SECS_PER_HOUR (3600UL)
-#define SECS_PER_DAY  (SECS_PER_HOUR * 24L)
+// already defined in Timelib.h
+//#define SECS_PER_MIN  (60UL)
+//#define SECS_PER_HOUR (3600UL)
+//#define SECS_PER_DAY  (SECS_PER_HOUR * 24L)
 
 /* Useful Macros for getting elapsed time */
-#define numberOfSeconds(_time_) (_time_ % SECS_PER_MIN)
-#define numberOfMinutes(_time_) ((_time_ / SECS_PER_MIN) % SECS_PER_MIN)
-#define numberOfHours(_time_) (( _time_% SECS_PER_DAY) / SECS_PER_HOUR)
-#define elapsedDays(_time_) ( _time_ / SECS_PER_DAY)
+// already defined in Timelib.h
+//#define numberOfSeconds(_time_) (_time_ % SECS_PER_MIN)
+//#define numberOfMinutes(_time_) ((_time_ / SECS_PER_MIN) % SECS_PER_MIN)
+//#define numberOfHours(_time_) (( _time_% SECS_PER_DAY) / SECS_PER_HOUR)
+//#define elapsedDays(_time_) ( _time_ / SECS_PER_DAY)
 
 //declairing prototypes
 void configModeCallback (WiFiManager *myWiFiManager);
@@ -51,16 +53,16 @@ int8_t getWifiQuality();
 // LED Settings
 const int offset = 1;
 int refresh = 0;
-String message = "hello";
+//n.u. String message = "hello";
 int spacer = 1;  // dots between letters
 int width = 5 + spacer; // The font width is 5 pixels + spacer
 Max72xxPanel matrix = Max72xxPanel(pinCS, numberOfHorizontalDisplays, numberOfVerticalDisplays);
 String Wide_Clock_Style = "1";  //1="hh:mm Temp", 2="hh:mm:ss", 3="hh:mm"
-float UtcOffset;  //time zone offsets that correspond with the CityID above (offset from GMT)
+//n.u. float UtcOffset;  //time zone offsets that correspond with the CityID above (offset from GMT)
 
 // Time
-TimeDB TimeDB("");
-String lastMinute = "xx";
+//TimeDB TimeDB("");
+int lastMinute;
 int displayRefreshCount = 1;
 long lastEpoch = 0;
 long firstEpoch = 0;
@@ -108,8 +110,8 @@ static const char WEB_ACTION3[] PROGMEM = "</a><a class='w3-bar-item w3-button' 
                        "<a class='w3-bar-item w3-button' href='https://github.com/Qrome/marquee-scroller' target='_blank'><i class='fas fa-question-circle'></i> About</a>";
 
 static const char CHANGE_FORM1[] PROGMEM = "<form class='w3-container' action='/locations' method='get'><h2>Configure:</h2>"
-                      "<label>TimeZone DB API Key (get from <a href='https://timezonedb.com/register' target='_BLANK'>here</a>)</label>"
-                      "<input class='w3-input w3-border w3-margin-bottom' type='text' name='TimeZoneDB' value='%TIMEDBKEY%' maxlength='60'>"
+                      //"<label>TimeZone DB API Key (get from <a href='https://timezonedb.com/register' target='_BLANK'>here</a>)</label>"
+                      //"<input class='w3-input w3-border w3-margin-bottom' type='text' name='TimeZoneDB' value='%TIMEDBKEY%' maxlength='60'>"
                       "<label>OpenWeatherMap API Key (get from <a href='https://openweathermap.org/' target='_BLANK'>here</a>)</label>"
                       "<input class='w3-input w3-border w3-margin-bottom' type='text' name='openWeatherMapApiKey' value='%WEATHERKEY%' maxlength='70'>"
                       "<p><label>%CITYNAME1% (<a href='http://openweathermap.org/find' target='_BLANK'><i class='fas fa-search'></i> Search for City ID</a>)</label>"
@@ -354,8 +356,8 @@ void loop() {
   }
   checkDisplay(); // this will see if we need to turn it on or off for night mode.
 
-  if (lastMinute != TimeDB.zeroPad(minute())) {
-    lastMinute = TimeDB.zeroPad(minute());
+  if (lastMinute != minute()) {
+    lastMinute = minute();
 
     if (weatherClient.getError() != "") {
       scrollMessage(weatherClient.getError());
@@ -388,8 +390,8 @@ void loop() {
       msg += " ";
 
       if (SHOW_DATE) {
-        msg += TimeDB.getDayName() + ", ";
-        msg += TimeDB.getMonthName() + " " + day() + "  ";
+        msg += getDayName(weekday()) + ", ";
+        msg += getMonthName(month()) + " " + day() + "  ";
       }
       if (SHOW_CITY) {
         msg += weatherClient.getCity(0) + "  ";
@@ -400,7 +402,7 @@ void loop() {
       if (SHOW_HIGHLOW) {
         msg += "High/Low:" + weatherClient.getHigh(0) + "/" + weatherClient.getLow(0) + " " + getTempSymbol() + "  ";
       }
-      
+
       if (SHOW_CONDITION) {
         msg += description + "  ";
       }
@@ -414,9 +416,9 @@ void loop() {
       if (SHOW_PRESSURE) {
         msg += "Pressure:" + weatherClient.getPressure(0) + getPressureSymbol() + "  ";
       }
-     
+
       msg += marqueeMessage + " ";
-      
+
       if (NEWS_ENABLED) {
         msg += "  " + NEWS_SOURCE + ": " + newsClient.getTitle(newsIndex) + "  ";
         newsIndex += 1;
@@ -432,7 +434,7 @@ void loop() {
         piholeClient.getPiHoleData(PiHoleServer, PiHolePort, PiHoleApiKey);
         piholeClient.getGraphData(PiHoleServer, PiHolePort, PiHoleApiKey);
         if (piholeClient.getPiHoleStatus() != "") {
-          msg += "    Pi-hole (" + piholeClient.getPiHoleStatus() + "): " + piholeClient.getAdsPercentageToday() + "% "; 
+          msg += "    Pi-hole (" + piholeClient.getPiHoleStatus() + "): " + piholeClient.getAdsPercentageToday() + "% ";
         }
       }
 
@@ -450,7 +452,7 @@ void loop() {
       currentTime += " " + currentTemp + getTempSymbol();
     }
     if (Wide_Clock_Style == "2") {
-      currentTime = currentTime + secondsIndicator(false) + TimeDB.zeroPad(second());
+      currentTime = currentTime + secondsIndicator(false) + zeroPad(second());
       matrix.fillScreen(LOW); // show black
     }
     if (Wide_Clock_Style == "3") {
@@ -468,19 +470,12 @@ void loop() {
   }
 }
 
-String zeroPad(int value) {
-  String rtnValue = String(value);
-  if (value < 10) {
-    rtnValue = "0" + rtnValue;
-  }
-  return rtnValue;
-}
 
 String hourMinutes(boolean isRefresh) {
   if (IS_24HOUR) {
-    return String(hour()) + secondsIndicator(isRefresh) + TimeDB.zeroPad(minute());
+    return String(hour()) + secondsIndicator(isRefresh) + zeroPad(minute());
   } else {
-    return String(hourFormat12()) + secondsIndicator(isRefresh) + TimeDB.zeroPad(minute());
+    return String(hourFormat12()) + secondsIndicator(isRefresh) + zeroPad(minute());
   }
 }
 
@@ -569,7 +564,7 @@ void handleLocations() {
   if (!athentication()) {
     return server.requestAuthentication();
   }
-  TIMEDBKEY = server.arg("TimeZoneDB");
+  //TIMEDBKEY = server.arg("TimeZoneDB");
   APIKEY = server.arg("openWeatherMapApiKey");
   CityIDs[0] = server.arg("city1").toInt();
   flashOnSeconds = server.hasArg("flashseconds");
@@ -661,7 +656,7 @@ void handleNewsConfigure() {
     return server.requestAuthentication();
   }
   digitalWrite(externalLight, LOW);
-  
+
   server.sendHeader("Cache-Control", "no-cache, no-store");
   server.sendHeader("Pragma", "no-cache");
   server.sendHeader("Expires", "-1");
@@ -755,7 +750,7 @@ void handlePiholeConfigure() {
 
   server.sendContent(form);
   form = "";
-          
+
   sendFooter();
 
   server.sendContent("");
@@ -779,7 +774,7 @@ void handleConfigure() {
   sendHeader();
 
   String form = FPSTR(CHANGE_FORM1);
-  form.replace("%TIMEDBKEY%", TIMEDBKEY);
+  //form.replace("%TIMEDBKEY%", TIMEDBKEY);
   form.replace("%WEATHERKEY%", APIKEY);
 
 
@@ -826,7 +821,7 @@ void handleConfigure() {
   }
   form.replace("%HIGHLOW_CHECKED%", isHighlowChecked);
 
-  
+
   String is24hourChecked = "";
   if (IS_24HOUR) {
     is24hourChecked = "checked='checked'";
@@ -931,17 +926,14 @@ void getWeatherData() //client function to send/receive GET request data.
   matrix.drawPixel(0, 2, HIGH);
   Serial.println("matrix Width:" + matrix.width());
   matrix.write();
-  TimeDB.updateConfig(TIMEDBKEY, weatherClient.getLat(0), weatherClient.getLon(0));
-  time_t currentTime = TimeDB.getTime();
-  if(currentTime > 5000 || firstEpoch == 0) {
-    setTime(currentTime);
-  } else {
-    Serial.println("Time update unsuccessful!");
-  }
+
   lastEpoch = now();
-  if (firstEpoch == 0) {
-    firstEpoch = now();
-    Serial.println("firstEpoch is: " + String(firstEpoch));
+  if (timeStatus() != timeNotSet) {
+    if (firstEpoch == 0) {
+      firstEpoch = now();
+      setSyncInterval(300);
+      Serial.println(F("firstEpoch is: ") + String(firstEpoch));
+    }
   }
 
   if (NEWS_ENABLED && displayOn) {
@@ -1059,19 +1051,30 @@ void displayWeatherData() {
     temperature.remove(temperature.indexOf(".") + 2);
   }
 
-  String time = TimeDB.getDayName() + ", " + TimeDB.getMonthName() + " " + day() + ", " + hourFormat12() + ":" + TimeDB.zeroPad(minute()) + " " + TimeDB.getAmPm();
+  String dtstr;
+  if (IS_24HOUR) {
+    // Euro date+time presentation: MSB to LSB
+    dtstr = String(year()) + " " + getMonthName(month()) + " " + day() + " " + zeroPad(hour()) + ":" + zeroPad(minute()) + ", " + getDayName(weekday());
+  }
+  else {
+    // US date+time presentation
+    dtstr = getDayName(weekday()) + ", " + getMonthName(month()) + " " + day() + ", " + hourFormat12() + ":" + zeroPad(minute()) + ", " + String(isAM() ? "AM" : "PM");
+  }
 
   Serial.println(weatherClient.getCity(0));
   Serial.println(weatherClient.getCondition(0));
   Serial.println(weatherClient.getDescription(0));
   Serial.println(temperature);
-  Serial.println(time);
+  Serial.println(dtstr);
 
-  if (TIMEDBKEY == "") {
-    html += "<p>Please <a href='/configure'>Configure TimeZoneDB</a> with API key.</p>";
-  }
+  //if (TIMEDBKEY == "") {
+  //  html += "<p>Please <a href='/configure'>Configure TimeZoneDB</a> with API key.</p>";
+  //}
 
   if (weatherClient.getCity(0) == "") {
+    if (timeStatus() == timeNotSet) {
+      html += F("<p>waiting for first time sync...</p>");
+    }
     html += "<p>Please <a href='/configure'>Configure Weather</a> API</p>";
     if (weatherClient.getError() != "") {
       html += "<p>Weather Error: <strong>" + weatherClient.getError() + "</strong></p>";
@@ -1088,7 +1091,7 @@ void displayWeatherData() {
     html += weatherClient.getCondition(0) + " (" + weatherClient.getDescription(0) + ")<br>";
     html += temperature + " " + getTempSymbol(true) + "<br>";
     html += weatherClient.getHigh(0) + "/" + weatherClient.getLow(0) + " " + getTempSymbol(true) + "<br>";
-    html += time + "<br>";
+    html += dtstr + "<br>";
     html += "<a href='https://www.google.com/maps/@" + weatherClient.getLat(0) + "," + weatherClient.getLon(0) + ",10000m/data=!3m1!1e3' target='_BLANK'><i class='fas fa-map-marker' style='color:red'></i> Map It!</a><br>";
     html += "</p></div></div><hr>";
   }
@@ -1106,7 +1109,7 @@ void displayWeatherData() {
       int minutes = numberOfMinutes(val);
       int seconds = numberOfSeconds(val);
       html += "Online and Printing</br>Est. Print Time Left: " + zeroPad(hours) + ":" + zeroPad(minutes) + ":" + zeroPad(seconds) + "<br>";
-    
+
       val = printerClient.getProgressPrintTime().toInt();
       hours = numberOfHours(val);
       minutes = numberOfMinutes(val);
@@ -1281,10 +1284,10 @@ void enableDisplay(boolean enable) {
     }
     matrix.shutdown(false);
     matrix.fillScreen(LOW); // show black
-    Serial.println("Display was turned ON: " + now());
+    Serial.println("Display was turned ON: " + get24HrColonMin(now()));
   } else {
     matrix.shutdown(true);
-    Serial.println("Display was turned OFF: " + now());
+    Serial.println("Display was turned OFF: " + get24HrColonMin(now()));
     displayOffEpoch = lastEpoch;
   }
 }
@@ -1294,7 +1297,7 @@ void checkDisplay() {
   if (timeDisplayTurnsOn == "" || timeDisplayTurnsOff == "") {
     return; // nothing to do
   }
-  String currentTime = TimeDB.zeroPad(hour()) + ":" + TimeDB.zeroPad(minute());
+  String currentTime = zeroPad(hour()) + ":" + zeroPad(minute());
 
   if (currentTime == timeDisplayTurnsOn && !displayOn) {
     Serial.println("Time to turn display on: " + currentTime);
@@ -1316,7 +1319,7 @@ String writeCityIds() {
     Serial.println("File open failed!");
   } else {
     Serial.println("Saving settings now...");
-    f.println("TIMEDBKEY=" + TIMEDBKEY);
+    //f.println("TIMEDBKEY=" + TIMEDBKEY);
     f.println("APIKEY=" + APIKEY);
     f.println("CityID=" + String(CityIDs[0]));
     f.println("marqueeMessage=" + marqueeMessage);
@@ -1374,11 +1377,11 @@ void readCityIds() {
   String line;
   while (fr.available()) {
     line = fr.readStringUntil('\n');
-    if (line.indexOf("TIMEDBKEY=") >= 0) {
+    /*if (line.indexOf("TIMEDBKEY=") >= 0) {
       TIMEDBKEY = line.substring(line.lastIndexOf("TIMEDBKEY=") + 10);
       TIMEDBKEY.trim();
       Serial.println("TIMEDBKEY: " + TIMEDBKEY);
-    }
+    }*/
     if (line.indexOf("APIKEY=") >= 0) {
       APIKEY = line.substring(line.lastIndexOf("APIKEY=") + 7);
       APIKEY.trim();
@@ -1609,7 +1612,7 @@ void drawPiholeGraph() {
   int yval = 0;
 
   int totalRows = count - matrix.width();
-  
+
   if (totalRows < 0) {
     totalRows = 0;
   }
@@ -1662,9 +1665,9 @@ void centerPrint(String msg, boolean extraStuff) {
       int numberOfLightPixels = (printerClient.getProgressCompletion().toFloat() / float(100)) * (matrix.width() - 1);
       matrix.drawFastHLine(0, 7, numberOfLightPixels, HIGH);
     }
-    
+
   }
-  
+
   matrix.setCursor(x, 0);
   matrix.print(msg);
 

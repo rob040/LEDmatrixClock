@@ -27,7 +27,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.5"
+#define VERSION "3.1.6"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
@@ -345,8 +345,8 @@ void loop() {
   if (lastMinute != minute()) {
     lastMinute = minute();
 
-    if (weatherClient.getError() != "") {
-      scrollMessage(weatherClient.getError());
+    if (weatherClient.getErrorMessage() != "") {
+      scrollMessage(weatherClient.getErrorMessage());
       return;
     }
 
@@ -369,9 +369,9 @@ void loop() {
     // Check to see if we need to Scroll some Data
     if (displayRefreshCount <= 0) {
       displayRefreshCount = minutesBetweenScrolling;
-      String temperature = weatherClient.getTempRounded(0);
-      String description = weatherClient.getDescription(0);
-      description.toUpperCase();
+      String temperature = String(weatherClient.getTemperatureRounded());
+      String weatherDescription = weatherClient.getWeatherDescription();
+      weatherDescription.toUpperCase();
       String msg;
       msg += " ";
 
@@ -380,27 +380,27 @@ void loop() {
         msg += getMonthName(month()) + " " + day() + "  ";
       }
       if (SHOW_CITY) {
-        msg += weatherClient.getCity(0) + "  ";
+        msg += weatherClient.getCity() + "  ";
       }
       msg += temperature + getTempSymbol() + "  ";
 
       //show high/low temperature
       if (SHOW_HIGHLOW) {
-        msg += "High/Low:" + weatherClient.getHigh(0) + "/" + weatherClient.getLow(0) + " " + getTempSymbol() + "  ";
+        msg += "High/Low:" + String(weatherClient.getTemperatureHigh()) + "/" + String(weatherClient.getTemperatureLow()) + " " + getTempSymbol() + "  ";
       }
 
       if (SHOW_CONDITION) {
-        msg += description + "  ";
+        msg += weatherDescription + "  ";
       }
       if (SHOW_HUMIDITY) {
-        msg += "Humidity:" + weatherClient.getHumidityRounded(0) + "%  ";
+        msg += "Humidity:" + String(weatherClient.getHumidity()) + "%  ";
       }
       if (SHOW_WIND) {
-        msg += "Wind: " + weatherClient.getDirectionText(0) + " @ " + weatherClient.getWindRounded(0) + " " + getSpeedSymbol() + "  ";
+        msg += "Wind: " + weatherClient.getDirectionText() + " @ " + String(weatherClient.getWindSpeedRounded()) + " " + getSpeedSymbol() + "  ";
       }
       //line to show barometric pressure
       if (SHOW_PRESSURE) {
-        msg += "Pressure:" + weatherClient.getPressure(0) + getPressureSymbol() + "  ";
+        msg += "Pressure:" + String(weatherClient.getPressure()) + getPressureSymbol() + "  ";
       }
 
       msg += marqueeMessage + " ";
@@ -434,7 +434,7 @@ void loop() {
   if (numberOfHorizontalDisplays >= 8) {
     if (Wide_Clock_Style == "1") {
       // On Wide Display -- show the current temperature as well
-      String currentTemp = weatherClient.getTempRounded(0);
+      String currentTemp = String(weatherClient.getTemperatureRounded());
       currentTime += " " + currentTemp + getTempSymbol();
     }
     if (Wide_Clock_Style == "2") {
@@ -762,8 +762,8 @@ void handleConfigure() {
   form.replace("%WEATHERKEY%", APIKEY);
 
   String cityName = "";
-  if (weatherClient.getCity(0) != "") {
-    cityName = weatherClient.getCity(0) + ", " + weatherClient.getCountry(0);
+  if (weatherClient.getCity() != "") {
+    cityName = weatherClient.getCity() + ", " + weatherClient.getCountry();
   }
   form.replace("%CITYNAME1%", cityName);
   form.replace("%CITY1%", String(CityIDs[0]));
@@ -897,8 +897,12 @@ void getWeatherData() //client function to send/receive GET request data.
     matrix.write();
 
     weatherClient.updateWeather();
-    if (weatherClient.getError() != "") {
-      scrollMessage(weatherClient.getError());
+    if (weatherClient.getErrorMessage() != "") {
+      scrollMessage(weatherClient.getErrorMessage());
+    }
+    else {
+      // Set current timezone (adapts to DST when regeon supports that)
+      set_timeZoneSec(weatherClient.getTimeZoneSeconds());
     }
   }
 
@@ -974,7 +978,7 @@ void sendHeader() {
   html = "<nav class='w3-sidebar w3-bar-block w3-card' style='margin-top:88px' id='mySidebar'>";
   html += "<div class='w3-container w3-theme-d2'>";
   html += "<span onclick='closeSidebar()' class='w3-button w3-display-topright w3-large'><i class='fas fa-times'></i></span>";
-  html += "<div class='w3-left'><img src='http://openweathermap.org/img/w/" + weatherClient.getIcon(0) + ".png' alt='" + weatherClient.getDescription(0) + "'></div>";
+  html += "<div class='w3-left'><img src='http://openweathermap.org/img/w/" + weatherClient.getIcon() + ".png' alt='" + weatherClient.getWeatherDescription() + "'></div>";
   html += "<div class='w3-padding'>Menu</div></div>";
   server.sendContent(html);
 
@@ -1028,7 +1032,7 @@ void displayWeatherData() {
   server.send(200, "text/html", "");
   sendHeader();
 
-  String temperature = weatherClient.getTemp(0);
+  String temperature = String(weatherClient.getTemperature());
 
   if ((temperature.indexOf(".") != -1) && ((int)temperature.length() >= (temperature.indexOf(".") + 2))) {
     temperature.remove(temperature.indexOf(".") + 2);
@@ -1044,34 +1048,43 @@ void displayWeatherData() {
     dtstr = getDayName(weekday()) + ", " + getMonthName(month()) + " " + day() + ", " + hourFormat12() + ":" + zeroPad(minute()) + ", " + String(isAM() ? "AM" : "PM");
   }
 
-  Serial.println(weatherClient.getCity(0));
-  Serial.println(weatherClient.getCondition(0));
-  Serial.println(weatherClient.getDescription(0));
+  Serial.println(weatherClient.getCity());
+  Serial.println(weatherClient.getWeatherCondition());
+  Serial.println(weatherClient.getWeatherDescription());
+  Serial.print(F("UpdateTime: "));
+  Serial.println(get24HrColonMin(weatherClient.getReportTimestamp() + weatherClient.getTimeZoneSeconds()));
+  Serial.print(F("SunRiseTime: "));
+  Serial.println(get24HrColonMin(weatherClient.getSunRise() + weatherClient.getTimeZoneSeconds()));
+  Serial.print(F("SunSetTime: "));
+  Serial.println(get24HrColonMin(weatherClient.getSunSet() + weatherClient.getTimeZoneSeconds()));
   Serial.println(temperature);
   Serial.println(dtstr);
 
-  if (weatherClient.getCity(0) == "") {
+  if (weatherClient.getCity() == "") {
     if (timeStatus() == timeNotSet) {
       html += F("<p>waiting for first time sync...</p>");
     }
     html += "<p>Please <a href='/configure'>Configure Weather</a> API</p>";
-    if (weatherClient.getError() != "") {
-      html += "<p>Weather Error: <strong>" + weatherClient.getError() + "</strong></p>";
+    if (weatherClient.getErrorMessage() != "") {
+      html += "<p>Weather Error: <strong>" + weatherClient.getErrorMessage() + "</strong></p>";
     }
   } else {
-    html += "<div class='w3-cell-row' style='width:100%'><h2>" + weatherClient.getCity(0) + ", " + weatherClient.getCountry(0) + "</h2></div><div class='w3-cell-row'>";
+    html += "<div class='w3-cell-row' style='width:100%'><h2>" + weatherClient.getCity() + ", " + weatherClient.getCountry() + "</h2></div><div class='w3-cell-row'>";
     html += "<div class='w3-cell w3-left w3-medium' style='width:120px'>";
-    html += "<img src='http://openweathermap.org/img/w/" + weatherClient.getIcon(0) + ".png' alt='" + weatherClient.getDescription(0) + "'><br>";
-    html += weatherClient.getHumidity(0) + "% Humidity<br>";
-    html += weatherClient.getDirectionText(0) + " / " + weatherClient.getWind(0) + " <span class='w3-tiny'>" + getSpeedSymbol() + "</span> Wind<br>";
-    html += weatherClient.getPressure(0) + " Pressure<br>";
+    html += "<img src='http://openweathermap.org/img/w/" + weatherClient.getIcon() + ".png' alt='" + weatherClient.getWeatherDescription() + "'><br>";
+    html += String(weatherClient.getHumidity()) + "% Humidity<br>";
+    html += weatherClient.getDirectionText() + " / " + String(weatherClient.getWindSpeed()) + " <span class='w3-tiny'>" + getSpeedSymbol() + "</span> Wind<br>";
+    html += String(weatherClient.getPressure()) + " Pressure<br>";
     html += "</div>";
     html += "<div class='w3-cell w3-container' style='width:100%'><p>";
-    html += weatherClient.getCondition(0) + " (" + weatherClient.getDescription(0) + ")<br>";
+    html += weatherClient.getWeatherCondition() + " (" + weatherClient.getWeatherDescription() + ")<br>";
     html += temperature + " " + getTempSymbol(true) + "<br>";
-    html += weatherClient.getHigh(0) + "/" + weatherClient.getLow(0) + " " + getTempSymbol(true) + "<br>";
-    html += dtstr + "<br>";
-    html += "<a href='https://www.google.com/maps/@" + weatherClient.getLat(0) + "," + weatherClient.getLon(0) + ",10000m/data=!3m1!1e3' target='_BLANK'><i class='fas fa-map-marker' style='color:red'></i> Map It!</a><br>";
+    html += String(weatherClient.getTemperatureHigh()) + "/" + weatherClient.getTemperatureLow() + " " + getTempSymbol(true) + "<br>";
+    html += "SunRise " + get24HrColonMin(weatherClient.getSunRise() + weatherClient.getTimeZoneSeconds()) + "<br>";
+    html += "SunSet " + get24HrColonMin(weatherClient.getSunSet() + weatherClient.getTimeZoneSeconds()) + "<br>";
+    html += "Updated " + get24HrColonMin(weatherClient.getReportTimestamp() + weatherClient.getTimeZoneSeconds()) + "<br>";
+    html += "Now " + dtstr + "<br>";
+    html += "<a href='https://www.google.com/maps/@" + String(weatherClient.getLat()) + "," + String(weatherClient.getLon()) + ",10000m/data=!3m1!1e3' target='_BLANK'><i class='fas fa-map-marker' style='color:red'></i> Map It!</a><br>";
     html += "</p></div></div><hr>";
   }
 
@@ -1341,8 +1354,8 @@ String writeCityIds() {
   f.close();
   readCityIds();
   weatherClient.setCityId(CityIDs[0]);
-  String cityIds = weatherClient.getMyCityIDs();
-  return cityIds;
+  //String cityIds = weatherClient.getMyCityIDs();
+  return "";//cityIds;
 }
 
 void readCityIds() {

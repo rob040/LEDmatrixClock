@@ -28,80 +28,73 @@ SOFTWARE.
 class OpenWeatherMapClient {
 
 private:
-  String myCityIDs = ""; //TODO: only one cityID is allowed
-  String myApiKey = "";
-  String units = "";
+  int myCityID;
+  String myApiKey;
+  //String units;
 
   const char* servername = "api.openweathermap.org";  // remote server we will connect to
 
-  typedef struct {
-    String lat;
-    String lon;
-    String dt;
-    String city;
-    String country;
-    String temp;
-    String humidity;
-    String condition;
-    String wind;
-    String weatherId;
-    String description;
-    String icon;
-    String error;
-    String pressure;
-    String direction;
-    String high;
-    String low;
-    String timeZone;
-    int sunRise;
-    int sunSet;
-    boolean cached;
-  } weather;
+  String city;
+  String country;
+  String weatherCondition;
+  String weatherDescription;
+  String icon;
+  String errorMsg;
+  float lat;   // Location coordinate Lattitude
+  float lon;   // Location coordinate Longitude
+  float temperature; // Temperature. Unit Default: Kelvin, Metric: Celsius, Imperial: Fahrenheit
+  float tempHigh;
+  float tempLow;
+  float windSpeed;  // Unit Default: meter/sec, Metric: meter/sec, Imperial: miles/hour
+  int weatherId;
+  int pressure; // Atmospheric pressure on the ground level, hPa
+  int humidity;  // in %, 0..100
+  int windDirection; // degrees 0..359
+  int cloudCoverage;  // in %, 0..100
+  int timeZone; // +/- delta seconds to UTC
+  uint32_t reportTimestamp;
+  uint32_t sunRise;
+  uint32_t sunSet;
+  boolean cached;
+  boolean isMetric;
 
-  //TODO: move to 1 weather object
-  weather weathers[5];
-
-  String roundValue(String value);
 
 public:
-  OpenWeatherMapClient(String ApiKey, int CityIDs[], int cityCount, boolean isMetric); //deprecated, can only accept 1 cityID
   OpenWeatherMapClient(String ApiKey, int CityID, boolean isMetric);
   void updateWeather();
-  void updateWeatherApiKey(String ApiKey) {setWeatherApiKey(ApiKey);}; //deprecated, use setWeatherApiKey() instead
-  void setWeatherApiKey(String ApiKey);
-  void updateCityIdList(int CityIDs[], int cityCount); //deprecated, can only accept 1 cityID, use setCityId() instead
-  void setCityId(int CityID);
-  void setMetric(boolean isMetric);
+  inline void setWeatherApiKey(String ApiKey) {myApiKey = ApiKey;};
+  inline void setCityId(int CityID) {myCityID = CityID;};
+  inline void setMetric(boolean isMetric) {this->isMetric = isMetric;};
 
-  String getLat(int index);
-  String getLon(int index);
-  String getDt(int index);
-  String getCity(int index);
-  String getCountry(int index);
-  String getTemp(int index);
-  String getTempRounded(int index);
-  String getHumidity(int index);
-  String getHumidityRounded(int index);
-  String getCondition(int index);
-  String getWind(int index);
-  String getWindRounded(int index);
-  String getDirection(int index);
-  String getDirectionRounded(int index);
-  String getDirectionText(int index);
-  String getPressure(int index);
-  String getHigh(int index);
-  String getLow(int index);
-  String getWeatherId(int index);
-  String getDescription(int index);
-  String getIcon(int index);
-  boolean getCached();
-  String getMyCityIDs(); // NOTE returns max 1 CityID
-  String getWeatherIcon(int index);
-  String getError();
-  String getWeekDay(int index, float offset); // Depricated
+  static inline int roundFloatToInt(float f) { return (int)(f+0.5);}
+
+  inline float getLat() {return lat;};
+  inline float getLon() {return lon;};
+  inline uint32_t getReportTimestamp() {return reportTimestamp;};
+  inline String getCity() {return city;};
+  inline String getCountry() {return country;};
+  inline float getTemperature() {return temperature;};
+  inline int getTemperatureRounded() {return roundFloatToInt(temperature);};
+  inline int getHumidity() {return humidity;};
+  inline String getWeatherCondition() {return weatherCondition;};
+  inline float getWindSpeed() {return windSpeed;};
+  inline int getWindSpeedRounded() {return roundFloatToInt(windSpeed);};
+  inline int getWindDirection() {return windDirection;};
+  inline int getCloudCoverage() {return cloudCoverage;};
+  inline int getPressure() {return pressure;};
+  inline float getTemperatureHigh() {return tempHigh;};
+  inline float getTemperatureLow() {return tempLow;};
+  inline int getWeatherId() {return weatherId;};
+  inline String getWeatherDescription() {return weatherDescription;};
+  inline String getIcon() {return icon;};
+  inline boolean getCached() {return cached;};
+  inline int getMyCityID() {return myCityID;};
+  inline String getErrorMessage() {return errorMsg;};
+  inline int getTimeZone() {return timeZone/3600;};
+  inline int getTimeZoneSeconds() {return timeZone;};
+  inline uint32_t getSunRise() {return sunRise;};
+  inline uint32_t getSunSet() {return sunSet;};
   String getWeekDay();
-  int getTimeZone(int index=0);
-  int getTimeZoneSeconds();
-  int getSunRise();
-  int getSunSet();
+  String getDirectionText();
+  String getWeatherIcon();
 };

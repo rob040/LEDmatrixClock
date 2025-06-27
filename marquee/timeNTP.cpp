@@ -41,23 +41,11 @@ void set_timeZoneSec(int timeZoneSeconds)
     // we have received new timezone value
     //
     timeZoneSec = timeZoneSeconds;
-    //if (timeStatus() == timeNotSet)
-      setSyncProvider(getNtpTime);
+    setSyncProvider(getNtpTime);
     if (timeStatus() != timeNotSet)
       setSyncInterval(300);
   }
 }
-/*
-void timeNTPloop()
-{
-  if (timeStatus() != timeNotSet) {
-    if (now() != prevDisplay) { //update the display only if time has changed
-      prevDisplay = now();
-      digitalClockDisplay();
-    }
-  }
-}
-*/
 
 /*-------- NTP code ----------*/
 
@@ -91,7 +79,6 @@ time_t getNtpTime()
       secsSince1900 -= 2208988800UL;
       secsSince1900 += timeZoneSec;
       //extern uint32_t sysTime;
-      Serial.flush();
       //Serial.print(F("NTP delta system ")); Serial.println((long)(sysTime-secsSince1900));
       Serial.print(F("NTP timezone ")); Serial.println(timeZoneSec);
       Serial.flush();

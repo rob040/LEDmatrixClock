@@ -40,7 +40,7 @@ private:
   String weatherDescription;
   String icon;
   String errorMsg;
-  float lat;   // Location coordinate Lattitude
+  float lat;   // Location coordinate Latitude
   float lon;   // Location coordinate Longitude
   float temperature; // Temperature. Unit Default: Kelvin, Metric: Celsius, Imperial: Fahrenheit
   float tempHigh;

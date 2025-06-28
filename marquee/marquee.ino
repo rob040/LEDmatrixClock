@@ -35,7 +35,7 @@
 // #define BUZZER_PIN  D2
 
 
-//declairing prototypes
+//declaring prototypes
 void configModeCallback(WiFiManager *myWiFiManager);
 int8_t getWifiQuality();
 
@@ -83,18 +83,18 @@ ESP8266WebServer server(WEBSERVER_PORT);
 ESP8266HTTPUpdateServer serverUpdater;
 
 static const char HEADER1[] PROGMEM = "<!DOCTYPE HTML>"
-"<html><head><title>Marquee Scroller</title><link rel='icon' href='data:;base64,='>"
-"<meta http-equiv='Content-Type' content='text/html; charset=UTF-8' />"
-"<meta name='viewport' content='width=device-width, initial-scale=1'>"
-"<link rel='stylesheet' href='https://www.w3schools.com/w3css/4/w3.css'>"
-"<link rel='stylesheet' href='https://www.w3schools.com/lib/w3-theme-$COLOR$.css'>"
-"<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/css/all.min.css'>"
-"</head><body>"
-"<nav class='w3-sidebar w3-bar-block w3-card' style='margin-top:88px' id='mySidebar'>"
-"<div class='w3-container w3-theme-d2'>"
-"<span onclick='closeSidebar()' class='w3-button w3-display-topright w3-large'><i class='fas fa-times'></i></span>"
-"<div class='w3-left'><img src='http://openweathermap.org/img/w/$ICO$.png' alt='$IDES$'></div>"
-"<div class='w3-padding'>Menu</div></div>";
+  "<html><head><title>Marquee Scroller</title><link rel='icon' href='data:;base64,='>"
+  "<meta http-equiv='Content-Type' content='text/html; charset=UTF-8' />"
+  "<meta name='viewport' content='width=device-width, initial-scale=1'>"
+  "<link rel='stylesheet' href='https://www.w3schools.com/w3css/4/w3.css'>"
+  "<link rel='stylesheet' href='https://www.w3schools.com/lib/w3-theme-$COLOR$.css'>"
+  "<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/css/all.min.css'>"
+  "</head><body>"
+  "<nav class='w3-sidebar w3-bar-block w3-card' style='margin-top:88px' id='mySidebar'>"
+  "<div class='w3-container w3-theme-d2'>"
+  "<span onclick='closeSidebar()' class='w3-button w3-display-topright w3-large'><i class='fas fa-times'></i></span>"
+  "<div class='w3-left'><img src='http://openweathermap.org/img/w/$ICO$.png' alt='$IDES$'></div>"
+  "<div class='w3-padding'>Menu</div></div>";
 
 static const char HEADER2[] PROGMEM = "</nav>"
   "<header class='w3-top w3-bar w3-theme'><button class='w3-bar-item w3-button w3-xxxlarge w3-hover-theme' onclick='openSidebar()'>"
@@ -103,8 +103,6 @@ static const char HEADER2[] PROGMEM = "</nav>"
   "function openSidebar(){document.getElementById('mySidebar').style.display='block'}"
   "function closeSidebar(){document.getElementById('mySidebar').style.display='none'}"
   "closeSidebar();"
-  //"function refreshPage(){if(document.getElementById('mySidebar').style.display==='none')window.location.reload();}"
-  //"var intervaltimer = setInterval(refreshPage, 10000);"
   "</script>"
   "<br><div class='w3-container w3-large' style='margin-top:88px'>";
 
@@ -188,9 +186,9 @@ static const char PIHOLE_FORM[] PROGMEM =
 
 static const char PIHOLE_TEST[] PROGMEM =
   "<script>function testPiHole(){var e=document.getElementById(\"PiHoleTest\"),t=document.getElementById(\"piholeAddress\").value,"
- "n=document.getElementById(\"piholePort\").value,api=document.getElementById(\"piApiToken\").value;;"
- "if(e.innerHTML=\"\",\"\"==t||\"\"==n)return e.innerHTML=\"* Address and Port are required\","
- "void(e.style.background=\"\");var r=\"http://\"+t+\":\"+n;r+=\"/admin/api.php?summary=3&auth=\"+api,window.open(r,\"_blank\").focus()}</script>";
+  "n=document.getElementById(\"piholePort\").value,api=document.getElementById(\"piApiToken\").value;;"
+  "if(e.innerHTML=\"\",\"\"==t||\"\"==n)return e.innerHTML=\"* Address and Port are required\","
+  "void(e.style.background=\"\");var r=\"http://\"+t+\":\"+n;r+=\"/admin/api.php?summary=3&auth=\"+api,window.open(r,\"_blank\").focus()}</script>";
 
 static const char NEWS_FORM1[] PROGMEM =
   "<form class='w3-container' action='/savenews' method='get'><h2>News Configuration:</h2>"
@@ -241,11 +239,6 @@ static const char COLOR_THEMES[] PROGMEM =
   "<option>black</option>"
   "<option>w3schools</option>";
 
-//Replace checkbox marker text
-//inline void formReplaceCheckboxMarker(String form, String marker, bool checked) {
-//  form.replace(marker, (checked) ? "checked='checked'" : "");
-//}
-
 const int TIMEOUT = 500; // 500 = 1/2 second
 int timeoutCount = 0;
 
@@ -267,7 +260,7 @@ void setup() {
   readConfiguration();
 
   Serial.println(F("Number of LED Displays: ") + String(numberOfHorizontalDisplays));
-  // initialize dispaly
+  // initialize display
   matrix.setIntensity(0); // Use a value between 0 and 15 for brightness
 
   int maxPos = numberOfHorizontalDisplays * numberOfVerticalDisplays;
@@ -305,7 +298,7 @@ void setup() {
 #endif
 
   //WiFiManager
-  //Local intialization. Once its business is done, there is no need to keep it around
+  //Local initialization. Once its business is done, there is no need to keep it around
   WiFiManager wifiManager;
 
   // Uncomment for testing wifi manager
@@ -687,7 +680,7 @@ void handleForgetWifi() {
     return server.requestAuthentication();
   }
   //WiFiManager
-  //Local intialization. Once its business is done, there is no need to keep it around
+  //Local initialization. Once its business is done, there is no need to keep it around
   redirectHome();
   WiFiManager wifiManager;
   wifiManager.resetSettings();
@@ -909,7 +902,7 @@ void getWeatherData() //client function to send/receive GET request data.
     if (weatherClient.getErrorMessage() != "") {
       scrollMessage(weatherClient.getErrorMessage());
     } else {
-      // Set current timezone (adapts to DST when regeon supports that)
+      // Set current timezone (adapts to DST when region supports that)
       set_timeZoneSec(weatherClient.getTimeZoneSeconds());
     }
   }

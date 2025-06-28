@@ -63,7 +63,7 @@ String APIKEY = ""; // Your API Key from http://openweathermap.org/
 int CityID = 5304391;
 String marqueeMessage = "";
 boolean IS_METRIC = false; // false = Imperial and true = Metric
-boolean IS_24HOUR = false; // 23:00 millitary 24 hour clock
+boolean IS_24HOUR = false; // 23:00 military 24 hour clock
 boolean IS_PM = true; // Show PM indicator on Clock when in AM/PM mode
 const int WEBSERVER_PORT = 80; // The port you can access this device on over HTTP
 const boolean WEBSERVER_ENABLED = true;  // Device will provide a web interface via http://[ip]:[port]/
@@ -104,8 +104,8 @@ boolean OCTOPRINT_PROGRESS = true;
 String OctoPrintApiKey = "";  // ApiKey from your User Account on OctoPrint
 String OctoPrintServer = "";  // IP or Address of your OctoPrint Server (DO NOT include http://)
 int OctoPrintPort = 80;       // the port you are running your OctoPrint server on (usually 80);
-String OctoAuthUser = "";     // only used if you have haproxy or basic athentintication turned on (not default)
-String OctoAuthPass = "";     // only used with haproxy or basic auth (only needed if you must authenticate)
+String OctoAuthUser = "";     // only used if you have HAproxy or basic authentication turned on (not default)
+String OctoAuthPass = "";     // only used with HAproxy or basic auth (only needed if you must authenticate)
 
 // Pi-hole Client -- monitor basic stats from your Pi-hole server (see http://pi-hole.net)
 boolean USE_PIHOLE = false;   // Set true to display your Pi-hole details

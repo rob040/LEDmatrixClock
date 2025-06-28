@@ -1,0 +1,40 @@
+
+Original is Qrome marquee scroller v3.0.3
+	https://github.com/Qrome/marquee-scroller, last update Apr 30, 2024
+Forked to rob040 LED matrix Clock
+	https://github.com/rob040/LEDmatrixClock
+
+TODO items
+1. PRIO 1: get rid of TimeZoneDB registration requirement
+   This req is not needed, as the Weather API supplies current timezone in seconds from UTC, and performs automatic DST changes, which makes conversion from country/city to TZ string and TZ string interpretation not needed.
+   => DONE
+2. Update OpenWeather API; new API key requests can no longer use the "GET /data/2.5/group?" request, but must use the current "GET /data/2.5/weather?" request. The returned json string is different and requires adaptation.
+   => DONE
+3. Reduce RAM usage; most static text and html is duplicated in RAM, most can be prevented
+   There is only 80kB RAM in ESP8266
+   => DONE v3.1.8  saves 6352 bytes RAM and 2728 bytes FLASH.
+   There were some functional improvements as well
+4. Add basic MQTT support (there is already PR#265 for this, which looks good as a start)
+4.1 Add MQTT server username and password
+4.2 Add MQTT control of display brightness, display on/off,
+5. Compile under PlatformIO / PIOarduino in VScode, perhaps saying goodbye to Arduino IDE (PIO provides control over used library versions, which is near impossible with Arduino IDE for different projects)
+6. OpenWeatherMap only accepts 1 CityID and produces 1 current weather report: remove presumed flexibility here.
+7. Fix naming like read/write 'CityIDs', 'handleLocations' 'GET /location', which are misnomers for __configuration__ update, save, restore
+7.1 opening "http://<deviceIP>/location" will erase your configured configuration! Prevent this!
+   -> now called /saveconfig
+   -> todo in all /save* requests
+   => DONE v3.1.9
+8. Fix some idiosyncrasies, coding mis-style (uppercase variables, space between function name and its arguments, ...), TODO's
+9. Prioritize metric and SI-units as config defaults and select archaic colonial/imperial units as an option, same goes for 24h/12h clock.
+10. Go through list of issues and PRs of original repo and check which are 'solved' by this Fork
+   may be provide PR's to Original repo, though the changes might be too large to be acceptable/merge-able
+11. make it compile and run on ESP32 variants
+12. Adaptive brightness option; add LDR on ADC input and heavily filter for slow changes
+
+Future
+- Change to use latest Arduino json V7 library. this makes the JsonStreamingParser and json buffer size calculation unnecessary.
+- Add REST API for various controls
+- Update webpage with json data; requires JS code
+
+
+

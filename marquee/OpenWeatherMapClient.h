@@ -66,7 +66,8 @@ public:
   inline void setCityId(int CityID) {myCityID = CityID;};
   inline void setMetric(boolean isMetric) {this->isMetric = isMetric;};
 
-  static inline int roundFloatToInt(float f) { return (int)(f+0.5);}
+  //Rounding no longer needed; when converting float to String, use second argument to set decimal places
+  //static inline int roundFloatToInt(float f) { return (int)(f+0.5);}
 
   inline float getLat() {return lat;};
   inline float getLon() {return lon;};
@@ -74,11 +75,11 @@ public:
   inline String getCity() {return city;};
   inline String getCountry() {return country;};
   inline float getTemperature() {return temperature;};
-  inline int getTemperatureRounded() {return roundFloatToInt(temperature);};
+  //inline int getTemperatureRounded() {return roundFloatToInt(temperature);};
   inline int getHumidity() {return humidity;};
   inline String getWeatherCondition() {return weatherCondition;};
   inline float getWindSpeed() {return windSpeed;};
-  inline int getWindSpeedRounded() {return roundFloatToInt(windSpeed);};
+  //inline int getWindSpeedRounded() {return roundFloatToInt(windSpeed);};
   inline int getWindDirection() {return windDirection;};
   inline int getCloudCoverage() {return cloudCoverage;};
   inline int getPressure() {return pressure;};
@@ -95,6 +96,6 @@ public:
   inline uint32_t getSunRise() {return sunRise;};
   inline uint32_t getSunSet() {return sunSet;};
   String getWeekDay();
-  String getDirectionText();
+  String getWindDirectionText();
   String getWeatherIcon();
 };

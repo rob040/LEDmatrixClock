@@ -27,11 +27,12 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.9"
+#define VERSION "3.1.10"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
-#define BUZZER_PIN  D2
+// uncomment Define buzzer pin when installed
+// #define BUZZER_PIN  D2
 
 
 //declairing prototypes
@@ -279,6 +280,7 @@ void setup() {
   matrix.fillScreen(LOW); // show black
   centerPrint("hello");
 
+#ifdef BUZZER_PIN
   tone(BUZZER_PIN, 415, 500);
   delay(500 * 1.3);
   tone(BUZZER_PIN, 466, 500);
@@ -286,6 +288,7 @@ void setup() {
   tone(BUZZER_PIN, 370, 1000);
   delay(1000 * 1.3);
   noTone(BUZZER_PIN);
+#endif
 
   for (int inx = 0; inx <= 15; inx++) {
     matrix.setIntensity(inx);
@@ -297,7 +300,9 @@ void setup() {
   }
   delay(1000);
   matrix.setIntensity(displayIntensity);
+#ifdef BUZZER_PIN
   //noTone(BUZZER_PIN);
+#endif
 
   //WiFiManager
   //Local intialization. Once its business is done, there is no need to keep it around
@@ -1159,14 +1164,18 @@ void configModeCallback(WiFiManager* myWiFiManager) {
 
 void flashLED(int number, int delayTime) {
   for (int inx = 0; inx < number; inx++) {
+#ifdef BUZZER_PIN
     tone(BUZZER_PIN, 440, delayTime);
+#endif
     delay(delayTime);
     digitalWrite(externalLight, LOW);
     delay(delayTime);
     digitalWrite(externalLight, HIGH);
     delay(delayTime);
   }
+#ifdef BUZZER_PIN
   noTone(BUZZER_PIN);
+#endif
 }
 
 String getTempSymbol() {

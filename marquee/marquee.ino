@@ -27,12 +27,15 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.13"
+#define VERSION "3.1.14"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
 // uncomment Define buzzer pin when installed
 // #define BUZZER_PIN  D2
+
+// Refresh main web page every x seconds, or disable by uncomment or set to 0
+#define WEBPAGE_AUTOREFRESH   20
 
 
 //declaring prototypes
@@ -93,6 +96,7 @@ static const char WEB_HEADER[] PROGMEM = "<!DOCTYPE HTML>"
   "<link rel='stylesheet' href='https://www.w3schools.com/lib/w3-theme-$COLOR$.css'>"
   "<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/css/all.min.css'>"
   "</head>";
+
 static const char WEB_BODY1[] PROGMEM =  "<body>"
   "<nav class='w3-sidebar w3-bar-block w3-card' style='margin-top:88px' id='mySidebar'>"
   "<div class='w3-container w3-theme-d2'>"
@@ -462,9 +466,8 @@ void loop() {
 
       //show high/low temperature
       if (SHOW_HIGHLOW) {
-        msg += F("High/Low:") + String(weatherClient.getTemperatureHigh(),0) + "/" + String(weatherClient.getTemperatureLow(),0) + " " + getTempSymbol() + "  ";
+        msg += F("High/Low:") + String(weatherClient.getTemperatureHigh(),0) + "/" + String(weatherClient.getTemperatureLow(),0) + "  ";
       }
-
       if (SHOW_CONDITION) {
         msg += weatherDescription + "  ";
       }
@@ -472,14 +475,15 @@ void loop() {
         msg += F("Humidity:") + String(weatherClient.getHumidity()) + "%  ";
       }
       if (SHOW_WIND) {
-        msg += F("Wind: ") + weatherClient.getWindDirectionText() + " @ " + String(weatherClient.getWindSpeed(),0) + " " + getSpeedSymbol() + "  ";
+        msg += F("Wind:") + weatherClient.getWindDirectionText() + "@" + String(weatherClient.getWindSpeed(),0) + getSpeedSymbol() + "  ";
       }
       //line to show barometric pressure
       if (SHOW_PRESSURE) {
         msg += F("Pressure:") + String(weatherClient.getPressure()) + getPressureSymbol() + "  ";
       }
-
-      msg += marqueeMessage + " ";
+      if (marqueeMessage.length() > 0) {
+        msg += marqueeMessage + "  ";
+      }
 
       if (NEWS_ENABLED) {
         msg += "  " + NEWS_SOURCE + ": " + newsClient.getTitle(newsIndex) + "  ";
@@ -1103,7 +1107,7 @@ void displayWeatherData() {
   String dtstr;
   if (IS_24HOUR) {
     // UK date+time presentation: MSB to LSB
-    dtstr = String(year()) + " " + getMonthName(month()) + " " + day() + " " + zeroPad(hour()) + ":" + zeroPad(minute()) + ", " + getDayName(weekday());
+    dtstr = getDayName(weekday()) + ", " + String(year()) + " " + getMonthName(month()) + " " + day() + " " + zeroPad(hour()) + ":" + zeroPad(minute());
   } else {
     // US date+time presentation
     dtstr = getDayName(weekday()) + ", " + getMonthName(month()) + " " + day() + ", " + hourFormat12() + ":" + zeroPad(minute()) + ", " + getAmPm(isPM());
@@ -1130,32 +1134,43 @@ void displayWeatherData() {
       html += F("<p>Weather Error: <strong>") + weatherClient.getErrorMessage() + F("</strong></p>");
     }
   } else {
-    html = F(
-      "<script>"
-      "function refreshPage(){if(document.getElementById('mySidebar').style.display==='none')window.location.reload();}"
-      "var intervaltimer = setInterval(refreshPage, 10000);"
-      "</script>"
+    html.reserve(512);
+    html += F(
       "<div class='w3-cell-row' style='width:100%'><h2>") + weatherClient.getCity() + ", " + weatherClient.getCountry() + F("</h2></div><div class='w3-cell-row'>"
       "<div class='w3-cell w3-left w3-medium' style='width:120px'>"
-      "<img src='http://openweathermap.org/img/w/") + weatherClient.getIcon() + ".png' alt='" + weatherClient.getWeatherDescription() + "'><br>" +
-      weatherClient.getHumidity() + F("% Humidity<br>") +
-      weatherClient.getWindDirectionText() + " / " + String(weatherClient.getWindSpeed(),1) + F(" <span class='w3-tiny'>") + getSpeedSymbol() + F("</span> Wind<br>") +
-      weatherClient.getPressure() + F(" Pressure<br>"
-        "</div>"
-        "<div class='w3-cell w3-container' style='width:100%'><p>");
+      "<img src='http://openweathermap.org/img/wn/") + weatherClient.getIcon() + "@2x.png' alt='" + weatherClient.getWeatherDescription() + "'><br>" +
+      weatherClient.getHumidity() + F("% <span class='w3-tiny'>RH</span><br>") +
+      weatherClient.getPressure() + F(" <span class='w3-tiny'>") + getPressureSymbol() + F("</span><br>"
+      "Wind ") +
+      weatherClient.getWindDirectionText() + " /<br>&nbsp;&nbsp;" + String(weatherClient.getWindSpeed(),1) + F("&nbsp;<span class='w3-tiny'>") + getSpeedSymbol() + F("</span><br>"
+      "</div>"
+      "<div class='w3-cell w3-container' style='width:100%'><p>");
     server.sendContent(html);
-
-    html =
-      weatherClient.getWeatherCondition() + " (" + weatherClient.getWeatherDescription() + ")<br>" +
+    String clouds;
+    if ((weatherClient.getCloudCoverage() > 0) && (weatherClient.getWeatherDescription().indexOf("louds")>0)) {
+       clouds = String(weatherClient.getCloudCoverage()) + " %";
+    }
+    html.clear();
+    html.reserve(1024);
+    html +=
+      weatherClient.getWeatherCondition() + " (" + weatherClient.getWeatherDescription() + ") " + clouds + "<br>" +
       temperature + " " + getTempSymbol(true) + "<br>" +
       String(weatherClient.getTemperatureHigh(),1) + "/" + String(weatherClient.getTemperatureLow(),1) + " " + getTempSymbol(true) + "<br>"
       "SunRise " + get24HrColonMin(weatherClient.getSunRise() + weatherClient.getTimeZoneSeconds()) + "<br>"
       "SunSet " + get24HrColonMin(weatherClient.getSunSet() + weatherClient.getTimeZoneSeconds()) + "<br>"
       "Updated " + get24HrColonMin(weatherClient.getReportTimestamp() + weatherClient.getTimeZoneSeconds()) +
-      F("<br>""<br>"
+      F("<br>"
         "<a href='https://www.google.com/maps/@") + weatherClient.getLat() + "," + weatherClient.getLon() + F(",10000m/data=!3m1!1e3' target='_BLANK'><i class='fas fa-map-marker' style='color:red'></i> Map It!</a><br>"
       "</p></div></div><hr>"
       "<div class='w3-cell-row' style='width:100%'><h3>") + dtstr  + F("</h3></div><hr>");
+    #if defined (WEBPAGE_AUTOREFRESH) && (WEBPAGE_AUTOREFRESH > 0)
+    #define str(arg) #arg
+    #define mkstr(arg) str(arg)
+    html +=  F("<script>"
+      "function refreshPage(){if(document.getElementById('mySidebar').style.display==='none')window.location.reload();}"
+      "var intervaltimer=setInterval(refreshPage," mkstr(WEBPAGE_AUTOREFRESH) "*1000);"
+      "</script>");
+    #endif
   }
 
 

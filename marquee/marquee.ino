@@ -27,7 +27,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.16"
+#define VERSION "3.1.17"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
@@ -310,11 +310,17 @@ void setup() {
     matrix.setIntensity(inx);
     delay(100);
   }
+  delay(200);
   for (int inx = 15; inx >= 0; inx--) {
     matrix.setIntensity(inx);
     delay(60);
   }
-  delay(1000);
+  delay(200);
+  for (int inx = 0; inx <= displayIntensity; inx++) {
+    matrix.setIntensity(inx);
+    delay(100);
+  }
+  delay(800);
   matrix.setIntensity(displayIntensity);
 #ifdef BUZZER_PIN
   //noTone(BUZZER_PIN);

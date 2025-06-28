@@ -27,7 +27,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.14"
+#define VERSION "3.1.15"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
@@ -118,7 +118,7 @@ static const char WEB_FOOTER[] PROGMEM = "<br><br><br>"
   "</div>"
   "<footer class='w3-container w3-bottom w3-theme w3-margin-top'>"
   "<i class='far fa-paper-plane'></i> Version: " VERSION " build " __DATE__ " " __TIME__ "<br>"
-  "<i class='far fa-clock'></i> Next Update: $UPD$ <br>"
+  "<i class='far fa-clock'></i> Next Data Update: $UPD$ <br>"
   "<i class='fas fa-rss'></i> Signal Strength: $RSSI$%"
   "</footer>"
   "</body></html>";
@@ -260,8 +260,13 @@ static const char COLOR_THEMES[] PROGMEM =
 const int TIMEOUT = 500; // 500 = 1/2 second
 int timeoutCount = 0;
 
-// Change the externalLight to the pin you wish to use if other than the Built-in LED
-int externalLight = LED_BUILTIN; // LED_BUILTIN is is the built in LED on the Wemos
+// Change the LED_ONBOARD to the pin you wish to use if other than the Built-in LED
+#define LED_ONBOARD  LED_BUILTIN // LED_BUILTIN is the on-board LED on the ESP12E module on the Wemos
+#define LED_ON  LOW   // define polarity of LED_ONBOARD
+#define LED_OFF HIGH  // define polarity of LED_ONBOARD
+
+// matrix fillscreen clear color is 0
+#define CLEAR  0
 
 void setup() {
   Serial.begin(115200);
@@ -270,7 +275,7 @@ void setup() {
   delay(10);
 
   // Initialize digital pin for LED
-  pinMode(externalLight, OUTPUT);
+  pinMode(LED_ONBOARD, OUTPUT);
 
   //New Line to clear from start garbage
   Serial.println();
@@ -288,7 +293,7 @@ void setup() {
   }
 
   Serial.println(F("matrix created"));
-  matrix.fillScreen(LOW); // show black
+  matrix.fillScreen(CLEAR); // show black
   centerPrint(F("hello"));
 
 #ifdef BUZZER_PIN
@@ -433,7 +438,7 @@ void loop() {
     if (displayOn) {
       matrix.shutdown(false);
     }
-    matrix.fillScreen(LOW); // show black
+    matrix.fillScreen(CLEAR); // show black
     if (OCTOPRINT_ENABLED) {
       if (displayOn && ((printerClient.isOperational() || printerClient.isPrinting()) || printerCount == 0)) {
         // This should only get called if the printer is actually running or if it has been 2 minutes since last check
@@ -526,13 +531,13 @@ void loop() {
     }
     if (Wide_Clock_Style == "2") {
       currentTime = currentTime + secondsIndicator(false) + zeroPad(second());
-      matrix.fillScreen(LOW); // show black
+      matrix.fillScreen(CLEAR); // show black
     }
     if (Wide_Clock_Style == "3") {
       // No change this is normal clock display
     }
   }
-  matrix.fillScreen(LOW);
+  matrix.fillScreen(CLEAR);
   centerPrint(currentTime, true);
 
   if (WEBSERVER_ENABLED) {
@@ -581,7 +586,7 @@ void handleSaveWideClock() {
     if (numberOfHorizontalDisplays >= 8) {
       Wide_Clock_Style = server.arg(F("wideclockformat"));
       writeConfiguration();
-      matrix.fillScreen(LOW); // show black
+      matrix.fillScreen(CLEAR); // show black
     }
   }
   redirectHome();
@@ -597,7 +602,7 @@ void handleSaveNews() {
     NEWS_ENABLED = server.hasArg(F("displaynews"));
     NEWS_API_KEY = server.arg(F("newsApiKey"));
     NEWS_SOURCE = server.arg(F("newssource"));
-    matrix.fillScreen(LOW); // show black
+    matrix.fillScreen(CLEAR); // show black
     writeConfiguration();
     newsClient.updateNews();
   }
@@ -619,7 +624,7 @@ void handleSaveOctoprint() {
     OctoPrintPort = server.arg(F("octoPrintPort")).toInt();
     OctoAuthUser = server.arg(F("octoUser"));
     OctoAuthPass = server.arg(F("octoPass"));
-    matrix.fillScreen(LOW); // show black
+    matrix.fillScreen(CLEAR); // show black
     writeConfiguration();
     if (OCTOPRINT_ENABLED) {
       printerClient.getPrinterJobResults();
@@ -716,7 +721,7 @@ void handleSaveConfig() {
     temp.trim();
     temp.toCharArray(www_password, sizeof(www_password));
     weatherClient.setMetric(IS_METRIC);
-    matrix.fillScreen(LOW); // show black
+    matrix.fillScreen(CLEAR); // show black
     writeConfiguration();
     getWeatherData(); // this will force a data pull for new weather
   }
@@ -750,7 +755,7 @@ void handleWideClockConfigure() {
   if (!authentication()) {
     return server.requestAuthentication();
   }
-  digitalWrite(externalLight, LOW);
+  digitalWrite(LED_ONBOARD, LED_ON);
 
   server.sendHeader(F("Cache-Control"), F("no-cache, no-store"));
   server.sendHeader(F("Pragma"), F("no-cache"));
@@ -773,14 +778,14 @@ void handleWideClockConfigure() {
 
   server.sendContent("");
   server.client().stop();
-  digitalWrite(externalLight, HIGH);
+  digitalWrite(LED_ONBOARD, LED_OFF);
 }
 
 void handleNewsConfigure() {
   if (!authentication()) {
     return server.requestAuthentication();
   }
-  digitalWrite(externalLight, LOW);
+  digitalWrite(LED_ONBOARD, LED_ON);
 
   server.sendHeader(F("Cache-Control"), F("no-cache, no-store"));
   server.sendHeader(F("Pragma"), F("no-cache"));
@@ -800,14 +805,14 @@ void handleNewsConfigure() {
 
   server.sendContent("");
   server.client().stop();
-  digitalWrite(externalLight, HIGH);
+  digitalWrite(LED_ONBOARD, LED_OFF);
 }
 
 void handleOctoprintConfigure() {
   if (!authentication()) {
     return server.requestAuthentication();
   }
-  digitalWrite(externalLight, LOW);
+  digitalWrite(LED_ONBOARD, LED_ON);
 
   server.sendHeader(F("Cache-Control"), F("no-cache, no-store"));
   server.sendHeader(F("Pragma"), F("no-cache"));
@@ -831,14 +836,14 @@ void handleOctoprintConfigure() {
 
   server.sendContent("");
   server.client().stop();
-  digitalWrite(externalLight, HIGH);
+  digitalWrite(LED_ONBOARD, LED_OFF);
 }
 
 void handlePiholeConfigure() {
   if (!authentication()) {
     return server.requestAuthentication();
   }
-  digitalWrite(externalLight, LOW);
+  digitalWrite(LED_ONBOARD, LED_ON);
 
   server.sendHeader(F("Cache-Control"), F("no-cache, no-store"));
   server.sendHeader(F("Pragma"), F("no-cache"));
@@ -863,14 +868,14 @@ void handlePiholeConfigure() {
 
   server.sendContent("");
   server.client().stop();
-  digitalWrite(externalLight, HIGH);
+  digitalWrite(LED_ONBOARD, LED_OFF);
 }
 
 void handleMqttConfigure() {
   if (!authentication()) {
     return server.requestAuthentication();
   }
-  digitalWrite(externalLight, LOW);
+  digitalWrite(LED_ONBOARD, LED_ON);
 
   server.sendHeader(F("Cache-Control"), F("no-cache, no-store"));
   server.sendHeader(F("Pragma"), F("no-cache"));
@@ -893,14 +898,14 @@ void handleMqttConfigure() {
 
   server.sendContent("");
   server.client().stop();
-  digitalWrite(externalLight, HIGH);
+  digitalWrite(LED_ONBOARD, LED_OFF);
 }
 
 void handleConfigure() {
   if (!authentication()) {
     return server.requestAuthentication();
   }
-  digitalWrite(externalLight, LOW);
+  digitalWrite(LED_ONBOARD, LED_ON);
 
   server.sendHeader(F("Cache-Control"), F("no-cache, no-store"));
   server.sendHeader(F("Pragma"), F("no-cache"));
@@ -956,7 +961,7 @@ void handleConfigure() {
 
   server.sendContent("");
   server.client().stop();
-  digitalWrite(externalLight, HIGH);
+  digitalWrite(LED_ONBOARD, LED_OFF);
 }
 
 void handleDisplay() {
@@ -970,8 +975,8 @@ void handleDisplay() {
 //***********************************************************************
 void getWeatherData() //client function to send/receive GET request data.
 {
-  digitalWrite(externalLight, LOW);
-  matrix.fillScreen(LOW); // show black
+  digitalWrite(LED_ONBOARD, LED_ON);
+  matrix.fillScreen(CLEAR); // show black
   Serial.println();
 
   if (displayOn) {
@@ -1023,11 +1028,11 @@ void getWeatherData() //client function to send/receive GET request data.
 
   Serial.println(F("Version: " VERSION));
   Serial.println();
-  digitalWrite(externalLight, HIGH);
+  digitalWrite(LED_ONBOARD, LED_OFF);
 }
 
 void displayMessage(String message) {
-  digitalWrite(externalLight, LOW);
+  digitalWrite(LED_ONBOARD, LED_ON);
 
   server.sendHeader(F("Cache-Control"), F("no-cache, no-store"));
   server.sendHeader(F("Pragma"), F("no-cache"));
@@ -1040,7 +1045,7 @@ void displayMessage(String message) {
   server.sendContent("");
   server.client().stop();
 
-  digitalWrite(externalLight, HIGH);
+  digitalWrite(LED_ONBOARD, LED_OFF);
 }
 
 void redirectHome() {
@@ -1092,7 +1097,7 @@ void sendFooter() {
 }
 
 void displayWeatherData() {
-  digitalWrite(externalLight, LOW);
+  digitalWrite(LED_ONBOARD, LED_ON);
   String html;
 
   server.sendHeader(F("Cache-Control"), F("no-cache, no-store"));
@@ -1260,7 +1265,7 @@ void displayWeatherData() {
   sendFooter();
   server.sendContent("");
   server.client().stop();
-  digitalWrite(externalLight, HIGH);
+  digitalWrite(LED_ONBOARD, LED_OFF);
 }
 
 void configModeCallback(WiFiManager* myWiFiManager) {
@@ -1280,9 +1285,9 @@ void flashLED(int number, int delayTime) {
     tone(BUZZER_PIN, 440, delayTime);
 #endif
     delay(delayTime);
-    digitalWrite(externalLight, LOW);
+    digitalWrite(LED_ONBOARD, LED_ON);
     delay(delayTime);
-    digitalWrite(externalLight, HIGH);
+    digitalWrite(LED_ONBOARD, LED_OFF);
     delay(delayTime);
   }
 #ifdef BUZZER_PIN
@@ -1360,7 +1365,7 @@ void enableDisplay(boolean enable) {
       displayOffEpoch = 0;  // reset
     }
     matrix.shutdown(false);
-    matrix.fillScreen(LOW); // show black
+    matrix.fillScreen(CLEAR); // show black
     Serial.println(F("Display was turned ON: ") + get24HrColonMin(now()));
   } else {
     matrix.shutdown(true);
@@ -1636,7 +1641,7 @@ void scrollMessage(String msg) {
     }
     if (refresh == 1) i = 0;
     refresh = 0;
-    matrix.fillScreen(LOW);
+    matrix.fillScreen(CLEAR);
 
     int letter = i / width;
     int x = (matrix.width() - 1) - i % width;

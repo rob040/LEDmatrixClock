@@ -1,0 +1,10 @@
+.pio
+.vscode
+binaries
+logs
+*.bak
+*.log
+*.???-
+*.?-
+*.-
+*-

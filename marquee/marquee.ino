@@ -27,7 +27,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.11"
+#define VERSION "3.1.12"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
@@ -284,7 +284,7 @@ void setup() {
 
   Serial.println(F("matrix created"));
   matrix.fillScreen(LOW); // show black
-  centerPrint("hello");
+  centerPrint(F("hello"));
 
 #ifdef BUZZER_PIN
   tone(BUZZER_PIN, 415, 500);
@@ -337,21 +337,21 @@ void setup() {
 
   if (ENABLE_OTA) {
     ArduinoOTA.onStart([]() {
-      Serial.println("Start");
+      Serial.println(F("Start"));
     });
     ArduinoOTA.onEnd([]() {
-      Serial.println("\nEnd");
+      Serial.println(F("\nEnd"));
     });
     ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
       Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
     });
     ArduinoOTA.onError([](ota_error_t error) {
       Serial.printf("Error[%u]: ", error);
-      if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-      else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-      else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-      else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-      else if (error == OTA_END_ERROR) Serial.println("End Failed");
+      if (error == OTA_AUTH_ERROR) Serial.println(F("Auth Failed"));
+      else if (error == OTA_BEGIN_ERROR) Serial.println(F("Begin Failed"));
+      else if (error == OTA_CONNECT_ERROR) Serial.println(F("Connect Failed"));
+      else if (error == OTA_RECEIVE_ERROR) Serial.println(F("Receive Failed"));
+      else if (error == OTA_END_ERROR) Serial.println(F("End Failed"));
     });
     ArduinoOTA.setHostname((const char *)hostname.c_str());
     if (OTA_Password != "") {
@@ -382,16 +382,16 @@ void setup() {
     serverUpdater.setup(&server, "/update", www_username, www_password);
     // Start the server
     server.begin();
-    Serial.println("Server started");
+    Serial.println(F("Server started"));
     // Print the IP address
-    String webAddress = "http://" + WiFi.localIP().toString() + ":" + String(WEBSERVER_PORT) + "/";
-    Serial.println("Use this URL : " + webAddress);
+    String webAddress = F("http://") + WiFi.localIP().toString() + ":" + String(WEBSERVER_PORT) + "/";
+    Serial.print(F("Use this URL : ")); Serial.println(webAddress);
     scrollMessage(" v" + String(VERSION) + "  IP: " + WiFi.localIP().toString() + "  ");
 
     timeNTPsetup();
   } else {
-    Serial.println("Web Interface is Disabled");
-    scrollMessage("Web Interface is Disabled");
+    Serial.println(F("Web Interface is Disabled"));
+    scrollMessage(F("Web Interface is Disabled"));
   }
 
   flashLED(1, 500);
@@ -461,7 +461,7 @@ void loop() {
 
       //show high/low temperature
       if (SHOW_HIGHLOW) {
-        msg += "High/Low:" + String(weatherClient.getTemperatureHigh(),0) + "/" + String(weatherClient.getTemperatureLow(),0) + " " + getTempSymbol() + "  ";
+        msg += F("High/Low:") + String(weatherClient.getTemperatureHigh(),0) + "/" + String(weatherClient.getTemperatureLow(),0) + " " + getTempSymbol() + "  ";
       }
 
       if (SHOW_CONDITION) {
@@ -487,15 +487,17 @@ void loop() {
           newsIndex = 0;
         }
       }
+
       if (OCTOPRINT_ENABLED && printerClient.isPrinting()) {
         msg += "  " + printerClient.getFileName() + " ";
         msg += "(" + printerClient.getProgressCompletion() + "%)  ";
       }
+
       if (USE_PIHOLE) {
         piholeClient.getPiHoleData(PiHoleServer, PiHolePort, PiHoleApiKey);
         piholeClient.getGraphData(PiHoleServer, PiHolePort, PiHoleApiKey);
         if (piholeClient.getPiHoleStatus() != "") {
-          msg += "    Pi-hole (" + piholeClient.getPiHoleStatus() + "): " + piholeClient.getAdsPercentageToday() + "% ";
+          msg += F("    Pi-hole (") + piholeClient.getPiHoleStatus() + "): " + piholeClient.getAdsPercentageToday() + "% ";
         }
       }
 
@@ -842,10 +844,10 @@ void handlePiholeConfigure() {
   server.sendContent(FPSTR(PIHOLE_TEST));
 
   String form = FPSTR(PIHOLE_FORM);
-  form.replace("%PIHO_CB%", (USE_PIHOLE) ? "checked='checked'" : "");
-  form.replace("%PIHO_ADR%", PiHoleServer);
-  form.replace("%PIHO_PRT%", String(PiHolePort));
-  form.replace("%PIHO_API%", PiHoleApiKey);
+  form.replace(F("%PIHO_CB%"), (USE_PIHOLE) ? "checked='checked'" : "");
+  form.replace(F("%PIHO_ADR%"), PiHoleServer);
+  form.replace(F("%PIHO_PRT%"), String(PiHolePort));
+  form.replace(F("%PIHO_API%"), PiHoleApiKey);
 
   server.sendContent(form);
   form = "";
@@ -1145,8 +1147,8 @@ void displayWeatherData() {
       "Updated " + get24HrColonMin(weatherClient.getReportTimestamp() + weatherClient.getTimeZoneSeconds()) +
       F("<br>""<br>"
         "<a href='https://www.google.com/maps/@") + weatherClient.getLat() + "," + weatherClient.getLon() + F(",10000m/data=!3m1!1e3' target='_BLANK'><i class='fas fa-map-marker' style='color:red'></i> Map It!</a><br>"
-        "</p></div></div><hr>"
-        "<div class='w3-cell-row' style='width:100%'><h3>") + dtstr  + F("</h3></div>");
+      "</p></div></div><hr>"
+      "<div class='w3-cell-row' style='width:100%'><h3>") + dtstr  + F("</h3></div>");
   }
 
 
@@ -1161,14 +1163,15 @@ void displayWeatherData() {
       int hours = numberOfHours(val);
       int minutes = numberOfMinutes(val);
       int seconds = numberOfSeconds(val);
-      html += F("Online and Printing</br>Est. Print Time Left: ") + zeroPad(hours) + ":" + zeroPad(minutes) + ":" + zeroPad(seconds) + "<br>";
+      html += F("Online and Printing<br>"
+        "Est. Print Time Left: ") + zeroPad(hours) + ":" + zeroPad(minutes) + ":" + zeroPad(seconds) + "<br>";
 
       val = printerClient.getProgressPrintTime().toInt();
       hours = numberOfHours(val);
       minutes = numberOfMinutes(val);
       seconds = numberOfSeconds(val);
       html += "Printing Time: " + zeroPad(hours) + ":" + zeroPad(minutes) + ":" + zeroPad(seconds) + "<br>" +
-        printerClient.getState() + " " + printerClient.getFileName() + F("</br>"
+        printerClient.getState() + " " + printerClient.getFileName() + F("<br>"
         "<style>#myProgress {width: 100%;background-color: #ddd;}#myBar {width: ") + printerClient.getProgressCompletion() + F("%;height: 30px;background-color: #4CAF50;}</style>"
         "<div id=\"myProgress\"><div id=\"myBar\" class=\"w3-medium w3-center\">") + printerClient.getProgressCompletion() + F("%</div></div>");
     } else if (printerClient.isOperational()) {
@@ -1193,7 +1196,7 @@ void displayWeatherData() {
         "Status: <b>") + piholeClient.getPiHoleStatus() + F("</b><br>"
         "</div><br><hr>");
     } else {
-      html = F("<div class='w3-cell-row'>Pi-hole Error"
+      html = F("<div class='w3-cell-row'><b>Pi-hole Error</b><br>"
         "Please <a href='/configurepihole' title='Configure'>Configure</a> for Pi-hole <a href='/configurepihole' title='Configure'><i class='fas fa-cog'></i></a><br>"
         "Status: Error Getting Data<br>"
         "Reason: ") + piholeClient.getError() + F("<br></div><br><hr>");
@@ -1225,7 +1228,7 @@ void displayWeatherData() {
     } else {
       for (int inx = 0; inx < 10; inx++) {
         html = F("<div class='w3-cell-row'><a href='") + newsClient.getUrl(inx) + F("' target='_BLANK'>") + newsClient.getTitle(inx) + "</a></div>" +
-          newsClient.getDescription(inx) + "<br/><br/>";
+          newsClient.getDescription(inx) + F("<br/><br/>");
         server.sendContent(html);
         html = "";
       }
@@ -1270,14 +1273,7 @@ String getTempSymbol() {
 }
 
 String getTempSymbol(bool forWeb) {
-  //return = ((forWeb) ? "°" : String(char(247))) + String((IS_METRIC) ? 'C' : 'F');
-  String rtnValue = (IS_METRIC) ? "C" : "F";
-  if (forWeb) {
-    rtnValue = "°" + rtnValue;
-  } else {
-    rtnValue = char(247) + rtnValue;
-  }
-  return rtnValue;
+  return ((forWeb) ? "°" : String(char(247))) + String((IS_METRIC) ? 'C' : 'F');
 }
 
 
@@ -1360,13 +1356,13 @@ void checkDisplay() {
   String currentTime = zeroPad(hour()) + ":" + zeroPad(minute());
 
   if (currentTime == timeDisplayTurnsOn && !displayOn) {
-    Serial.println("Time to turn display on: " + currentTime);
+    Serial.print(F("Time to turn display on: ")); Serial.println(currentTime);
     flashLED(1, 500);
     enableDisplay(true);
   }
 
   if (currentTime == timeDisplayTurnsOff && displayOn) {
-    Serial.println("Time to turn display off: " + currentTime);
+    Serial.print(F("Time to turn display off: ")); Serial.println(currentTime);
     flashLED(2, 500);
     enableDisplay(false);
   }

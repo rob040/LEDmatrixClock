@@ -27,7 +27,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.8"
+#define VERSION "3.1.9"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
@@ -538,100 +538,131 @@ void handlePull() {
 }
 
 void handleSaveWideClock() {
-  if (!authentication()) {
-    return server.requestAuthentication();
-  }
-  if (numberOfHorizontalDisplays >= 8) {
-    Wide_Clock_Style = server.arg(F("wideclockformat"));
-    writeConfiguration();
-    matrix.fillScreen(LOW); // show black
+  // test that important args are present to accept new config
+  if (server.hasArg(F("wideclockformat"))) {
+    if (!authentication()) {
+      return server.requestAuthentication();
+    }
+    if (numberOfHorizontalDisplays >= 8) {
+      Wide_Clock_Style = server.arg(F("wideclockformat"));
+      writeConfiguration();
+      matrix.fillScreen(LOW); // show black
+    }
   }
   redirectHome();
 }
 
 void handleSaveNews() {
-  if (!authentication()) {
-    return server.requestAuthentication();
+  // test that important args are present to accept new config
+  if (server.hasArg(F("newsApiKey")) &&
+      server.hasArg(F("newssource"))) {
+    if (!authentication()) {
+      return server.requestAuthentication();
+    }
+    NEWS_ENABLED = server.hasArg(F("displaynews"));
+    NEWS_API_KEY = server.arg(F("newsApiKey"));
+    NEWS_SOURCE = server.arg(F("newssource"));
+    matrix.fillScreen(LOW); // show black
+    writeConfiguration();
+    newsClient.updateNews();
   }
-  NEWS_ENABLED = server.hasArg(F("displaynews"));
-  NEWS_API_KEY = server.arg(F("newsApiKey"));
-  NEWS_SOURCE = server.arg(F("newssource"));
-  matrix.fillScreen(LOW); // show black
-  writeConfiguration();
-  newsClient.updateNews();
   redirectHome();
 }
 
 void handleSaveOctoprint() {
-  if (!authentication()) {
-    return server.requestAuthentication();
-  }
-  OCTOPRINT_ENABLED = server.hasArg(F("displayoctoprint"));
-  OCTOPRINT_PROGRESS = server.hasArg(F("octoprintprogress"));
-  OctoPrintApiKey = server.arg(F("octoPrintApiKey"));
-  OctoPrintServer = server.arg(F("octoPrintAddress"));
-  OctoPrintPort = server.arg(F("octoPrintPort")).toInt();
-  OctoAuthUser = server.arg(F("octoUser"));
-  OctoAuthPass = server.arg(F("octoPass"));
-  matrix.fillScreen(LOW); // show black
-  writeConfiguration();
-  if (OCTOPRINT_ENABLED) {
-    printerClient.getPrinterJobResults();
+  // test that important args are present to accept new config
+  if (server.hasArg(F("octoPrintApiKey")) &&
+      server.hasArg(F("octoUser"))
+      ) {
+    if (!authentication()) {
+      return server.requestAuthentication();
+    }
+    OCTOPRINT_ENABLED = server.hasArg(F("displayoctoprint"));
+    OCTOPRINT_PROGRESS = server.hasArg(F("octoprintprogress"));
+    OctoPrintApiKey = server.arg(F("octoPrintApiKey"));
+    OctoPrintServer = server.arg(F("octoPrintAddress"));
+    OctoPrintPort = server.arg(F("octoPrintPort")).toInt();
+    OctoAuthUser = server.arg(F("octoUser"));
+    OctoAuthPass = server.arg(F("octoPass"));
+    matrix.fillScreen(LOW); // show black
+    writeConfiguration();
+    if (OCTOPRINT_ENABLED) {
+      printerClient.getPrinterJobResults();
+    }
   }
   redirectHome();
 }
 
 void handleSavePihole() {
-  if (!authentication()) {
-    return server.requestAuthentication();
-  }
-  USE_PIHOLE = server.hasArg(F("displaypihole"));
-  PiHoleServer = server.arg(F("piholeAddress"));
-  PiHolePort = server.arg(F("piholePort")).toInt();
-  PiHoleApiKey = server.arg(F("piApiToken"));
-  Serial.println(F("PiHoleApiKey from save: ") + PiHoleApiKey);
-  writeConfiguration();
-  if (USE_PIHOLE) {
-    piholeClient.getPiHoleData(PiHoleServer, PiHolePort, PiHoleApiKey);
-    piholeClient.getGraphData(PiHoleServer, PiHolePort, PiHoleApiKey);
+  // test that some important args are present to accept new config
+  if (server.hasArg(F("piholeAddress")) &&
+      server.hasArg(F("piholePort")) &&
+      server.hasArg(F("piApiToken"))
+      ) {
+
+    if (!authentication()) {
+      return server.requestAuthentication();
+    }
+    USE_PIHOLE = server.hasArg(F("displaypihole"));
+    PiHoleServer = server.arg(F("piholeAddress"));
+    PiHolePort = server.arg(F("piholePort")).toInt();
+    PiHoleApiKey = server.arg(F("piApiToken"));
+    Serial.println(F("PiHoleApiKey from save: ") + PiHoleApiKey);
+    writeConfiguration();
+    if (USE_PIHOLE) {
+      piholeClient.getPiHoleData(PiHoleServer, PiHolePort, PiHoleApiKey);
+      piholeClient.getGraphData(PiHoleServer, PiHolePort, PiHoleApiKey);
+    }
   }
   redirectHome();
 }
 
 void handleSaveConfig() {
-  if (!authentication()) {
-    return server.requestAuthentication();
+  // test that some important args are present to accept new config
+  if (server.hasArg(F("openWeatherMapApiKey")) &&
+      server.hasArg(F("city1")) &&
+      server.hasArg(F("marqueeMsg")) &&
+      server.hasArg(F("startTime")) &&
+      server.hasArg(F("userid")) &&
+      server.hasArg(F("stationpassword")) &&
+      server.hasArg(F("theme")) &&
+      server.hasArg(F("scrollspeed"))
+      ) {
+
+    if (!authentication()) {
+      return server.requestAuthentication();
+    }
+    APIKEY = server.arg(F("openWeatherMapApiKey"));
+    CityID = server.arg(F("city")).toInt();
+    flashOnSeconds = server.hasArg(F("flashseconds")); // means blinking ":" on clock
+    IS_24HOUR = server.hasArg(F("is24hour"));
+    IS_PM = server.hasArg(F("isPM"));
+    SHOW_DATE = server.hasArg(F("showdate"));
+    SHOW_CITY = server.hasArg(F("showcity"));
+    SHOW_CONDITION = server.hasArg(F("showcondition"));
+    SHOW_HUMIDITY = server.hasArg(F("showhumidity"));
+    SHOW_WIND = server.hasArg(F("showwind"));
+    SHOW_PRESSURE = server.hasArg(F("showpressure"));
+    SHOW_HIGHLOW = server.hasArg(F("showhighlow"));
+    IS_METRIC = server.hasArg(F("metric"));
+    marqueeMessage = decodeHtmlString(server.arg(F("marqueeMsg")));
+    timeDisplayTurnsOn = decodeHtmlString(server.arg(F("startTime")));
+    timeDisplayTurnsOff = decodeHtmlString(server.arg(F("endTime")));
+    displayIntensity = server.arg(F("ledintensity")).toInt();
+    minutesBetweenDataRefresh = server.arg(F("refresh")).toInt();
+    themeColor = server.arg(F("theme"));
+    minutesBetweenScrolling = server.arg(F("refreshDisplay")).toInt();
+    displayScrollSpeed = server.arg(F("scrollspeed")).toInt();
+    IS_BASIC_AUTH = server.hasArg(F("isBasicAuth"));
+    String temp = server.arg(F("userid"));
+    temp.toCharArray(www_username, sizeof(temp));
+    temp = server.arg(F("stationpassword"));
+    temp.toCharArray(www_password, sizeof(temp));
+    weatherClient.setMetric(IS_METRIC);
+    matrix.fillScreen(LOW); // show black
+    writeConfiguration();
+    getWeatherData(); // this will force a data pull for new weather
   }
-  APIKEY = server.arg(F("openWeatherMapApiKey"));
-  CityID = server.arg(F("city")).toInt();
-  flashOnSeconds = server.hasArg(F("flashseconds")); // means blinking ":" on clock
-  IS_24HOUR = server.hasArg(F("is24hour"));
-  IS_PM = server.hasArg(F("isPM"));
-  SHOW_DATE = server.hasArg(F("showdate"));
-  SHOW_CITY = server.hasArg(F("showcity"));
-  SHOW_CONDITION = server.hasArg(F("showcondition"));
-  SHOW_HUMIDITY = server.hasArg(F("showhumidity"));
-  SHOW_WIND = server.hasArg(F("showwind"));
-  SHOW_PRESSURE = server.hasArg(F("showpressure"));
-  SHOW_HIGHLOW = server.hasArg(F("showhighlow"));
-  IS_METRIC = server.hasArg(F("metric"));
-  marqueeMessage = decodeHtmlString(server.arg(F("marqueeMsg")));
-  timeDisplayTurnsOn = decodeHtmlString(server.arg(F("startTime")));
-  timeDisplayTurnsOff = decodeHtmlString(server.arg(F("endTime")));
-  displayIntensity = server.arg(F("ledintensity")).toInt();
-  minutesBetweenDataRefresh = server.arg(F("refresh")).toInt();
-  themeColor = server.arg(F("theme"));
-  minutesBetweenScrolling = server.arg(F("refreshDisplay")).toInt();
-  displayScrollSpeed = server.arg(F("scrollspeed")).toInt();
-  IS_BASIC_AUTH = server.hasArg(F("isBasicAuth"));
-  String temp = server.arg(F("userid"));
-  temp.toCharArray(www_username, sizeof(temp));
-  temp = server.arg(F("stationpassword"));
-  temp.toCharArray(www_password, sizeof(temp));
-  weatherClient.setMetric(IS_METRIC);
-  matrix.fillScreen(LOW); // show black
-  writeConfiguration();
-  getWeatherData(); // this will force a data pull for new weather
   redirectHome();
 }
 

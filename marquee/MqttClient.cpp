@@ -42,12 +42,12 @@ void callback(char* topic, uint8_t* message, unsigned int length) {
   lastMqttMessageNew = true;
 }
 
-MqttClient::MqttClient(String passedServer, int port, String passedTopic):
+MqttClient::MqttClient(const String &passedServer, int port, const String &passedTopic):
   client("", 0, callback, wclient) {
   updateMqttClient(passedServer, port, passedTopic);
 }
 
-void MqttClient::updateMqttClient(String passedServer, int port, String passedTopic) {
+void MqttClient::updateMqttClient(const String &passedServer, int port, const String &passedTopic) {
   this->port = port;
   passedServer.toCharArray(server, MAX_SERVER_LEN);
   passedTopic.toCharArray(topic, MAX_TOPIC_LEN);

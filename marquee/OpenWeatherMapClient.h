@@ -60,9 +60,9 @@ private:
 
 
 public:
-  OpenWeatherMapClient(String ApiKey, int CityID, boolean isMetric);
+  OpenWeatherMapClient(const String &ApiKey, int CityID, boolean isMetric);
   void updateWeather();
-  inline void setWeatherApiKey(String ApiKey) {myApiKey = ApiKey;};
+  inline void setWeatherApiKey(const String &ApiKey) {myApiKey = ApiKey;};
   inline void setCityId(int CityID) {myCityID = CityID;};
   inline void setMetric(boolean isMetric) {this->isMetric = isMetric;};
 

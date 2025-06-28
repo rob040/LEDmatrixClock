@@ -30,13 +30,13 @@ class PiHoleClient {
 
 private:
 
-  WiFiClient getSubmitRequest(String apiGetData, String myServer, int myPort);
+  WiFiClient getSubmitRequest(const String &apiGetData, const String &myServer, int myPort);
   void resetClientsBlocked();
   void resetBlockedGraphData();
-  
+
   String errorMessage = "";
 
-  int blocked[144] = {0};  
+  int blocked[144] = {0};
   int blockedCount = 0;
   int blockedHigh = 0;
 
@@ -65,15 +65,15 @@ private:
     String privacy_level;
     String piHoleStatus;
   } phd;
-  
+
   phd piHoleData;
-  
-  
+
+
 public:
   PiHoleClient();
-  void getPiHoleData(String server, int port, String apiKey);
-  void getGraphData(String server, int port, String apiKey);
-  void getTopClientsBlocked(String server, int port, String apiKey);
+  void getPiHoleData(const String &server, int port, const String &apiKey);
+  void getGraphData(const String &server, int port, const String &apiKey);
+  void getTopClientsBlocked(const String &server, int port, const String &apiKey);
 
   String getDomainsBeingBlocked();
   String getDnsQueriesToday();
@@ -84,19 +84,19 @@ public:
   /*
   String getUniqueDomains();
   String getQueriesForwarded();
-  String getQueriesCached();  
+  String getQueriesCached();
   String getDnsQueriesAllTypes();
   String getReplyNODATA();
   String getReplyNXDOMAIN();
   String getReplyCNAME();
   String getReplyIP();
   String getPrivacyLevel();
-  
+
   */
   String getPiHoleStatus();
   String getError();
 
-  int *getBlockedAds();  
+  int *getBlockedAds();
   int getBlockedCount();
   int getBlockedHigh();
 

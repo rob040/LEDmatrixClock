@@ -25,7 +25,7 @@ SOFTWARE.
 #include "math.h"
 #include "timeStr.h"
 
-OpenWeatherMapClient::OpenWeatherMapClient(String ApiKey, int CityID, boolean isMetric) {
+OpenWeatherMapClient::OpenWeatherMapClient(const String &ApiKey, int CityID, boolean isMetric) {
   myCityID = CityID;
   myApiKey = ApiKey;
   this->isMetric = isMetric;

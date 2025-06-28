@@ -23,15 +23,15 @@ SOFTWARE.
 
 #include "OctoPrintClient.h"
 
-OctoPrintClient::OctoPrintClient(String ApiKey, String server, int port, String user, String pass) {
+OctoPrintClient::OctoPrintClient(const String &ApiKey, const String &server, int port, const String &user, const String &pass) {
   updateOctoPrintClient(ApiKey, server, port, user, pass);
 }
 
-void OctoPrintClient::updateOctoPrintClient(String ApiKey, String server, int port, String user, String pass) {
+void OctoPrintClient::updateOctoPrintClient(const String &ApiKey, const String &server, int port, const String &user, const String &pass) {
   server.toCharArray(myServer, 100);
   myApiKey = ApiKey;
   myPort = port;
-  encodedAuth = "";
+  encodedAuth.clear();
   if (user != "") {
     String userpass = user + ":" + pass;
     base64 b64;
@@ -41,14 +41,14 @@ void OctoPrintClient::updateOctoPrintClient(String ApiKey, String server, int po
 
 boolean OctoPrintClient::validate() {
   boolean rtnValue = false;
-  printerData.error = "";
-  if (String(myServer) == "") {
+  printerData.error.clear();
+  if (String(myServer).length() == 0) {
     printerData.error += F("Server address is required; ");
   }
-  if (myApiKey == "") {
+  if (myApiKey.length() == 0) {
     printerData.error += F("ApiKey is required; ");
   }
-  if (printerData.error == "") {
+  if (printerData.error.length() == 0) {
     rtnValue = true;
   }
   return rtnValue;
@@ -81,7 +81,7 @@ void OctoPrintClient::getPrinterJobResults() {
       printerData.error = F("Octoprint Connection Failed");
       return;
     }
-  } 
+  }
   else {
     Serial.println(F("Connection for OctoPrint data failed: ") + String(myServer) + ":" + String(myPort)); //error message if no client connect
     Serial.println();
@@ -119,7 +119,7 @@ void OctoPrintClient::getPrinterJobResults() {
     Serial.println(F("OctoPrint Data Parsing failed!"));
     return;
   }
-  
+
   printerData.averagePrintTime = (const char*)root["job"]["averagePrintTime"];
   printerData.estimatedPrintTime = (const char*)root["job"]["estimatedPrintTime"];
   printerData.fileName = (const char*)root["job"]["file"]["name"];
@@ -138,7 +138,7 @@ void OctoPrintClient::getPrinterJobResults() {
   } else {
     Serial.println(F("Printer Not Opperational"));
   }
-  
+
   printClient.stop(); //stop client
 }
 
@@ -182,7 +182,7 @@ String OctoPrintClient::getProgressCompletion() {
 }
 
 String OctoPrintClient::getProgressFilepos() {
-  return printerData.progressFilepos;  
+  return printerData.progressFilepos;
 }
 
 String OctoPrintClient::getProgressPrintTime() {

@@ -43,11 +43,11 @@ class MqttClient {
     char failMessage[MAX_TOPIC_LEN + 100] = {0};
 
   public:
-    MqttClient(String passedServer, int port, String passedTopic);
+    MqttClient(const String &passedServer, int port, const String &passedTopic);
     String getError();
     char* getLastMqttMessage();
     char* getNewMqttMessage();
-    void updateMqttClient(String passedServer, int port, String passedTopic);
+    void updateMqttClient(const String &passedServer, int port, const String &passedTopic);
 
     void loop();
 };

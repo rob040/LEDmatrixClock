@@ -27,7 +27,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.12"
+#define VERSION "3.1.13"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
@@ -85,21 +85,22 @@ MqttClient mqttClient(MqttServer, MqttPort, MqttTopic);
 ESP8266WebServer server(WEBSERVER_PORT);
 ESP8266HTTPUpdateServer serverUpdater;
 
-static const char HEADER1[] PROGMEM = "<!DOCTYPE HTML>"
+static const char WEB_HEADER[] PROGMEM = "<!DOCTYPE HTML>"
   "<html><head><title>Marquee Scroller</title><link rel='icon' href='data:;base64,='>"
   "<meta http-equiv='Content-Type' content='text/html; charset=UTF-8' />"
   "<meta name='viewport' content='width=device-width, initial-scale=1'>"
   "<link rel='stylesheet' href='https://www.w3schools.com/w3css/4/w3.css'>"
   "<link rel='stylesheet' href='https://www.w3schools.com/lib/w3-theme-$COLOR$.css'>"
   "<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/css/all.min.css'>"
-  "</head><body>"
+  "</head>";
+static const char WEB_BODY1[] PROGMEM =  "<body>"
   "<nav class='w3-sidebar w3-bar-block w3-card' style='margin-top:88px' id='mySidebar'>"
   "<div class='w3-container w3-theme-d2'>"
   "<span onclick='closeSidebar()' class='w3-button w3-display-topright w3-large'><i class='fas fa-times'></i></span>"
   "<div class='w3-left'><img src='http://openweathermap.org/img/w/$ICO$.png' alt='$IDES$'></div>"
   "<div class='w3-padding'>Menu</div></div>";
 
-static const char HEADER2[] PROGMEM = "</nav>"
+static const char WEB_BODY2[] PROGMEM = "</nav>"
   "<header class='w3-top w3-bar w3-theme'><button class='w3-bar-item w3-button w3-xxxlarge w3-hover-theme' onclick='openSidebar()'>"
   "<i class='fas fa-bars'></i></button><h2 class='w3-bar-item'>Weather Marquee</h2></header>"
   "<script>"
@@ -109,10 +110,10 @@ static const char HEADER2[] PROGMEM = "</nav>"
   "</script>"
   "<br><div class='w3-container w3-large' style='margin-top:88px'>";
 
-static const char FOOTER[] PROGMEM = "<br><br><br>"
+static const char WEB_FOOTER[] PROGMEM = "<br><br><br>"
   "</div>"
   "<footer class='w3-container w3-bottom w3-theme w3-margin-top'>"
-  "<i class='far fa-paper-plane'></i> Version: " VERSION "<br>"
+  "<i class='far fa-paper-plane'></i> Version: " VERSION " build " __DATE__ " " __TIME__ "<br>"
   "<i class='far fa-clock'></i> Next Update: $UPD$ <br>"
   "<i class='fas fa-rss'></i> Signal Strength: $RSSI$%"
   "</footer>"
@@ -705,9 +706,11 @@ void handleSaveConfig() {
     displayScrollSpeed = server.arg(F("scrollspeed")).toInt();
     IS_BASIC_AUTH = server.hasArg(F("isBasicAuth"));
     String temp = server.arg(F("userid"));
-    temp.toCharArray(www_username, sizeof(temp));
+    temp.trim();
+    temp.toCharArray(www_username, sizeof(www_username));
     temp = server.arg(F("stationpassword"));
-    temp.toCharArray(www_password, sizeof(temp));
+    temp.trim();
+    temp.toCharArray(www_password, sizeof(www_password));
     weatherClient.setMetric(IS_METRIC);
     matrix.fillScreen(LOW); // show black
     writeConfiguration();
@@ -850,7 +853,7 @@ void handlePiholeConfigure() {
   form.replace(F("%PIHO_API%"), PiHoleApiKey);
 
   server.sendContent(form);
-  form = "";
+  form.clear();
 
   sendFooter();
 
@@ -894,7 +897,6 @@ void handleConfigure() {
     return server.requestAuthentication();
   }
   digitalWrite(externalLight, LOW);
-  String html = "";
 
   server.sendHeader(F("Cache-Control"), F("no-cache, no-store"));
   server.sendHeader(F("Pragma"), F("no-cache"));
@@ -1049,8 +1051,10 @@ void redirectHome() {
 }
 
 void sendHeader() {
-  String html = FPSTR(HEADER1);
+  String html = FPSTR(WEB_HEADER);
   html.replace(F("$COLOR$"), themeColor);
+  server.sendContent(html);
+  html = FPSTR(WEB_BODY1);
   html.replace(F("$ICO$"), weatherClient.getIcon());
   html.replace(F("$IDES$"), weatherClient.getWeatherDescription());
   server.sendContent(html);
@@ -1068,7 +1072,7 @@ void sendHeader() {
   }
   server.sendContent(FPSTR(WEB_ACTION3));
 
-  server.sendContent(FPSTR(HEADER2));
+  server.sendContent(FPSTR(WEB_BODY2));
 }
 
 void sendFooter() {
@@ -1076,7 +1080,7 @@ void sendFooter() {
   Serial.print("Signal Strength (RSSI): ");
   Serial.print(rssi);
   Serial.println("%");
-  String html = FPSTR(FOOTER);
+  String html = FPSTR(WEB_FOOTER);
 
   html.replace(F("$UPD$"), getTimeTillUpdate());
   html.replace(F("$RSSI$"), String(rssi));
@@ -1085,7 +1089,7 @@ void sendFooter() {
 
 void displayWeatherData() {
   digitalWrite(externalLight, LOW);
-  String html = "";
+  String html;
 
   server.sendHeader(F("Cache-Control"), F("no-cache, no-store"));
   server.sendHeader(F("Pragma"), F("no-cache"));
@@ -1117,7 +1121,7 @@ void displayWeatherData() {
   Serial.println(temperature);
   Serial.println(dtstr);
 
-  if (weatherClient.getCity() == "") {
+  if (weatherClient.getCity().length() == 0) {
     if (timeStatus() == timeNotSet) {
       html += F("<p>waiting for first time sync...</p>");
     }
@@ -1138,7 +1142,10 @@ void displayWeatherData() {
       weatherClient.getWindDirectionText() + " / " + String(weatherClient.getWindSpeed(),1) + F(" <span class='w3-tiny'>") + getSpeedSymbol() + F("</span> Wind<br>") +
       weatherClient.getPressure() + F(" Pressure<br>"
         "</div>"
-        "<div class='w3-cell w3-container' style='width:100%'><p>") +
+        "<div class='w3-cell w3-container' style='width:100%'><p>");
+    server.sendContent(html);
+
+    html =
       weatherClient.getWeatherCondition() + " (" + weatherClient.getWeatherDescription() + ")<br>" +
       temperature + " " + getTempSymbol(true) + "<br>" +
       String(weatherClient.getTemperatureHigh(),1) + "/" + String(weatherClient.getTemperatureLow(),1) + " " + getTempSymbol(true) + "<br>"
@@ -1148,12 +1155,12 @@ void displayWeatherData() {
       F("<br>""<br>"
         "<a href='https://www.google.com/maps/@") + weatherClient.getLat() + "," + weatherClient.getLon() + F(",10000m/data=!3m1!1e3' target='_BLANK'><i class='fas fa-map-marker' style='color:red'></i> Map It!</a><br>"
       "</p></div></div><hr>"
-      "<div class='w3-cell-row' style='width:100%'><h3>") + dtstr  + F("</h3></div>");
+      "<div class='w3-cell-row' style='width:100%'><h3>") + dtstr  + F("</h3></div><hr>");
   }
 
 
-  server.sendContent(String(html)); // spit out what we got
-  html = ""; // fresh start
+  server.sendContent(html); // spit out what we got
+  html.clear(); // fresh start
 
 
   if (OCTOPRINT_ENABLED) {
@@ -1182,12 +1189,12 @@ void displayWeatherData() {
       html += F("Not Connected");
     }
     html += F("</div><br><hr>");
-    server.sendContent(String(html));
-    html = "";
+    server.sendContent(html);
+    html.clear();
   }
 
   if (USE_PIHOLE) {
-    if (piholeClient.getError() == "") {
+    if (piholeClient.getError().length() == 0) {
       html = F("<div class='w3-cell-row'><b>Pi-hole</b><br>"
         "Total Queries (") + piholeClient.getUniqueClients() + F(" clients): <b>") + piholeClient.getDnsQueriesToday() + F("</b><br>"
         "Queries Blocked: <b>") + piholeClient.getAdsBlockedToday() + F("</b><br>"
@@ -1202,7 +1209,7 @@ void displayWeatherData() {
         "Reason: ") + piholeClient.getError() + F("<br></div><br><hr>");
     }
     server.sendContent(html);
-    html = "";
+    html.clear();
   }
   if (USE_MQTT) {
     if (mqttClient.getError().length() == 0) {
@@ -1221,16 +1228,16 @@ void displayWeatherData() {
 
   if (NEWS_ENABLED) {
     html = F("<div class='w3-cell-row' style='width:100%'><h2>News (") + NEWS_SOURCE + F(")</h2></div>");
-    if (newsClient.getTitle(0) == "") {
+    if (newsClient.getTitle(0).length() == 0) {
       html += F("<p>Please <a href='/configurenews'>Configure News</a> API</p>");
       server.sendContent(html);
-      html = "";
+      html.clear();
     } else {
       for (int inx = 0; inx < 10; inx++) {
         html = F("<div class='w3-cell-row'><a href='") + newsClient.getUrl(inx) + F("' target='_BLANK'>") + newsClient.getTitle(inx) + "</a></div>" +
           newsClient.getDescription(inx) + F("<br/><br/>");
         server.sendContent(html);
-        html = "";
+        html.clear();
       }
     }
   }
@@ -1276,7 +1283,6 @@ String getTempSymbol(bool forWeb) {
   return ((forWeb) ? "°" : String(char(247))) + String((IS_METRIC) ? 'C' : 'F');
 }
 
-
 String getSpeedSymbol() {
   return (IS_METRIC) ? "kmh" : "mph";
 }
@@ -1299,7 +1305,7 @@ int8_t getWifiQuality() {
 }
 
 String getTimeTillUpdate() {
-  String rtnValue = "";
+  String rtnValue;
 
   long timeToUpdate = (((minutesBetweenDataRefresh * 60) + lastEpoch) - now());
 
@@ -1307,7 +1313,7 @@ String getTimeTillUpdate() {
   int minutes = numberOfMinutes(timeToUpdate);
   int seconds = numberOfSeconds(timeToUpdate);
 
-  rtnValue += String(hours) + ":";
+  rtnValue = String(hours) + ":";
   if (minutes < 10) {
     rtnValue += "0";
   }
@@ -1350,7 +1356,7 @@ void enableDisplay(boolean enable) {
 
 // Toggle on and off the display if user defined times
 void checkDisplay() {
-  if (timeDisplayTurnsOn == "" || timeDisplayTurnsOff == "") {
+  if (timeDisplayTurnsOn.length() == 0 || timeDisplayTurnsOff.length() == 0) {
     return; // nothing to do
   }
   String currentTime = zeroPad(hour()) + ":" + zeroPad(minute());
@@ -1529,12 +1535,12 @@ void readConfiguration() {
     if ((idx = line.indexOf(F("www_username="))) >= 0) {
       String temp = line.substring(idx + 13);
       temp.trim();
-      temp.toCharArray(www_username, sizeof(temp));
+      temp.toCharArray(www_username, sizeof(www_username));
     }
     if ((idx = line.indexOf(F("www_password="))) >= 0) {
       String temp = line.substring(idx + 13);
       temp.trim();
-      temp.toCharArray(www_password, sizeof(temp));
+      temp.toCharArray(www_password, sizeof(www_password));
     }
     if ((idx = line.indexOf(F("IS_BASIC_AUTH="))) >= 0) {
       IS_BASIC_AUTH = line.substring(idx + 14).toInt();
@@ -1682,11 +1688,11 @@ void drawPiholeGraph() {
   }
 }
 
-void centerPrint(String msg) {
+void centerPrint(const String &msg) {
   centerPrint(msg, false);
 }
 
-void centerPrint(String msg, boolean extraStuff) {
+void centerPrint(const String &msg, boolean extraStuff) {
   int x = (matrix.width() - (msg.length() * width)) / 2;
 
   // Print the static portions of the display before the main Message
@@ -1708,7 +1714,7 @@ void centerPrint(String msg, boolean extraStuff) {
   matrix.write();
 }
 
-String decodeHtmlString(String msg) {
+String decodeHtmlString(const String &msg) {
   String decodedMsg = msg;
   // Restore special characters that are misformed to %char by the client browser
   decodedMsg.replace("+", " ");

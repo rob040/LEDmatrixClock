@@ -36,7 +36,7 @@ private:
 
   void resetPrintData();
   boolean validate();
-  
+
   String result;
 
   typedef struct {
@@ -55,11 +55,11 @@ private:
 
   PrinterStruct printerData;
 
-  
+
 public:
-  OctoPrintClient(String ApiKey, String server, int port, String user, String pass);
+  OctoPrintClient(const String &ApiKey, const String &server, int port, const String &user, const String &pass);
   void getPrinterJobResults();
-  void updateOctoPrintClient(String ApiKey, String server, int port, String user, String pass);
+  void updateOctoPrintClient(const String &ApiKey, const String &server, int port, const String &user, const String &pass);
 
   String getAveragePrintTime();
   String getEstimatedPrintTime();

@@ -31,10 +31,10 @@ SOFTWARE.
 class NewsApiClient: public JsonListener {
 
   private:
-    String mySource = "";
-    String myApiKey = "";
-    
-    String currentKey = "";
+    String mySource;
+    String myApiKey;
+
+    String currentKey;
     int counterTitle = 0;
 
     typedef struct {
@@ -44,20 +44,20 @@ class NewsApiClient: public JsonListener {
     } newsfeed;
 
     newsfeed news[10];
-    
+
     const char* servername = "newsapi.org";  // remote server we will connect to
-  
+
   public:
     NewsApiClient(String ApiKey, String NewsSource);
-    void updateNewsClient(String ApiKey, String NewsSource);
+    void updateNewsClient(const String &ApiKey, const String &NewsSource);
     void updateNews();
-    void updateNewsSource(String source);
-    
+    void updateNewsSource(const String &source);
+
     String getTitle(int index);
     String getDescription(int index);
     String getUrl(int index);
-    String cleanText(String text);
-    
+    String cleanText(const String &text);
+
     virtual void whitespace(char c);
     virtual void startDocument();
     virtual void key(String key);

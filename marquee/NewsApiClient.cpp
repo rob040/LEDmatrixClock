@@ -32,7 +32,7 @@ NewsApiClient::NewsApiClient(String ApiKey, String NewsSource) {
   updateNewsClient(ApiKey, NewsSource);
 }
 
-void NewsApiClient::updateNewsClient(String ApiKey, String NewsSource) {
+void NewsApiClient::updateNewsClient(const String &ApiKey, const String &NewsSource) {
   mySource = NewsSource;
   myApiKey = ApiKey;
 }
@@ -73,9 +73,9 @@ void NewsApiClient::updateNews() {
           // read up to 128 byte
           int c = stream->readBytes(buff, ((size > sizeof(buff)) ? sizeof(buff) : size));
           for(int i=0;i<c;i++) {
-            parser.parse(buff[i]); 
+            parser.parse(buff[i]);
           }
-            
+
           if(len > 0)
             len -= c;
           }
@@ -102,7 +102,7 @@ String NewsApiClient::getUrl(int index) {
   return news[index].url;
 }
 
-void NewsApiClient::updateNewsSource(String source) {
+void NewsApiClient::updateNewsSource(const String &source) {
   mySource = source;
 }
 
@@ -151,7 +151,8 @@ void NewsApiClient::startObject() {
 void NewsApiClient::endDocument() {
 }
 
-String NewsApiClient::cleanText(String text) {
+String NewsApiClient::cleanText(const String &ctext) {
+  String text = ctext;
   text.replace("’", "'");
   text.replace("“", "\"");
   text.replace("”", "\"");

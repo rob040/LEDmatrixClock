@@ -27,7 +27,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.15"
+#define VERSION "3.1.16"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
@@ -680,7 +680,7 @@ void handleSaveMqtt() {
 void handleSaveConfig() {
   // test that some important args are present to accept new config
   if (server.hasArg(F("openWeatherMapApiKey")) &&
-      server.hasArg(F("city1")) &&
+      server.hasArg(F("city")) &&
       server.hasArg(F("marqueeMsg")) &&
       server.hasArg(F("startTime")) &&
       server.hasArg(F("userid")) &&

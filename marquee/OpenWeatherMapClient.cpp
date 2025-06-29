@@ -19,10 +19,12 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+Change History:
+20250628 rob040   Completely changed this OWM client API and OWM access API to use the Free Service
 */
 
 #include "OpenWeatherMapClient.h"
-#include "math.h"
 #include "timeStr.h"
 
 OpenWeatherMapClient::OpenWeatherMapClient(const String &ApiKey, int CityID, boolean isMetric) {
@@ -137,7 +139,7 @@ void OpenWeatherMapClient::updateWeather() {
   } else {
     // Imperial mode
     // windspeed is already in mph
-    //convert millibars (hPa) to Inches mercury
+    //convert millibars (hPa) to Inches mercury (inHg)
     pressure = (int)((float)pressure * 0.0295300586 + 0.5);
     //convert millibars (hPa) to PSI
     //pressure = (int)((float)pressure * 0.0145037738 + 0.5);

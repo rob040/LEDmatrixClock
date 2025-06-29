@@ -27,7 +27,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.19"
+#define VERSION "3.1.20"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
@@ -469,8 +469,8 @@ void loop() {
       msg += " ";
 
       if (SHOW_DATE) {
-        msg += getDayName(weekday()) + ", ";
-        msg += getMonthName(month()) + " " + day() + "  ";
+        msg += getDayName(weekday()).substring(0,3) + ", ";
+        msg += getMonthName(month()).substring(0,3) + " " + day() + "  ";
       }
       if (SHOW_CITY) {
         msg += weatherClient.getCity() + "  ";
@@ -488,7 +488,9 @@ void loop() {
         msg += F("Humidity:") + String(weatherClient.getHumidity()) + "%  ";
       }
       if (SHOW_WIND) {
-        msg += F("Wind:") + weatherClient.getWindDirectionText() + "@" + String(weatherClient.getWindSpeed(),0) + getSpeedSymbol() + "  ";
+        String windspeed = String(weatherClient.getWindSpeed(),0);
+        windspeed.trim();
+        msg += F("Wind:") + weatherClient.getWindDirectionText() + " " + windspeed + getSpeedSymbol() + "  ";
       }
       //line to show barometric pressure
       if (SHOW_PRESSURE) {

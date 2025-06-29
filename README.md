@@ -1,7 +1,9 @@
 # LED Matrix Clock a.k.a. Marquee Scroller (Clock, Weather, News, and More)
 
 ## NOTICE
-This fork enhances the Qrome Marquee Scroller version 3.03 from february 2023, that was developed during 2018-2022 period. For more information and development history visit [Qrome Marquee Scroller](https://github.com/Qrome/marquee-scroller) and read his [README](https://github.com/Qrome/marquee-scroller/blob/master/README.md).
+This fork enhances the Qrome Marquee Scroller version 3.03 from february 2023, that was developed during 2018-2022 period.
+
+For more information and development history visit [Qrome Marquee Scroller](https://github.com/Qrome/marquee-scroller) and read his [README](https://github.com/Qrome/marquee-scroller/blob/master/README.md).
 
 Read the [feature enhancements below](#feature-enhancements)
 
@@ -46,7 +48,7 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 * Wemos D1 Mini ESP8266: https://amzn.to/3tMl81U
 * LED Dot Matrix Module: https://amzn.to/2HtnQlD
 
-Note: Using the links provided here help to support these types of projects. Thank you for the support.
+Note: Using the links provided here help to support [Qrome](https://github.com/Qrome) for his efforts. Thank you for the support.
 
 ## Wiring for the Wemos D1 Mini to the LED Dot Matrix Display
 
@@ -73,9 +75,9 @@ Double Wide LED version: https://www.thingiverse.com/thing:2989552
 </p>
 
 <p align="left" title="Marquee Scroller parts">
-  <img src="/images/marquee-allparts.jpg" width="200"/>
-  <img src="/images/marquee-backplate.jpg" width="200"/>
-  <img src="/images/marquee-lit.jpg" width="200"/>
+  <img src="/images/marquee-allparts.jpg" width="270"/>
+  <img src="/images/marquee-backplate.jpg" width="270"/>
+  <img src="/images/marquee-lit.jpg" width="260"/>
 </p>
 <p align="left" title="Makes from Thingiverse">
   <img src="/images/20171105_124635.jpg" width="200"/>
@@ -103,22 +105,26 @@ Still, the source directory structure is kept such that this project can be buil
 
 ### Loading Supporting Library Files in Arduino
 Use the Arduino guide for details on how to installing and manage libraries https://www.arduino.cc/en/Guide/Libraries
-**Packages** -- the following packages and libraries are used (download and install):
-<WiFiManager.h> --> https://github.com/tzapu/WiFiManager (latest)
-<TimeLib.h> --> https://github.com/PaulStoffregen/Time
-<Adafruit_GFX.h> --> https://github.com/adafruit/Adafruit-GFX-Library
-<Max72xxPanel.h> --> https://github.com/markruys/arduino-Max72xxPanel
-<JsonStreamingParser.h> --> https://github.com/squix78/json-streaming-parser
 
-Note ArduinoJson (version 5.13.1) is now included as a library file in version 2.7 and later.
+**Packages** -- the following packages and libraries are used (download and install):
+* <WiFiManager.h> --> https://github.com/tzapu/WiFiManager (latest)
+* <TimeLib.h> --> https://github.com/PaulStoffregen/Time
+* <Adafruit_GFX.h> --> https://github.com/adafruit/Adafruit-GFX-Library
+* <Max72xxPanel.h> --> https://github.com/markruys/arduino-Max72xxPanel
+* <JsonStreamingParser.h> --> https://github.com/squix78/json-streaming-parser
+
+Note ArduinoJson (version 5.13.1) is now included as a library file.
 
 ## Building with PlatformIO.
 Use [**VScode**](https://code.visualstudio.com/docs) with [**PlatformIO**](https://platformio.org/) or better, its desendant fork [**PIOarduino**](https://marketplace.visualstudio.com/items?itemName=pioarduino.pioarduino-ide) extension.
 
 Please refer to the links on how to install VScode on your OS.
 
-Then, open this project with `Visual Studio Code`, via File --> Open Folder: select folder containing platformio.ini file.
+Then, open this project with `Visual Studio Code`, via File --> Open Folder: select folder containing `platformio.ini` file.
 
+The `platformio.ini` file contains the references to the required external libraries and version numbers.
+
+To build, open the `pioarduino` or `platformio` extension (left hand side icon), then under *PROJECT TASKS* -> *Default* -> *General* : select **Build** and then **Upload**
 
 ## Initial Configuration
 Editing the **Settings.h** file is totally optional and not required.

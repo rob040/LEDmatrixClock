@@ -49,24 +49,52 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 Note: Using the links provided here help to support these types of projects. Thank you for the support.
 
 ## Wiring for the Wemos D1 Mini to the LED Dot Matrix Display
-CLK -> D5 (SCK)
-CS  -> D6
-DIN -> D7 (MOSI)
-VCC -> 5V+
-GND -> GND-
 
-<p align="center">
+| LED | D1 mini |
+| --- | --- |
+| VCC | 5V+       |
+| GND | GND-      |
+| CLK | D5 (SCK)  |
+| CS  | D6        |
+| DIN | D7 (MOSI) |
+
+The Connections in a picture:
+<p align="left" title="Wires from D1-mini to LED display">
   <img src="/images/marquee_scroller_pins.png" width="400"/>
 </p>
 
 ## 3D Printed Case by David Payne:
-Original Single Panel version: https://www.thingiverse.com/thing:2867294
+Original Single Panel version: https://www.thingiverse.com/thing:2867294 <br>
 Double Wide LED version: https://www.thingiverse.com/thing:2989552
+
+<p align="left" title="STL models from Thingiverse">
+  <img src="/images/Thingiverse-stl-base.png" width="400"/>
+  <img src="/images/Thingiverse-stl-back.png" width="400"/>
+</p>
+
+<p align="left" title="Marquee Scroller parts">
+  <img src="/images/marquee-allparts.jpg" width="200"/>
+  <img src="/images/marquee-backplate.jpg" width="200"/>
+  <img src="/images/marquee-lit.jpg" width="200"/>
+</p>
+<p align="left" title="Makes from Thingiverse">
+  <img src="/images/20171105_124635.jpg" width="200"/>
+  <img src="/images/20171017_075241.jpg" width="200"/>
+  <img src="/images/20171105_125913.jpg" width="200"/>
+  <img src="/images/20171022_214044.jpg" width="200"/>
+</p>
+<p align="left" title="Makes from Thingiverse">
+  <img src="/images/20180128_091534.jpg" width="200"/>
+  <img src="/images/20180128_091524.jpg" width="200"/>
+  <img src="/images/20180128_091552.jpg" width="200"/>
+  <img src="/images/20180127_135828.jpg" width="200"/>
+</p>
+
 
 
 ## Compiling and Loading to Wemos D1 Mini (ESP8266)
 ### Using Arduino 2.x IDE
-It is NOT recommended to use Arduino IDE. It might be difficult to get the right library versions together, especially when using it also for other Arduino projects.
+It is NOT recommended to use Arduino IDE. It might be difficult to get the right library versions together, especially when using it also for other Arduino projects.<br>
 Still, the source directory structure is kept such that this project can be build with little to no effort. This might change in the future.
 * Support for ESP8266 Boards is included in Arduino v2.x
 * Select Board:  "ESP8266" --> "LOLIN(WEMOS) D1 R2 & mini"
@@ -111,26 +139,28 @@ it will become a **Access Point Hotspot** -- connect to it with your phone at ht
 
 After connected to your WiFi network it will display the IP address assigned to it and that can be
 used to open a browser to the Web Interface.  You will be able to manage your API Keys through the web interface.
+
 The default user / password for the configuration page is: admin / password
 
 The Clock will display the time of the City selected for the weather.
 
-<p align="center">
-  <img src="/images/2018-04-19%2006.58.05.png" width="200"/>
-  <img src="/images/2018-04-19%2006.58.15.png" width="200"/>
-  <img src="/images/2018-04-19%2006.58.32.png" width="200"/>
-  <img src="/images/2018-04-19%2006.58.58.png" width="200"/>
+<p align="left" title="the (old) webinterface on a phone">
+  <img src="/images/20180419_065805.png" width="200"/>
+  <img src="/images/20180419_065815.png" width="200"/>
+  <img src="/images/20180419_065832.png" width="200"/>
+  <img src="/images/20180419_065858.png" width="200"/>
 </p>
 
 
 ## Contributors
-David Payne
-Nathan Glaus
-Daniel Eichhorn -- Author of the TimeClient class (in older versions)
-yanvigdev
-nashiko-s
-magnum129
-rob040
+David Payne <br>
+Nathan Glaus <br>
+Daniel Eichhorn -- Author of the TimeClient class (in older versions) <br>
+yanvigdev <br>
+nashiko-s <br>
+magnum129 <br>
+rob040  --  author of this repo and these [feature enhancements listed above](#feature-enhancements)<br>
+
 
 Contributing to this software is warmly welcomed. You can do this basically by forking from master, committing modifications and then making a pulling requests against the latest DEV branch to be reviewed (follow the links above for operating guide). Detailed comments are encouraged. Adding change log and your contact into file header is encouraged. Thanks for your contribution.
 
@@ -138,5 +168,6 @@ When considering making a code contribution, please keep in mind the following g
 * User should not be required to edit the Settings.h file to compile and run.  This means the feature should be simple enough to manage through the web interface.
 * Changes should always support the recommended hardware (links above).
 
-![Marquee Scroller](/images/5d7f02ccbf01125cabbf246f97f2ead1_preview_featured.jpg)
-![Marquee Parts](/images/1ffa0c835554d280258c13be5513c4fe_preview_featured.jpg)
+<p title="Marquee Scroller">
+  <img src="/images/ScrollingClock.jpg" width="400"/>
+</p>

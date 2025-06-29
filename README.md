@@ -55,7 +55,9 @@ DIN -> D7 (MOSI)
 VCC -> 5V+
 GND -> GND-
 
-![Marquee Scroller Wiring](/images/marquee_scroller_pins.png)
+<p align="center">
+  <img src="/images/marquee_scroller_pins.png" width="400"/>
+</p>
 
 ## 3D Printed Case by David Payne:
 Original Single Panel version: https://www.thingiverse.com/thing:2867294

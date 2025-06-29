@@ -27,7 +27,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.18"
+#define VERSION "3.1.19"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
@@ -523,7 +523,23 @@ void loop() {
         // add mqtt message if there is one
         msg += String(mqttClient.getLastMqttMessage());
       }
-
+      if ((msg.length()-2) <= ((numberOfHorizontalDisplays * 8) / 6)) {
+        msg.trim(); // remove 2 trailing spaces
+        // msg fits on one screen : no scroll necessary
+        matrix.fillScreen(CLEAR);
+        centerPrint(msg, true);
+        // show msg for 10 seconds every minute at default scroll speed
+        for (int i = 0; i < 400; i++) {
+          delay(displayScrollSpeed);
+          if (WEBSERVER_ENABLED) {
+            server.handleClient();
+          }
+          if (ENABLE_OTA) {
+            ArduinoOTA.handle();
+          }
+        }
+        return;
+      }
       scrollMessage(msg);
       drawPiholeGraph();
     }

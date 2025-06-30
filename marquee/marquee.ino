@@ -27,7 +27,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.20"
+#define VERSION "3.1.21"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
@@ -469,8 +469,8 @@ void loop() {
       msg += " ";
 
       if (SHOW_DATE) {
-        msg += getDayName(weekday()).substring(0,3) + ", ";
-        msg += getMonthName(month()).substring(0,3) + " " + day() + "  ";
+        msg += getDayName(weekday()) + ", ";
+        msg += getMonthName(month()) + " " + day() + "  ";
       }
       if (SHOW_CITY) {
         msg += weatherClient.getCity() + "  ";
@@ -950,7 +950,7 @@ void handleConfigure() {
   form.replace(F("%OWMKEY%"), APIKEY);
   form.replace(F("%CTYNM%"), (weatherClient.getCity() != "") ? weatherClient.getCity() + ", " + weatherClient.getCountry() : "");
   form.replace(F("%CITY%"), String(CityID));
-  form.replace(F("%DATE_CB%"), (SHOW_DATE) ? "checked='checked'" : "");
+  form.replace(F("%DATE_CB%"), (SHOW_DATE) ? "checked" : "unchecked"); //FIXME TEST; this works well; ='checked' is unnecessary, browser removes it.
   form.replace(F("%CITY_CB%"), (SHOW_CITY) ? "checked='checked'" : "");
   form.replace(F("%COND_CB%"), (SHOW_CONDITION) ? "checked='checked'" : "");
   form.replace(F("%HUM_CB%"), (SHOW_HUMIDITY) ? "checked='checked'" : "");

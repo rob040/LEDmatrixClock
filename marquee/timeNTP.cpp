@@ -34,17 +34,21 @@ void timeNTPsetup()
   setSyncProvider(getNtpTime);
   setSyncInterval(20);
 }
-void set_timeZoneSec(int timeZoneSeconds)
+boolean set_timeZoneSec(int timeZoneSeconds)
 {
+  boolean timechange = false;
   if (timeZoneSec != timeZoneSeconds) {
     Serial.print("New timezone set: ");Serial.println(timeZoneSeconds);
     // we have received new timezone value
     //
     timeZoneSec = timeZoneSeconds;
     setSyncProvider(getNtpTime);
-    if (timeStatus() != timeNotSet)
+    if (timeStatus() != timeNotSet) {
       setSyncInterval(300);
+    }
+    timechange = true;
   }
+  return timechange;
 }
 
 /*-------- NTP code ----------*/

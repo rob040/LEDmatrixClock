@@ -27,7 +27,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.21"
+#define VERSION "3.1.22"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
@@ -1027,7 +1027,9 @@ void getWeatherData() //client function to send/receive GET request data.
       scrollMessage(weatherClient.getErrorMessage());
     } else {
       // Set current timezone (adapts to DST when region supports that)
-      set_timeZoneSec(weatherClient.getTimeZoneSeconds());
+      // when time was potentially changed, do reset the sync interval
+      if (set_timeZoneSec(weatherClient.getTimeZoneSeconds()))
+        setSyncInterval(minutesBetweenDataRefresh*SECS_PER_MIN);
     }
   }
 
@@ -1043,7 +1045,7 @@ void getWeatherData() //client function to send/receive GET request data.
   if (timeStatus() != timeNotSet) {
     if (firstEpoch == 0) {
       firstEpoch = now();
-      setSyncInterval(300);
+      setSyncInterval(minutesBetweenDataRefresh*SECS_PER_MIN);
       Serial.println(F("firstEpoch is: ") + String(firstEpoch));
     }
   }

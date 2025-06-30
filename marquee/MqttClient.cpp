@@ -33,8 +33,8 @@ SOFTWARE.
 
 WiFiClient wclient;
 
-char lastMqttMessage[128] = {0};
-bool lastMqttMessageNew = true;
+char lastMqttMessage[128];
+bool lastMqttMessageNew;
 
 void callback(char* topic, uint8_t* message, unsigned int length) {
   memcpy(lastMqttMessage, message, length);
@@ -42,17 +42,22 @@ void callback(char* topic, uint8_t* message, unsigned int length) {
   lastMqttMessageNew = true;
 }
 
-MqttClient::MqttClient(const String &passedServer, int port, const String &passedTopic):
+MqttClient::MqttClient(const String &passedServer, int port, const String &passedTopic, const String &passedAuthUser, const String &passedAuthPass):
   client("", 0, callback, wclient) {
-  updateMqttClient(passedServer, port, passedTopic);
+  updateMqttClient(passedServer, port, passedTopic, passedAuthUser, passedAuthPass);
 }
 
-void MqttClient::updateMqttClient(const String &passedServer, int port, const String &passedTopic) {
+void MqttClient::updateMqttClient(const String &passedServer, int port, const String &passedTopic, const String &passedAuthUser, const String &passedAuthPass) {
   this->port = port;
   passedServer.toCharArray(server, MAX_SERVER_LEN);
   passedTopic.toCharArray(topic, MAX_TOPIC_LEN);
+  passedAuthUser.toCharArray(authUser, sizeof(authUser));
+  passedAuthPass.toCharArray(authPass, sizeof(authPass));
   client.setServer(server, port);
   client.disconnect();
+  failMessage[0] = 0;
+  lastMqttMessage[0] = 0;
+  lastMqttMessageNew = false;
 }
 
 char* MqttClient::getLastMqttMessage() {
@@ -77,10 +82,22 @@ String MqttClient::getError() {
 
 void MqttClient::loop() {
   if (!client.connected()) {
-    if (client.connect("marquee")) {
+    boolean connectstatus;
+    if (strlen(authUser) > 0) {
+      connectstatus = client.connect("marquee", authUser, authPass);
+    } else {
+      connectstatus = client.connect("marquee");
+    }
+    if (connectstatus) {
       failMessage[0] = 0;
-      if (!client.subscribe(topic))
+      if (!client.subscribe(topic)) {
         sprintf(failMessage, "Failed to connect to topic:%s", topic);
+      } else {
+        // publish on topic + "/ready" the time to signal MQTT we are there
+        String pubtopic = topic;
+        pubtopic += "/ready";
+        client.publish(pubtopic.c_str(), "ready");
+      }
     } else {
       sprintf(failMessage, "Failed to connect to: %s:%d, reason: %d", server, port, client.state());
     }

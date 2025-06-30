@@ -29,25 +29,27 @@ SOFTWARE.
 
 #define MAX_TOPIC_LEN 128
 #define MAX_SERVER_LEN 128
-
+#define MAX_USRPW_LEN  32
 
 class MqttClient {
 
   private:
     WiFiClient wclient;
-    String lastMessage = "";
+    //n.u. String lastMessage;
     PubSubClient client;
-    char topic[MAX_TOPIC_LEN] = {0};
-    char server[MAX_SERVER_LEN] = {0};
+    char topic[MAX_TOPIC_LEN];
+    char server[MAX_SERVER_LEN];
+    char authUser[MAX_USRPW_LEN];
+    char authPass[MAX_USRPW_LEN];
+    char failMessage[MAX_TOPIC_LEN + 100];
     int port = 0;
-    char failMessage[MAX_TOPIC_LEN + 100] = {0};
 
   public:
-    MqttClient(const String &passedServer, int port, const String &passedTopic);
+    MqttClient(const String &passedServer, int port, const String &passedTopic, const String &authUser = "", const String &authPass = "");
     String getError();
     char* getLastMqttMessage();
     char* getNewMqttMessage();
-    void updateMqttClient(const String &passedServer, int port, const String &passedTopic);
+    void updateMqttClient(const String &passedServer, int port, const String &passedTopic, const String &authUser = "", const String &authPass = "");
 
     void loop();
 };

@@ -83,7 +83,7 @@ int printerCount = 0;
 PiHoleClient piholeClient;
 
 // Mqtt Client
-MqttClient mqttClient(MqttServer, MqttPort, MqttTopic);
+MqttClient mqttClient(MqttServer, MqttPort, MqttTopic, MqttAuthUser, MqttAuthPass);
 
 ESP8266WebServer server(WEBSERVER_PORT);
 ESP8266HTTPUpdateServer serverUpdater;
@@ -206,6 +206,8 @@ static const char MQTT_FORM[] PROGMEM =
   "<label>MQTT Address (do not include http://)</label><input class='w3-input w3-border w3-margin-bottom' type='text' name='mqttAddress' id='mqttAddress' value='%MQTT_ADR%' maxlength='60'>"
   "<label>MQTT Port</label><input class='w3-input w3-border w3-margin-bottom' type='text' name='mqttPort' id='mqttPort' value='%MQTT_PRT%' maxlength='5'  onkeypress='return isNumberKey(event)'>"
   "<label>MQTT Topic</label><input class='w3-input w3-border w3-margin-bottom' type='text' name='mqttTopic' id='mqttTopic' value='%MQTT_TOP%' maxlength='128'>"
+  "<label>MQTT server User (leave empty when not required) </label><input class='w3-input w3-border w3-margin-bottom' type='text' name='mqttUser' value='%MQTT_USR%' maxlength='30'>"
+  "<label>MQTT server Password </label><input class='w3-input w3-border w3-margin-bottom' type='password' name='mqttPass' value='%MQTT_PW%'>"
   "<button class='w3-button w3-block w3-green w3-section w3-padding' type='submit'>Save</button></form>"
   "<script>function isNumberKey(e){var h=e.which?e.which:event.keyCode;return!(h>31&&(h<48||h>57))}</script>";
 
@@ -697,6 +699,8 @@ void handleSaveMqtt() {
     MqttServer = server.arg(F("mqttAddress"));
     MqttPort = server.arg(F("mqttPort")).toInt();
     MqttTopic = server.arg(F("mqttTopic"));
+    MqttAuthUser = server.arg(F("mqttUser"));
+    MqttAuthPass = server.arg(F("mqttPass"));
 
     writeConfiguration();
   }
@@ -921,6 +925,8 @@ void handleMqttConfigure() {
   form.replace(F("%MQTT_ADR%"), MqttServer);
   form.replace(F("%MQTT_PRT%"), String(MqttPort));
   form.replace(F("%MQTT_TOP%"), MqttTopic);
+  form.replace(F("%MQTT_USR%"), MqttAuthUser);
+  form.replace(F("%MQTT_PW%"), MqttAuthPass);
 
   server.sendContent(form);
   form.clear();
@@ -1476,6 +1482,8 @@ void writeConfiguration() {
     f.println(F("MqttServer=") + MqttServer);
     f.println(F("MqttPort=") + String(MqttPort));
     f.println(F("MqttTopic=") + MqttTopic);
+    f.println(F("MqttUser=") + MqttAuthUser);
+    f.println(F("MqttPass=") + MqttAuthPass);
     f.println(F("themeColor=") + themeColor);
   }
   f.close();
@@ -1497,7 +1505,19 @@ void readConfiguration() {
   while (fr.available()) {
     line = fr.readStringUntil('\n');
     //print each line read
-    Serial.println(line);
+    {
+      int idx = line.indexOf("Key");
+      if (idx < 0) idx = line.indexOf("KEY");
+      if (idx < 0) idx = line.indexOf("Pass");
+      if (idx > 0) idx = line.indexOf("=");
+      if (idx > 0) {
+        // do not print keys or passwords
+        Serial.print(line.substring(0,idx+1));
+        Serial.println("***");
+      } else {
+        Serial.println(line);
+      }
+    }
     if ((idx = line.indexOf(F("APIKEY="))) >= 0) {
       APIKEY = line.substring(idx + 7);
       APIKEY.trim();
@@ -1647,6 +1667,14 @@ void readConfiguration() {
       MqttTopic = line.substring(idx + 10);
       MqttTopic.trim();
     }
+    if ((idx = line.indexOf(F("MqttUser="))) >= 0) {
+      MqttAuthUser = line.substring(idx + 9);
+      MqttAuthUser.trim();
+    }
+    if ((idx = line.indexOf(F("MqttPass="))) >= 0) {
+      MqttAuthPass = line.substring(idx + 9);
+      MqttAuthPass.trim();
+    }
     if ((idx = line.indexOf(F("themeColor="))) >= 0) {
       themeColor = line.substring(idx + 11);
       themeColor.trim();
@@ -1660,7 +1688,7 @@ void readConfiguration() {
   weatherClient.setMetric(IS_METRIC);
   weatherClient.setCityId(CityID);
   printerClient.updateOctoPrintClient(OctoPrintApiKey, OctoPrintServer, OctoPrintPort, OctoAuthUser, OctoAuthPass);
-  mqttClient.updateMqttClient(MqttServer, MqttPort, MqttTopic);
+  mqttClient.updateMqttClient(MqttServer, MqttPort, MqttTopic, MqttAuthUser, MqttAuthPass);
 }
 
 void scrollMessage(String msg) {

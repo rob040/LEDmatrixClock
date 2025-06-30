@@ -18,6 +18,9 @@ TODO items
    => DONE v3.1.11
 4.1 Add MQTT server username and password
 4.2 Add MQTT control of display brightness, display on/off,
+4.3 publish some weather info, 
+4.4 pub statistical data, 
+4.5 pub debug help, like free heap, max allocatable block; to monitor memory fragmentation and memory leaks
 5. Compile under PlatformIO / PIOarduino in VScode, perhaps saying goodbye to Arduino IDE (PIO provides control over used library versions, which is near impossible with Arduino IDE for different projects)
 6. OpenWeatherMap only accepts 1 CityID and produces 1 current weather report: remove presumed flexibility here.
    => DONE
@@ -28,16 +31,45 @@ TODO items
    -> todo in all /save* requests
    => DONE v3.1.9
 8. Fix some idiosyncrasies, coding mis-style (uppercase variables, space between function name and its arguments, ...), TODO's
-9. Prioritize metric and SI-units as config defaults and select archaic colonial/imperial units as an option, same goes for 24h/12h clock.
+   => ongoing
+9. Prioritize metric and SI-units as config defaults and select archaic colonial/imperial units as an option, same goes for 24h/12h clock. Get rid of 'military time'.
 10. Go through list of issues and PRs of original repo and check which are 'solved' by this Fork
    may be provide PR's to Original repo, though the changes might be too large to be acceptable/merge-able
 11. make it compile and run on ESP32 variants
+    => future
 12. Adaptive brightness option; add LDR on ADC input and heavily filter for slow changes
+13. make it possible to show alternate display (temperature) statically (without scrolling), alternating with time, like 10s temperture, 50s time
+    => DONE v1.3.19 (disable all display options will leave temperature, which is statically shown for 10s, which is quite long)
+13.1 make display functions showing time, scrolling message, static temperature display re-entrant from loop,
+    e.g. call scroll message for every pixel shift, call show time for every 1/2 second to blink center colon when enabled, etc
+    This allows the webserver and OTA to be serviced within the loop, iso at 3-4 places, and should increase web service responsiveness.
+14. Change from OWM city-ID to city/[state/]country or lat/lon coordinates or allow them all for maximum flexibility. 
+    The OWM geocoding-api will translate to lat/lon coordinates for weather requests.
+15. Check which font type/file is used.
+16. Add slider checkbox (see w3schools) (instead of oldfashioned checkboxes) to mainpage header for autorefresh and darkmode 
+16.1  How to preserve these settings in browser? cookie?
+17. Enhance display off quiet period with options like {display off, dimmed, dimmed time + temp, dimmed only time}. Should we configure dimmed level as well?
+18. Add local temperature sensor and show inside temperature. Support only a few I2C sensors. Caveat: here we might get requests like can you support this or that sensor....
+19. add Config option: "Flash System LED on Service Calls"; the blue onboard LED is quite bright, shining through the case and can be annoying.
+20. config page rework; In general, create more logical order, it is a mess now.
+	group 'Display' items name 'LED display', 
+	move 'use metric' to bottom (point 9!), 
+	rename 'Minutes Between Refresh Data' to 'Clock Sync / Weather Refresh (minutes)' and change NTP sync accordingly, 
+	move 'Minutes Between Scrolling Data' to display items and rename to 'Display interval', 
+	rename 'Flash : in the time' to 'Blink time colon', 
+	move 'marquee message' setting to 3rd line and name 'Scroll message', 
+	'Start time'/'End time' group in 'Quiet period' with start and end reversed + point 17, 
+
 
 Future
 - Change to use latest Arduino json V7 library. this makes the JsonStreamingParser and json buffer size calculation unnecessary.
 - Add REST API for various controls
 - Update webpage with json data; requires JS code
-
-
+- Investigate if we can run without adafruit library
+	https://github.com/markruys/arduino-Max72xxPanel/pull/7  BitBang and no Adafruit_GFX #7 
+	who defines the character map?
+Major overhaul
++ html main page: store whole page as one big array and process it as a stream, search for $marker$. Have a table with markers matching a callable function that returns the replacement text. callback could be anon inline function. This should reduce the number of string operations and memory allocations considerably.
+Alternatively, read base html from FS file, then size is even less important. What is file read performance? serve own css as file?
++ main loop: have a executive like structure, with all process functions return in limited time.
 

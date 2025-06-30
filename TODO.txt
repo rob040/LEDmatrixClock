@@ -16,12 +16,14 @@ TODO items
       There were some functional improvements as well
 4. Add basic MQTT support (there is already PR#265 for this, which looks good as a start)
    => DONE v3.1.11
-4.1 Add MQTT server username and password
+4.1 Add MQTT server username and password authentication and configuration
+   => DONE v3.1.23
 4.2 Add MQTT control of display brightness, display on/off,
 4.3 publish some weather info, 
 4.4 pub statistical data, 
 4.5 pub debug help, like free heap, max allocatable block; to monitor memory fragmentation and memory leaks
 5. Compile under PlatformIO / PIOarduino in VScode, perhaps saying goodbye to Arduino IDE (PIO provides control over used library versions, which is near impossible with Arduino IDE for different projects)
+   => Done, Arduino IDE still supported
 6. OpenWeatherMap only accepts 1 CityID and produces 1 current weather report: remove presumed flexibility here.
    => DONE
 7. Fix naming like read/write 'CityIDs', 'handleLocations' 'GET /location', which are misnomers for __configuration__ update, save, restore
@@ -34,11 +36,12 @@ TODO items
    => ongoing
 9. Prioritize metric and SI-units as config defaults and select archaic colonial/imperial units as an option, same goes for 24h/12h clock. Get rid of 'military time'.
 10. Go through list of issues and PRs of original repo and check which are 'solved' by this Fork
-   may be provide PR's to Original repo, though the changes might be too large to be acceptable/merge-able
+    may be provide PR's to Original repo, though the changes might be too large to be acceptable/merge-able
+    => ongoing
 11. make it compile and run on ESP32 variants
-    => future
+    => future (though it shouldnt be that hard, been there done that...
 12. Adaptive brightness option; add LDR on ADC input and heavily filter for slow changes
-13. make it possible to show alternate display (temperature) statically (without scrolling), alternating with time, like 10s temperture, 50s time
+13. make it possible to show alternate display (temperature) statically (without scrolling), alternating with time, like 10s temperature, 50s time
     => DONE v1.3.19 (disable all display options will leave temperature, which is statically shown for 10s, which is quite long)
 13.1 make display functions showing time, scrolling message, static temperature display re-entrant from loop,
     e.g. call scroll message for every pixel shift, call show time for every 1/2 second to blink center colon when enabled, etc
@@ -54,7 +57,9 @@ TODO items
 20. config page rework; In general, create more logical order, it is a mess now.
 	group 'Display' items name 'LED display', 
 	move 'use metric' to bottom (point 9!), 
-	rename 'Minutes Between Refresh Data' to 'Clock Sync / Weather Refresh (minutes)' and change NTP sync accordingly, 
+	rename 'Minutes Between Refresh Data' to 'Clock Sync / Weather Refresh (minutes)'
+	and change NTP sync accordingly, 
+	=> NTP sync fixed in v3.1.22
 	move 'Minutes Between Scrolling Data' to display items and rename to 'Display interval', 
 	rename 'Flash : in the time' to 'Blink time colon', 
 	move 'marquee message' setting to 3rd line and name 'Scroll message', 

@@ -36,11 +36,14 @@
 
 // Refresh main web page every x seconds, or disable by uncomment or set to 0
 #define WEBPAGE_AUTOREFRESH   20
-
+// DARK mode: Add button to main page to toggle webpage dark mode
+#define WEBPAGE_DARKMODE
 
 //declaring prototypes
 void configModeCallback(WiFiManager *myWiFiManager);
 int8_t getWifiQuality();
+void sendHeader(boolean isMainPage = false);
+
 
 // LED Settings
 const int offset = 1;
@@ -89,39 +92,168 @@ ESP8266WebServer server(WEBSERVER_PORT);
 ESP8266HTTPUpdateServer serverUpdater;
 
 static const char WEB_HEADER[] PROGMEM = "<!DOCTYPE HTML>"
-  "<html><head><title>Marquee Scroller</title><link rel='icon' href='data:;base64,='>"
+  "<html><head>"
+  "<title>Marquee LED matrix display Scroller</title>"
+  "<meta charset='UTF-8'>"
   "<meta http-equiv='Content-Type' content='text/html; charset=UTF-8' />"
   "<meta name='viewport' content='width=device-width, initial-scale=1'>"
+  "<meta name='description' content='Weather Marquee displaying time and current weather information on LED matrix display.'>"
+  "<meta name='keywords' content='clock, LED matrix display, weather, marquee, information'>"
   "<link rel='stylesheet' href='https://www.w3schools.com/w3css/4/w3.css'>"
   "<link rel='stylesheet' href='https://www.w3schools.com/lib/w3-theme-$COLOR$.css'>"
   "<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/css/all.min.css'>"
-  "</head>";
+  "<link rel='icon' href='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACJUlEQVQ4T2NkwAUcHFj0LKPegKQvHV8mwn"
+  "DgwB9sShlDQ0OZbyk5bf0iIKWEouA/A+N/RkYVBgZGIOPfHSD1H1me58Ozexfv7fNmdEgrFrmpE/z6uZIlin5GIA9FB5r1kvePM0hdXisKMUA3+PUXAWkG9m8fcHiIC"
+  "Sj+Dy73k0uAgefDUwZ1ZAO4Pr9meCVjwCD++CzOYAFJvJQ1ZhB9coHhO48og/oVJBew/frG8FjZhkHi4Rm8BryQN2GQvXuE4RcrF9SAYqAXFIJfww14RMAAOXQDoGHA"
+  "+/4xw2dBWQbuTy/gLngvqgpmC76+DRf7yifBAFYrIIvqhZeyRgwsv38iOf8/g8ydw2D+ExVbIAmKFwj4w8oODKtz0EBsAHpBGBiNiqjRCFLI//IuAwMwAj6KKiMZDIo"
+  "NJgZQNKLEwj9GFgbWHx8ZmP//Y/jKL8XwRkoHb7qAG2CbWrHkK5+4ENPfvwzfeEUYGP/9BaaHjww/eITwxgbHt/fA8Hr5jtE2rXLev38M8xkYOIEavuPVhC7JzMSYwG"
+  "iXXm7H8BfofiD4xclbddMg2Fn50qaTXF/fVcE0cAAZ77iF2u7q+ZmrX1i7l+375zawHPP/P/CgtU2v1Lqt43fhHws7s/qZFZaH53adQrbRNrnM7KZJxHGmvz//ql7eZ"
+  "HB4Zvs1kDzcAJu06kVPlawDhV5dX3G2rzgVm1+Mi3pnvxPTjJC+d3T9kVmtcSA1AN+w4BmrADV4AAAAAElFTkSuQmCC'>"
+  "<style>"
+    "body{"
+      "font-family:Arial, sans-serif;"
+      "font-size:16px;"
+    "}"
+    ".w3-bar{"
+      "padding:10px;"
+    "}"
+    ".w3-bar-item{"
+      "margin-right:20px;"
+    "}"
+    ".w3-button{"
+      "padding:10px 20px;"
+      "border:none;"
+      "border-radius:5px;"
+      "cursor:pointer;"
+    "}"
+    ".w3-button:hover{"
+      "background-color:#ccc;"
+    "}"
+    ".w3-right{"
+      "float:right-bottom;"
+    "}"
+    ".w3-right .w3-button{"
+      "display:block;"
+      "margin-bottom:5px;"
+    "}"
+    ".w3-right .w3-button:last-child{"
+      "margin-bottom:0;"
+    "}"
+    ".dark-mode{"
+      "background-color:#333;"
+      "color:#fff;"
+    "}"
+    ".dark-mode *{"
+      "background-color:inherit;"
+      "color:inherit;"
+    "}"
+    ".dark-mode .w3-theme{"
+      "background-color:#444;"
+    "}"
+    ".dark-mode .w3-theme-d2{"
+      "background-color:#555;"
+    "}"
+    ".dark-mode i{"
+      "color:#fff;"
+    "}"
+    "@media only screen and (max-width:768px){"
+      ".w3-right{"
+        "float:none;"
+      "}"
+      ".w3-right .w3-button{"
+        "display:inline-block;"
+        "margin-right:20px;"
+        "margin-bottom:0;"
+      "}"
+    "}"
+  "</style>"
+  "</head>\n"
+"<body>\n"
+  "<header class='w3-top w3-bar w3-theme'>"
+  "<button class='w3-bar-item w3-button w3-xxxlarge w3-hover-theme' onclick='openSidebar()'>"
+  "<i class='fas fa-bars'></i>"
+  "</button>"
+  "<h2 class='w3-bar-item'>Weather Marquee</h2>"
+  ;
+static const char WEB_HEADER_MAIN[] PROGMEM =
+  "<div class='w3-right'>"
+    #if defined (WEBPAGE_AUTOREFRESH) && (WEBPAGE_AUTOREFRESH > 0)
+    "<button id='autorefresh-button' class='w3-button w3-small' onclick='toggleAutoRefresh()' title='toggle Auto Refresh Mode'>"
+       "<i id='autorefresh-icon' class='fas fa-sync'></i>"
+    "</button>"
+    #endif
+    #if defined (WEBPAGE_DARKMODE)
+    "<button id='darkmode-button' class='w3-button w3-small' onclick='toggleDarkMode()' title='toggle Dark Mode '>"
+       "<i id='darkmode-icon' class='fas fa-moon'></i>"
+    "</button>"
+    #endif
+  "</div>"
+;
 
-static const char WEB_BODY1[] PROGMEM =  "<body>"
-  "<nav class='w3-sidebar w3-bar-block w3-card' style='margin-top:88px' id='mySidebar'>"
+static const char WEB_BODY1[] PROGMEM =
+  "</header>\n"
+  "<nav class='w3-sidebar w3-bar-block w3-card' style='margin-topNOT:108px' id='mySidebar'>"
   "<div class='w3-container w3-theme-d2'>"
   "<span onclick='closeSidebar()' class='w3-button w3-display-topright w3-large'><i class='fas fa-times'></i></span>"
   "<div class='w3-left'><img src='http://openweathermap.org/img/w/$ICO$.png' alt='$IDES$'></div>"
   "<div class='w3-padding'>Menu</div></div>";
 
-static const char WEB_BODY2[] PROGMEM = "</nav>"
-  "<header class='w3-top w3-bar w3-theme'><button class='w3-bar-item w3-button w3-xxxlarge w3-hover-theme' onclick='openSidebar()'>"
-  "<i class='fas fa-bars'></i></button><h2 class='w3-bar-item'>Weather Marquee</h2></header>"
+static const char WEB_BODY2[] PROGMEM =
+  "</nav>\n"
   "<script>"
   "function openSidebar(){document.getElementById('mySidebar').style.display='block'}"
   "function closeSidebar(){document.getElementById('mySidebar').style.display='none'}"
   "closeSidebar();"
-  "</script>"
-  "<br><div class='w3-container w3-large' style='margin-top:88px'>";
+  #if defined (WEBPAGE_DARKMODE)
+  "function restoreDarkMode(){const darkModeEnabled=localStorage.getItem('darkModeEnabled')==='true';"
+  "if(darkModeEnabled){document.body.classList.add('dark-mode');}}"
+  "restoreDarkMode();"
+  #endif
+  "</script>\n"
+  "<div class='w3-container w3-large' style='margin-top:108px'>\n";
+
+static const char WEB_BODY2_MAIN[] PROGMEM =
+  "<script>"
+    #if defined (WEBPAGE_AUTOREFRESH) && (WEBPAGE_AUTOREFRESH > 0)
+    #define str(arg) #arg
+    #define mkstr(arg) str(arg)
+  "var intervaltimer=0;"
+  "function refreshPage(){if(document.getElementById('mySidebar').style.display==='none')window.location.reload();}"
+  "function toggleAutoRefresh(){const autoRefreshEnabled=localStorage.getItem('autoRefreshEnabled')==='true';"
+  "const newState=!autoRefreshEnabled;localStorage.setItem('autoRefreshEnabled',newState);updateAutoRefreshButton(newState);"
+  "if(newState){startAutoRefresh();}else{stopAutoRefresh();}}"
+  "function updateAutoRefreshButton(enabled){const autoRefreshIcon=document.getElementById('autorefresh-icon');"
+  "if(enabled){autoRefreshIcon.classList.add('fa-spin');}else{autoRefreshIcon.classList.remove('fa-spin');}}"
+  "function stopAutoRefresh(){clearInterval(intervaltimer);}"
+  "function startAutoRefresh(){intervaltimer=setInterval(refreshPage," mkstr(WEBPAGE_AUTOREFRESH) "*1000);}"
+  "function initAutoRefresh(){const autoRefreshEnabled=localStorage.getItem('autoRefreshEnabled')==='true';"
+  "if(autoRefreshEnabled){startAutoRefresh();updateAutoRefreshButton(true);}"
+  "else{stopAutoRefresh();updateAutoRefreshButton(false);}}"
+  "initAutoRefresh();"
+  #endif
+  #if defined (WEBPAGE_DARKMODE)
+  "function toggleDarkMode(){const darkModeEnabled=localStorage.getItem('darkModeEnabled')==='true';"
+  "const newState=!darkModeEnabled;localStorage.setItem('darkModeEnabled',newState);updateDarkModeButton(newState);"
+  "document.body.classList.toggle('dark-mode',newState);}"
+  "function updateDarkModeButton(enabled){const darkModeIcon=document.getElementById('darkmode-icon');"
+  "if(enabled){darkModeIcon.classList.replace('fa-moon','fa-sun');}"
+  "else{darkModeIcon.classList.replace('fa-sun','fa-moon');}}"
+  "function initDarkMode(){const darkModeEnabled=localStorage.getItem('darkModeEnabled')==='true';"
+  "if(darkModeEnabled){document.body.classList.add('dark-mode');updateDarkModeButton(true);}"
+  "else{updateDarkModeButton(false);}}"
+  "initDarkMode();"
+  #endif
+  "</script>\n";
+
 
 static const char WEB_FOOTER[] PROGMEM = "<br><br><br>"
-  "</div>"
+  "</div>\n"
   "<footer class='w3-container w3-bottom w3-theme w3-margin-top'>"
   "<i class='far fa-paper-plane'></i> Version: " VERSION " build " __DATE__ " " __TIME__ "<br>"
   "<i class='far fa-clock'></i> Next Data Update: $UPD$ <br>"
   "<i class='fas fa-rss'></i> Signal Strength: $RSSI$%"
-  "</footer>"
-  "</body></html>";
+  "</footer>\n"
+  "</body></html>\n";
 
 static const char WEB_ACTIONS1[] PROGMEM =
   "<a class='w3-bar-item w3-button' href='/'><i class='fas fa-home'></i> Home</a>"
@@ -141,7 +273,7 @@ static const char WEB_ACTION3[] PROGMEM =
   "<a class='w3-bar-item w3-button' href='/forgetwifi' onclick='return confirm(\"Do you want to forget to WiFi connection?\")'><i class='fas fa-wifi'></i> Forget WiFi</a>"
   "<a class='w3-bar-item w3-button' href='/restart'><i class='fas fa-sync'></i> Restart</a>"
   "<a class='w3-bar-item w3-button' href='/update'><i class='fas fa-wrench'></i> Firmware Update</a>"
-  "<a class='w3-bar-item w3-button' href='https://github.com/Qrome/marquee-scroller' target='_blank'><i class='fas fa-question-circle'></i> About</a>";
+  "<a class='w3-bar-item w3-button' href='https://github.com/rob040/LEDmatrixClock' target='_blank'><i class='fas fa-question-circle'></i> About</a>";
 
 static const char CHANGE_FORM1[] PROGMEM =
   "<form class='w3-container' action='/saveconfig' method='get'><h2>Configure:</h2>"
@@ -149,17 +281,17 @@ static const char CHANGE_FORM1[] PROGMEM =
   "<input class='w3-input w3-border w3-margin-bottom' type='text' name='openWeatherMapApiKey' value='%OWMKEY%' maxlength='70'>"
   "<p><label>%CTYNM% (<a href='http://openweathermap.org/find' target='_BLANK'><i class='fas fa-search'></i> Search for City ID</a>)</label>"
   "<input class='w3-input w3-border w3-margin-bottom' type='text' name='city' value='%CITY%' onkeypress='return isNumberKey(event)'></p>"
-  "<p><input name='metric' class='w3-check w3-margin-top' type='checkbox' %METRIC_CB%> Use Metric (Celsius)</p>"
   "<p><input name='showdate' class='w3-check w3-margin-top' type='checkbox' %DATE_CB%> Display Date</p>"
   "<p><input name='showcity' class='w3-check w3-margin-top' type='checkbox' %CITY_CB%> Display City Name</p>"
   "<p><input name='showhighlow' class='w3-check w3-margin-top' type='checkbox' %HILO_CB%> Display Current High/Low Temperatures</p>"
   "<p><input name='showcondition' class='w3-check w3-margin-top' type='checkbox' %COND_CB%> Display Weather Condition</p>"
   "<p><input name='showhumidity' class='w3-check w3-margin-top' type='checkbox' %HUM_CB%> Display Humidity</p>"
   "<p><input name='showwind' class='w3-check w3-margin-top' type='checkbox' %WIND_CB%> Display Wind</p>"
-  "<p><input name='showpressure' class='w3-check w3-margin-top' type='checkbox' %PRES_CB%> Display Barometric Pressure</p>"
-  "<p><input name='is24hour' class='w3-check w3-margin-top' type='checkbox' %24HR_CB%> Use 24 Hour Clock (military time)</p>";
+  "<p><input name='showpressure' class='w3-check w3-margin-top' type='checkbox' %PRES_CB%> Display Barometric Pressure</p>";
 
 static const char CHANGE_FORM2[] PROGMEM =
+  "<p><input name='metric' class='w3-check w3-margin-top' type='checkbox' %METRIC_CB%> Use Metric units (Celsius,kmh,hPa)</p>"
+  "<p><input name='is24hour' class='w3-check w3-margin-top' type='checkbox' %24HR_CB%> Use 24 Hour Clock</p>"
   "<p><input name='isPM' class='w3-check w3-margin-top' type='checkbox' %PM_CB%> Show PM indicator (only 12h format)</p>"
   "<p><input name='flashseconds' class='w3-check w3-margin-top' type='checkbox' %FLASH_CB%> Flash \":\" in the time</p>"
   "<p><label>Marquee Message (up to 60 chars)</label><input class='w3-input w3-border w3-margin-bottom' type='text' name='marqueeMsg' value='%MSG%' maxlength='60'></p>"
@@ -831,7 +963,7 @@ void handleNewsConfigure() {
   sendHeader();
 
   String form = FPSTR(NEWS_FORM1);
-  form.replace(F("%NEWS_CB%"), (NEWS_ENABLED) ? "checked='checked'" : "");
+  form.replace(F("%NEWS_CB%"), (NEWS_ENABLED) ? "checked" : "");
   form.replace(F("%NEWSKEY%"), NEWS_API_KEY);
   form.replace(F("%NEWSSRC%"), NEWS_SOURCE);
   server.sendContent(form); //Send news form
@@ -858,8 +990,8 @@ void handleOctoprintConfigure() {
   sendHeader();
 
   String form = FPSTR(OCTO_FORM);
-  form.replace(F("%OCTO_CB%"), (OCTOPRINT_ENABLED) ? "checked='checked'" : "");
-  form.replace(F("%OCTPG_CB%"), (OCTOPRINT_PROGRESS) ? "checked='checked'" : "");
+  form.replace(F("%OCTO_CB%"), (OCTOPRINT_ENABLED) ? "checked" : "");
+  form.replace(F("%OCTPG_CB%"), (OCTOPRINT_PROGRESS) ? "checked" : "");
   form.replace(F("%OCTOKEY%"), OctoPrintApiKey);
   form.replace(F("%OCTOADR%"), OctoPrintServer);
   form.replace(F("%OCTOPOR%"), String(OctoPrintPort));
@@ -891,7 +1023,7 @@ void handlePiholeConfigure() {
   server.sendContent(FPSTR(PIHOLE_TEST));
 
   String form = FPSTR(PIHOLE_FORM);
-  form.replace(F("%PIHO_CB%"), (USE_PIHOLE) ? "checked='checked'" : "");
+  form.replace(F("%PIHO_CB%"), (USE_PIHOLE) ? "checked" : "");
   form.replace(F("%PIHO_ADR%"), PiHoleServer);
   form.replace(F("%PIHO_PRT%"), String(PiHolePort));
   form.replace(F("%PIHO_API%"), PiHoleApiKey);
@@ -921,7 +1053,7 @@ void handleMqttConfigure() {
   sendHeader();
 
   String form = FPSTR(MQTT_FORM);
-  form.replace(F("%MQTT_CB%"), (USE_MQTT) ? "checked='checked'" : "");
+  form.replace(F("%MQTT_CB%"), (USE_MQTT) ? "checked" : "");
   form.replace(F("%MQTT_ADR%"), MqttServer);
   form.replace(F("%MQTT_PRT%"), String(MqttPort));
   form.replace(F("%MQTT_TOP%"), MqttTopic);
@@ -956,20 +1088,20 @@ void handleConfigure() {
   form.replace(F("%OWMKEY%"), APIKEY);
   form.replace(F("%CTYNM%"), (weatherClient.getCity() != "") ? weatherClient.getCity() + ", " + weatherClient.getCountry() : "");
   form.replace(F("%CITY%"), String(CityID));
-  form.replace(F("%DATE_CB%"), (SHOW_DATE) ? "checked" : "unchecked"); //FIXME TEST; this works well; ='checked' is unnecessary, browser removes it.
-  form.replace(F("%CITY_CB%"), (SHOW_CITY) ? "checked='checked'" : "");
-  form.replace(F("%COND_CB%"), (SHOW_CONDITION) ? "checked='checked'" : "");
-  form.replace(F("%HUM_CB%"), (SHOW_HUMIDITY) ? "checked='checked'" : "");
-  form.replace(F("%WIND_CB%"), (SHOW_WIND) ? "checked='checked'" : "");
-  form.replace(F("%PRES_CB%"), (SHOW_PRESSURE) ? "checked='checked'" : "");
-  form.replace(F("%HILO_CB%"), (SHOW_HIGHLOW) ? "checked='checked'" : "");
-  form.replace(F("%24HR_CB%"), (IS_24HOUR) ? "checked='checked'" : "");
-  form.replace(F("%METRIC_CB%"), (IS_METRIC) ? "checked='checked'" : "");
+  form.replace(F("%DATE_CB%"), (SHOW_DATE) ? "checked" : "");
+  form.replace(F("%CITY_CB%"), (SHOW_CITY) ? "checked" : "");
+  form.replace(F("%COND_CB%"), (SHOW_CONDITION) ? "checked" : "");
+  form.replace(F("%HUM_CB%"), (SHOW_HUMIDITY) ? "checked" : "");
+  form.replace(F("%WIND_CB%"), (SHOW_WIND) ? "checked" : "");
+  form.replace(F("%PRES_CB%"), (SHOW_PRESSURE) ? "checked" : "");
+  form.replace(F("%HILO_CB%"), (SHOW_HIGHLOW) ? "checked" : "");
   server.sendContent(form);
 
   form = FPSTR(CHANGE_FORM2);
-  form.replace(F("%PM_CB%"), (IS_PM) ? "checked='checked'" : "");
-  form.replace(F("%FLASH_CB%"), (flashOnSeconds) ? "checked='checked'" : "");
+  form.replace(F("%24HR_CB%"), (IS_24HOUR) ? "checked" : "");
+  form.replace(F("%METRIC_CB%"), (IS_METRIC) ? "checked" : "");
+  form.replace(F("%PM_CB%"), (IS_PM) ? "checked" : "");
+  form.replace(F("%FLASH_CB%"), (flashOnSeconds) ? "checked" : "");
   form.replace(F("%MSG%"), marqueeMessage);
   form.replace(F("%STRT_TM%"), timeDisplayTurnsOn);
   form.replace(F("%END_TM%"), timeDisplayTurnsOff);
@@ -989,7 +1121,7 @@ void handleConfigure() {
   server.sendContent(form); //Send another chunk of the form
 
   form = FPSTR(CHANGE_FORM3);
-  form.replace(F("%AUTH_CB%"), (IS_BASIC_AUTH) ? "checked='checked'" : "");
+  form.replace(F("%AUTH_CB%"), (IS_BASIC_AUTH) ? "checked" : "");
   form.replace(F("%CFGUID%"), String(www_username));
   form.replace(F("%CFGPW%"), String(www_password));
   server.sendContent(form); // Send the second chunk of Data
@@ -1098,10 +1230,13 @@ void redirectHome() {
   delay(1000);
 }
 
-void sendHeader() {
+void sendHeader(boolean isMainPage) {
   String html = FPSTR(WEB_HEADER);
   html.replace(F("$COLOR$"), themeColor);
   server.sendContent(html);
+  if (isMainPage) {
+    server.sendContent(FPSTR(WEB_HEADER_MAIN));
+  }
   html = FPSTR(WEB_BODY1);
   html.replace(F("$ICO$"), weatherClient.getIcon());
   html.replace(F("$IDES$"), weatherClient.getWeatherDescription());
@@ -1121,6 +1256,9 @@ void sendHeader() {
   server.sendContent(FPSTR(WEB_ACTION3));
 
   server.sendContent(FPSTR(WEB_BODY2));
+  if (isMainPage) {
+    server.sendContent(FPSTR(WEB_BODY2_MAIN));
+  }
 }
 
 void sendFooter() {
@@ -1144,7 +1282,7 @@ void displayWeatherData() {
   server.sendHeader(F("Expires"), "-1");
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
   server.send(200, F("text/html"), "");
-  sendHeader();
+  sendHeader(true);
 
   String temperature = String(weatherClient.getTemperature(),1);
 
@@ -1207,14 +1345,14 @@ void displayWeatherData() {
         "<a href='https://www.google.com/maps/@") + weatherClient.getLat() + "," + weatherClient.getLon() + F(",10000m/data=!3m1!1e3' target='_BLANK'><i class='fas fa-map-marker' style='color:red'></i> Map It!</a><br>"
       "</p></div></div><hr>"
       "<div class='w3-cell-row' style='width:100%'><h3>") + dtstr  + F("</h3></div><hr>");
-    #if defined (WEBPAGE_AUTOREFRESH) && (WEBPAGE_AUTOREFRESH > 0)
-    #define str(arg) #arg
-    #define mkstr(arg) str(arg)
-    html +=  F("<script>"
-      "function refreshPage(){if(document.getElementById('mySidebar').style.display==='none')window.location.reload();}"
-      "var intervaltimer=setInterval(refreshPage," mkstr(WEBPAGE_AUTOREFRESH) "*1000);"
-      "</script>");
-    #endif
+  //  #if defined (WEBPAGE_AUTOREFRESH) && (WEBPAGE_AUTOREFRESH > 0)
+  //  #define str(arg) #arg
+  //  #define mkstr(arg) str(arg)
+  //  html +=  F("<script>"
+  //    "function refreshPage(){if(document.getElementById('mySidebar').style.display==='none')window.location.reload();}"
+  //    "var intervaltimer=setInterval(refreshPage," mkstr(WEBPAGE_AUTOREFRESH) "*1000);"
+  //    "</script>");
+  //  #endif
   }
 
 

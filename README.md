@@ -33,11 +33,14 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 * Update to new OpenWeatherMap.org API. Newly requested Free Service API-keys can no longer use the older call and structure.
 * Reduce RAM usage. The ESP8266 is an older wifi processor with limited RAM (80kB)
  especilly when compared to its newer ESP32 members.
-* Added basic MQTT support
+* Added basic MQTT support with basic Authentication.
 * Use VScode IDE with PlatformIO / PIOarduino, for better development and maintenace experience and much better build environment and library version control.
 * Improved start-up on time synchronisation and weather data update,
 * Improved weather data display on webpage (minor changes)
-* Automatic timezone (from Local wather )
+* Automatic timezone (from Local wather), hence no need for TimeZoneDB.
+* Added a favicon for easy recogninition in your browser.
+* Support for different display sizes without re-compilation, via configuration page (device will reboot upon change).
+  
 
 ### known issues
 * web-page updates halts scrolling display for a moment

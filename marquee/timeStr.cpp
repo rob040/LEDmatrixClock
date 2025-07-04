@@ -1,3 +1,9 @@
+/*
+ * Time Str - Support functions For Arduino String
+ *
+ * By rob040, Copyleft
+ *
+ */
 #include <Arduino.h>
 #include "timeLib.h"
 #include "timeStr.h"
@@ -43,7 +49,6 @@ String get24HrColonMin(uint32_t epoch)
   return zeroPad(hr)+":"+zeroPad(min);
 }
 
-
 String getAmPm(bool isPM) {
   return (isPM) ? "PM" : "AM";
 }
@@ -55,6 +60,7 @@ String spacePad(unsigned int number) {
     return String(number);
   }
 }
+
 String zeroPad(unsigned int number) {
   if (number < 10) {
     return "0" + String(number);

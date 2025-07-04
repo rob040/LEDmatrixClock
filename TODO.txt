@@ -39,7 +39,7 @@ TODO items
     may be provide PR's to Original repo, though the changes might be too large to be acceptable/merge-able
     => ongoing
 11. make it compile and run on ESP32 variants
-    => future (though it shouldnt be that hard, been there done that...) For me this is 'easy' reuse of some older HW.
+    => future (though it shouldnt be that hard, been there done that...) For me this is 'easy' reuse of some older HW, hence stick with ESP8266.
 12. Adaptive brightness option; add LDR on ADC input and heavily filter for slow changes
 13. make it possible to show alternate display (temperature) statically (without scrolling), alternating with time, like 10s temperature, 50s time
     => DONE v1.3.19 (disable all display options will leave temperature, which is statically shown for 10s, which is quite long)

@@ -13,15 +13,14 @@ Read the [feature enhancements below](#feature-enhancements)
 * Display Local Weather and conditions (refreshed every 10 - 30 minutes, configurable)
 * Display News Headlines from all the major sources
 * Display 3D print progress from your OctoPrint Server
-* Display Pi-hole status and graph (each pixel accross is 10 minutes)
+* Display Pi-hole status and graph (each pixel across is 10 minutes)
 * Configured through Web Interface
 * Basic Authorization to access Configuration web interface
 * Update firmware through web interface over WiFi (OTA)
 * Configurable scroll speed and LED brightness
 * Configurable data display and data update interval frequency
 * Configurable sleep / wake times
-* Configurable number of (compiletime)
-* Options of different LED-matrix panels (4 to >8) and
+* Configurable number of LED-matrix tiles (4 to >8) (compile option) and
   types of Clock Displays on larger panels, e.g. also display seconds or temperature
 * Video: https://youtu.be/DsThufRpoiQ
 * Build Video by Chris Riley: https://youtu.be/KqBiqJT9_lE
@@ -31,14 +30,13 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 * Removed the TimeZoneDB.com registration requirement.
 * Added Time NTP and more efficient time strings instead. Actual time zone information is used from OpenWeather API.
 * Update to new OpenWeatherMap.org API. Newly requested Free Service API-keys can no longer use the older call and structure.
-* Reduce RAM usage. The ESP8266 is an older wifi processor with limited RAM (80kB)
- especilly when compared to its newer ESP32 members.
+* Reduce RAM usage. The ESP8266 is an older WiFi processor with limited RAM (80kB), especially when compared to its newer ESP32 members.
 * Added basic MQTT support with basic Authentication.
-* Use VScode IDE with PlatformIO / PIOarduino, for better development and maintenace experience and much better build environment and library version control.
+* Use VScode IDE with PlatformIO / PIOarduino, for better development and maintenance experience and much better build environment and library version control.
 * Improved start-up on time synchronisation and weather data update,
 * Improved weather data display on webpage (minor changes)
-* Automatic timezone (from Local wather), hence no need for TimeZoneDB.
-* Added a favicon for easy recogninition in your browser.
+* Automatic timezone (from Local weather), hence no need for TimeZoneDB.
+* Added a favicon for easy recognition in your browser.
 * Support for different display sizes without re-compilation, via configuration page (device will reboot upon change).
   
 

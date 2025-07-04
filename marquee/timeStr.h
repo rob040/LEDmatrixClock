@@ -1,3 +1,8 @@
+/*
+ * Time Str - Support functions For Arduino String
+ *
+ * By rob040, Copyleft
+ */
 #include "TimeLib.h"
 #pragma once
 String getDayName(int weekday);

@@ -1,3 +1,9 @@
+/*
+ * Time NTP - Synchronize time with Network Time Protocol
+ *
+ * By rob040, Copyleft
+ * Based on example code from TimeLib
+ */
 
 #include <TimeLib.h>
 #include <ESP8266WiFi.h>
@@ -5,7 +11,7 @@
 
 
 // NTP Servers:
-static const char ntpServerName[] = "nl.pool.ntp.org";
+static const char ntpServerName[] = "1.pool.ntp.org";
 //static const char ntpServerName[] = "time.nist.gov";
 //static const char ntpServerName[] = "time-a.timefreq.bldrdoc.gov";
 //static const char ntpServerName[] = "time-b.timefreq.bldrdoc.gov";
@@ -23,7 +29,6 @@ unsigned int localPort = 8888;  // local port to listen for UDP packets
 time_t getNtpTime();
 void sendNTPpacket(IPAddress &address);
 
-
 void timeNTPsetup()
 {
   Serial.println("Starting UDP");
@@ -34,6 +39,7 @@ void timeNTPsetup()
   setSyncProvider(getNtpTime);
   setSyncInterval(20);
 }
+
 boolean set_timeZoneSec(int timeZoneSeconds)
 {
   boolean timechange = false;

@@ -48,6 +48,13 @@ String getAmPm(bool isPM) {
   return (isPM) ? "PM" : "AM";
 }
 
+String spacePad(unsigned int number) {
+  if (number < 10) {
+    return " " + String(number);
+  } else {
+    return String(number);
+  }
+}
 String zeroPad(unsigned int number) {
   if (number < 10) {
     return "0" + String(number);

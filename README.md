@@ -11,8 +11,8 @@ Read the [feature enhancements below](#feature-enhancements)
 ## Features include:
 * Accurate Clock refresh from Internet Time Servers
 * Display Local Weather and conditions (refreshed every 10 - 30 minutes, configurable)
-* Display News Headlines from all the major sources
-* Display 3D print progress from your OctoPrint Server
+* <del>Display News Headlines from all the major sources</del> -- removed, not free, see #1
+* <del>Display 3D print progress from your OctoPrint Server</del> -- removed, until upgrade available
 * Display Pi-hole status and graph (each pixel across is 10 minutes)
 * Configured through Web Interface
 * Basic Authorization to access Configuration web interface
@@ -31,18 +31,20 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 * Added Time NTP and more efficient time strings instead. Actual time zone information is used from OpenWeather API.
 * Update to new OpenWeatherMap.org API. Newly requested Free Service API-keys can no longer use the older call and structure.
 * Reduce RAM usage. The ESP8266 is an older WiFi processor with limited RAM (80kB), especially when compared to its newer ESP32 members.
-* Added basic MQTT support with basic Authentication.
+* Added MQTT support with basic Authentication, to send message to be displayed. Message is displayed immediately when display shows the time, and repeated every minute with default configuration.
 * Use VScode IDE with PlatformIO / PIOarduino, for better development and maintenance experience and much better build environment and library version control.
 * Improved start-up on time synchronisation and weather data update,
 * Improved weather data display on webpage (minor changes)
 * Automatic timezone (from Local weather), hence no need for TimeZoneDB.
 * Added a favicon for easy recognition in your browser.
 * Support for different display sizes without re-compilation, via configuration page (device will reboot upon change).
-  
+* Using the 'LittleFS' filesystem in stead of the depecated 'SPIFFS' filesystem
+* Using ArduinoJson upgraded to version 7
+
 
 ### known issues
 * web-page updates halts scrolling display for a moment
-* optional NEWS, Pi-Hole, OctoPi remain untested and may not work properly.
+* optional Pi-Hole, OctoPi remain untested and may not work properly.
 
 
 ## Required Parts:
@@ -101,7 +103,7 @@ It is NOT recommended to use Arduino IDE. It might be difficult to get the right
 Still, the source directory structure is kept such that this project can be build with little to no effort. This might change in the future.
 * Support for ESP8266 Boards is included in Arduino v2.x
 * Select Board:  "ESP8266" --> "LOLIN(WEMOS) D1 R2 & mini"
-* Set Flash Size: 4MB (FS:2MB OTA:~1019KB)
+* Set Flash Size: 4MB (FS:1MB OTA:~1019KB)
 * Select the **Port** from the tools menu.
 
 ### Loading Supporting Library Files in Arduino
@@ -112,9 +114,8 @@ Use the Arduino guide for details on how to installing and manage libraries http
 * <TimeLib.h> --> https://github.com/PaulStoffregen/Time
 * <Adafruit_GFX.h> --> https://github.com/adafruit/Adafruit-GFX-Library
 * <Max72xxPanel.h> --> https://github.com/markruys/arduino-Max72xxPanel
-* <JsonStreamingParser.h> --> https://github.com/squix78/json-streaming-parser
-
-Note ArduinoJson (version 5.13.1) is now included as a library file.
+* <JsonStreamingParser.h> --> https://github.com/squix78/json-streaming-parser  (to be discarded soon)
+* <ArduinoJson> -->  https://github.com/bblanchon/ArduinoJson v7.4.2+
 
 ## Building with PlatformIO.
 Use [**VScode**](https://code.visualstudio.com/docs) with [**PlatformIO**](https://platformio.org/) or better, its desendant fork [**PIOarduino**](https://marketplace.visualstudio.com/items?itemName=pioarduino.pioarduino-ide) extension.
@@ -131,9 +132,8 @@ To build, open the `pioarduino` or `platformio` extension (left hand side icon),
 Editing the **Settings.h** file is totally optional and not required.
 All API Keys are managed in the Web Interface.
 It is not required to edit the Settings.h file and re-compiling the code.
-* Open Weather Map free service API key: http://openweathermap.org/  -- this is used to get weather data and the current time zone from a selected City. This API key is required for correct time.
+* Open Weather Map free service API key: http://openweathermap.org/  -- this is used to get weather data and the current time zone from the selected City. This API key is required for correct time.
 * <del>TimeZoneDB free registration for API key: https://timezonedb.com/register -- this is used for setting the time and getting the correct time zone as well as managing time changes due to Day Light Savings time by regions.  This key is set and managed only through the web interface. TimeZoneDB key is required for correct time display.</del><br> This is no longer needed nor requested!
-* News API key (free): https://newsapi.org/ -- Optional if you want to get current news headlines.
 * Your OctoPrint API Key -- optional if you use the OctoPrint status.
 * Your Pi-hole API Key -- optional if you use the Pi-hole status.
 * Supports Chained 4x1 LED matrix displays -- configure up to 16x1 in the Settings.h file.

@@ -41,16 +41,17 @@ TODO items
 11. make it compile and run on ESP32 variants
     => future (though it shouldnt be that hard, been there done that...) For me this is 'easy' reuse of some older HW, hence stick with ESP8266.
 12. Adaptive brightness option; add LDR on ADC input and heavily filter for slow changes
-13. make it possible to show alternate display (temperature) statically (without scrolling), alternating with time, like 10s temperature, 50s time
-    => DONE v1.3.19 (disable all display options will leave temperature, which is statically shown for 10s, which is quite long)
+13. make it possible to show alternate display (temperature) statically (without scrolling), alternating with time, like 5s temperature, 55s time
+    => DONE v1.3.19 (disable all display options will leave temperature, which is statically shown for 5s)
 13.1 make display functions showing time, scrolling message, static temperature display re-entrant from loop,
     e.g. call scroll message for every pixel shift, call show time for every 1/2 second to blink center colon when enabled, etc
     This allows the webserver and OTA to be serviced within the loop, iso at 3-4 places, and should increase web service responsiveness.
 14. Change from OWM city-ID to city/[state/]country or lat/lon coordinates or allow them all for maximum flexibility.
     The OWM geocoding-api will translate to lat/lon coordinates for weather requests.
 15. Check which font type/file is used.
+    -> build-in to Adafruit_GFX_library glcdfont.c, fixed
 16. Add slider checkbox (see w3schools) (instead of oldfashioned checkboxes) to mainpage header for autorefresh and darkmode
-16.1  How to preserve these settings in browser? cookie?
+    ==> DONE v3.1.24 #9364fb50 20250701: Adds autorefresh and darkmode.
 17. Enhance display off quiet period with options like {display off, dimmed, dimmed time + temp, dimmed only time}. Should we configure dimmed level as well?
 18. Add local temperature sensor and show inside temperature. Support only a few I2C sensors. Caveat: here we might get requests like can you support this or that sensor....
 19. Add Config option: "Flash System LED on Service Calls"; the blue onboard LED is quite bright, shining through the case and can be annoying.
@@ -77,11 +78,14 @@ TODO items
       (There are smaller fonts, but everything in this code is assuming fixed size chars.)
       ==> Done v3.1.25; now there are 8 variants. No font change.
 21. News headlines: Do not use newsapi.org, it is NOT free but costs 450 USD per __MONTH__ (5400 USD per annum)! rediculous pricing for this Indian company!
+    ==> Done v3.1.26
+22. Change to use latest Arduino json V7 library. this makes the JsonStreamingParser and json buffer size (mis)calculation unnecessary.
+    ==> Done v3.1.27  (thanks to bit4man)
+23. Update to new PiHole by bit4man
 
 Future
-- Change to use latest Arduino json V7 library. this makes the JsonStreamingParser and json buffer size calculation unnecessary.
 - Add REST API for various controls
-- Update webpage with json data; requires JS code
+- Update webpage with json data; requires JS code (ie do html update client side iso. server side)
 - Investigate if we can run without adafruit library
 	https://github.com/markruys/arduino-Max72xxPanel/pull/7  BitBang and no Adafruit_GFX #7
 	who defines the character map?

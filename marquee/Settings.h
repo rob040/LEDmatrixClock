@@ -124,6 +124,7 @@ boolean SHOW_WINDDIR = true;
 boolean SHOW_PRESSURE = false;
 boolean SHOW_HIGHLOW = true;
 
+boolean isStaticDisplay = false; // static display above SHOW_* items
 boolean IS_METRIC = true; // false = Imperial and true = Metric
 boolean IS_24HOUR = true; // 23:00 military 24 hour clock
 boolean IS_PM = true; // Show PM indicator on Clock when in AM/PM mode

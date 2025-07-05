@@ -27,7 +27,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.29"
+#define VERSION "3.1.30"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
@@ -291,7 +291,7 @@ static const char CHANGE_FORM1[] PROGMEM =
   "<p><label>%CTYNM% (<a href='http://openweathermap.org/find' target='_BLANK'><i class='fas fa-search'></i> Search for City ID</a>)</label>"
   "<input class='w3-input w3-border' type='text' name='city' value='%CITY%' onkeypress='return isNumberKey(event)'></p>"
   "</fieldset>\n"
-  "<fieldset><legend>LED Display scrolling data options</legend>"
+  "<fieldset><legend>LED Display weather data options</legend>"
   "<p><input name='showtemp' class='w3-check' type='checkbox' %TEMP_CB%> Display Temperature</p>"
   "<p><input name='showdate' class='w3-check' type='checkbox' %DATE_CB%> Display Date</p>"
   "<p><input name='showcity' class='w3-check' type='checkbox' %CITY_CB%> Display City Name</p>"
@@ -307,9 +307,11 @@ static const char CHANGE_FORM1[] PROGMEM =
 
 static const char CHANGE_FORM2[] PROGMEM =
   "<fieldset><legend>Data Display settings</legend>"
-  "<p><input name='metric' class='w3-check' type='checkbox' %METRIC_CB%> Use Metric units (Celsius,kmh,hPa)</p>"
-  "<p><input name='is24hour' class='w3-check' type='checkbox' %24HR_CB%> Use 24 Hour Clock</p>"
-  "<p><input name='isPM' class='w3-check' type='checkbox' %PM_CB%> Show PM indicator (only 12h format)</p>"
+  // title='Any selected Display Scrolling Data is shown in short form without movement (scroll) when fitting within display width.'
+  "<p><input name='statdisp' class='w3-check' type='checkbox' %STATDISP_CB%> Do not scroll weather data display</p>"
+  "<p><input name='metric' class='w3-check' type='checkbox' %METRIC_CB%> Use Metric units (Celsius,kmh,mBar); Unchecked: use Imperial units (Farenheid,mph,inHg)</p>"
+  "<p><input name='is24hour' class='w3-check' type='checkbox' %24HR_CB%> Use 24 Hour Clock; Unchecked: use 12 Hour clock</p>"
+  "<p><input name='isPM' class='w3-check' type='checkbox' %PM_CB%> Show PM indicator (only on 12 Hour clock)</p>"
   "<p><input name='flashseconds' class='w3-check' type='checkbox' %FLASH_CB%> Blink \":\" in the time</p>"
   "</fieldset>\n"
   "<fieldset><legend>LED Display Active times</legend>"
@@ -646,42 +648,73 @@ void loop() {
     displayRefreshCount --;
     // Check to see if we need to Scroll some Data
     if (displayRefreshCount <= 0) {
+      String staticDisplay[8];
+      int staticDisplayIdx=0;
       displayRefreshCount = displayScrollingInterval;
       String temperature = String(weatherClient.getTemperature(),0);
       String weatherDescription = weatherClient.getWeatherDescription();
       weatherDescription.toUpperCase();
-      String msg;
-      msg += " ";
+      String msg = " ";
 
       if (SHOW_DATE) {
+        if (!isStaticDisplay) {
         msg += getDayName(weekday()) + ", ";
         msg += getMonthName(month()) + " " + day() + "  ";
+        } else {
+          if (IS_METRIC) {
+            staticDisplay[staticDisplayIdx] = zeroPad(month()) + "-" + zeroPad(day());
+          } else {
+            staticDisplay[staticDisplayIdx] = zeroPad(day()) + "," + zeroPad(month());
+          }
+          staticDisplayIdx++;
+        }
       }
-      if (SHOW_CITY) {
+      if (SHOW_CITY && !isStaticDisplay) {
         msg += weatherClient.getCity() + "  ";
       }
       if (SHOW_TEMPERATURE) {
-        msg += temperature + getTempSymbol() + "  ";
+        if (!isStaticDisplay) {
+          msg += temperature + getTempSymbol() + "  ";
+        } else {
+          staticDisplay[staticDisplayIdx] = temperature + getTempSymbol();
+          staticDisplayIdx++;
+        }
       }
 
       //show high/low temperature
-      if (SHOW_HIGHLOW) {
+      if (SHOW_HIGHLOW && !isStaticDisplay) {
         msg += F("High/Low:") + String(weatherClient.getTemperatureHigh(),0) + "/" + String(weatherClient.getTemperatureLow(),0) + "  ";
       }
-      if (SHOW_CONDITION) {
+      if (SHOW_CONDITION && !isStaticDisplay) {
         msg += weatherDescription + "  ";
       }
       if (SHOW_HUMIDITY) {
-        msg += F("Humidity:") + String(weatherClient.getHumidity()) + "%  ";
+        if (!isStaticDisplay) {
+          msg += F("Humidity:") + String(weatherClient.getHumidity()) + "%  ";
+        } else {
+          staticDisplay[staticDisplayIdx] = String(weatherClient.getHumidity()) + ((displayWidth>=6)?"%RH":"%");
+          staticDisplayIdx++;
+        }
       }
       if (SHOW_WIND) {
         String windspeed = String(weatherClient.getWindSpeed(),0);
         windspeed.trim();
-        msg += F("Wind:") + weatherClient.getWindDirectionText() + " " + windspeed + getSpeedSymbol() + "  ";
+        if (!isStaticDisplay) {
+          msg += F("Wind:") + weatherClient.getWindDirectionText() + " " + windspeed + getSpeedSymbol() + "  ";
+        } else {
+          // 4 tile display can fit up to "99kmh"
+          staticDisplay[staticDisplayIdx] = windspeed + getSpeedSymbol();
+          staticDisplayIdx++;
+        }
       }
-      //line to show barometric pressure
       if (SHOW_PRESSURE) {
-        msg += F("Pressure:") + String(weatherClient.getPressure()) + getPressureSymbol() + "  ";
+        if (!isStaticDisplay) {
+          msg += F("Pressure:") + String(weatherClient.getPressure()) + getPressureSymbol() + "  ";
+        } else {
+          // 4 tile display can just fit "999mb", ie. low pressure, Imperial inHg will only fit on 8 tiles
+          staticDisplay[staticDisplayIdx] = String(weatherClient.getPressure()) + getPressureSymbol();
+          staticDisplayIdx++;
+        }
       }
       if (marqueeMessage.length() > 0) {
         msg += marqueeMessage + "  ";
@@ -720,14 +753,16 @@ void loop() {
         msg += String(mqttClient.getLastMqttMessage());
       }
       #endif
-      String static_msg = msg;
-      static_msg.trim();
-      if ((int)(static_msg.length()) > 0) {
-        if ((int)(static_msg.length()) <= ((displayWidth * 8) / 6)) {
+
+      if (isStaticDisplay) {
+        int maxMsgLen = (displayWidth * 8) / 6;
+        for (int idx = 0; idx < staticDisplayIdx; idx++) {
+          int len = staticDisplay[idx].length();
+          if (len <= 0 || len > maxMsgLen) continue; // can't display this statically
           // msg fits on one screen : no scroll necessary
           matrix.fillScreen(CLEAR);
-          centerPrint(static_msg, true);
-          // show msg for 5 seconds every minute at default scroll speed
+          centerPrint(staticDisplay[idx], true);
+          // show each msg for 5 seconds at default scroll speed
           for (int i = 0; i < 200; i++) {
             delay(displayScrollSpeed);
             if (WEBSERVER_ENABLED) {
@@ -737,10 +772,10 @@ void loop() {
               ArduinoOTA.handle();
             }
           }
-          //return;
-        } else {
-          scrollMessage(msg);
         }
+      }
+      if (msg.length() > 3) {
+        scrollMessage(msg);
       }
       #if COMPILE_PIHOLE
       drawPiholeGraph();
@@ -964,6 +999,7 @@ void handleSaveConfig() {
     SHOW_WIND = server.hasArg(F("showwind"));
     SHOW_PRESSURE = server.hasArg(F("showpressure"));
     SHOW_HIGHLOW = server.hasArg(F("showhighlow"));
+    isStaticDisplay = server.hasArg(F("statdisp"));
     IS_METRIC = server.hasArg(F("metric"));
     marqueeMessage = decodeHtmlString(server.arg(F("marqueeMsg")));
     timeDisplayTurnsOn = decodeHtmlString(server.arg(F("startTime")));
@@ -1189,6 +1225,7 @@ void handleConfigure() {
   form.replace(F("%METRIC_CB%"), (IS_METRIC) ? "checked" : "");
   form.replace(F("%PM_CB%"), (IS_PM) ? "checked" : "");
   form.replace(F("%FLASH_CB%"), (flashOnSeconds) ? "checked" : "");
+  form.replace(F("%STATDISP_CB%"), (isStaticDisplay) ? "checked" : "");
   form.replace(F("%STRT_TM%"), timeDisplayTurnsOn);
   form.replace(F("%END_TM%"), timeDisplayTurnsOff);
   form.replace(F("%INTY_OPT%"), String(displayIntensity));
@@ -1680,6 +1717,7 @@ void writeConfiguration() {
     f.println(F("is24hour=") + String(IS_24HOUR));
     f.println(F("isPM=") + String(IS_PM));
     f.println(F("isMetric=") + String(IS_METRIC));
+    f.println(F("isStatDisp=") + String(isStaticDisplay));
     f.println(F("refreshRate=") + String(refreshDataInterval));
     f.println(F("dispInterval=") + String(displayScrollingInterval));
     f.println(F("displayWidth=") + String(displayWidth));
@@ -1808,6 +1846,9 @@ void readConfiguration() {
     }
     if ((idx = line.indexOf(F("isMetric="))) >= 0) {
       IS_METRIC = line.substring(idx + 9).toInt();
+    }
+    if ((idx = line.indexOf(F("isStatDisp="))) >= 0) {
+      isStaticDisplay = line.substring(idx + 11).toInt();
     }
     if ((idx = line.indexOf(F("refreshRate="))) >= 0) {
       refreshDataInterval = line.substring(idx + 12).toInt();

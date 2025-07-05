@@ -128,6 +128,7 @@ boolean isStaticDisplay = false; // static display above SHOW_* items
 boolean IS_METRIC = true; // false = Imperial and true = Metric
 boolean IS_24HOUR = true; // 23:00 military 24 hour clock
 boolean IS_PM = true; // Show PM indicator on Clock when in AM/PM mode
+boolean isSysLed = true; // flash onboard LED on system actions
 const int WEBSERVER_PORT = 80; // The port you can access this device on over HTTP
 const boolean WEBSERVER_ENABLED = true;  // Device will provide a web interface via http://[ip]:[port]/
 boolean IS_BASIC_AUTH = false;  // Use Basic Authorization for Configuration security on Web Interface

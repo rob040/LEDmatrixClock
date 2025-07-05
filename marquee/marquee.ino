@@ -27,7 +27,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.30"
+#define VERSION "3.1.31"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
@@ -321,10 +321,11 @@ static const char CHANGE_FORM2[] PROGMEM =
   "<fieldset><legend>LED Display settings</legend>"
   "<p>Display Brightness <input class='w3-border' name='ledintensity' type='number' min='0' max='15' value='%INTY_OPT%'></p>"
   "<p>Display Width (in 8x8 pixel tiles) <input class='w3-border' name='displaywidth' type='number' min='4' max='32' value='%DTW_OPT%'></p>"
-  "<p>Wide Clock Display Format &ge; 8 tiles <select class='w3-option w3-padding' name='wideclockformat' title='Format options for Display with 8 or more tiles' $WCLKDIS$>%WCLK_OPT%</select></p>"
+  "<p>Display Format for &ge; 8 tiles <select class='w3-option w3-padding' name='wideclockformat' title='Format options for Display with 8 or more tiles' $WCLKDIS$>%WCLK_OPT%</select></p>"
   "<p>Display Scroll Speed <select class='w3-option w3-padding' name='scrollspeed'>%SCRL_OPT%</select></p>"
   "<p>Display Scrolling Data interval <input class='w3-border' name='refreshDisplay' type='number' min='1' max='10' value='%RFSH_DISP%'> (minutes)</p>"
   "<p>Data Refresh interval <select class='w3-option w3-padding' name='refresh'>%RFSH_OPT%</select> (minutes)</p>"
+  "<p><input name='sysled' class='w3-check' type='checkbox' %SYSLED_CB%> Flash System LED on WiFi activity</p>"
   "</fieldset>\n";
 
 static const char CHANGE_FORM3[] PROGMEM =
@@ -1000,6 +1001,7 @@ void handleSaveConfig() {
     SHOW_PRESSURE = server.hasArg(F("showpressure"));
     SHOW_HIGHLOW = server.hasArg(F("showhighlow"));
     isStaticDisplay = server.hasArg(F("statdisp"));
+    isSysLed = server.hasArg(F("sysled"));
     IS_METRIC = server.hasArg(F("metric"));
     marqueeMessage = decodeHtmlString(server.arg(F("marqueeMsg")));
     timeDisplayTurnsOn = decodeHtmlString(server.arg(F("startTime")));
@@ -1061,42 +1063,12 @@ void handleForgetWifi() {
   ESP.restart();
 }
 
-//void handleWideClockConfigure() {
-//  if (!authentication()) {
-//    return server.requestAuthentication();
-//  }
-//  digitalWrite(LED_ONBOARD, LED_ON);
-//
-//  server.sendHeader(F("Cache-Control"), F("no-cache, no-store"));
-//  server.sendHeader(F("Pragma"), F("no-cache"));
-//  server.sendHeader(F("Expires"), "-1");
-//  server.setContentLength(CONTENT_LENGTH_UNKNOWN);
-//  server.send(200, F("text/html"), "");
-//
-//  sendHeader();
-//
-//  if (numberOfHorizontalDisplays >= 8) {
-//    // Wide display options
-//    String form = FPSTR(WIDECLOCK_FORM);
-//    String clockOptions = F("<option value='1'>HH:MM Temperature</option><option value='2'>HH:MM:SS</option><option value='3'>HH:MM</option>");
-//    clockOptions.replace(Wide_Clock_Style + "'", Wide_Clock_Style + F("' selected"));
-//    form.replace(F("%WCLK_OPT%"), clockOptions);
-//    server.sendContent(form);
-//  }
-//
-//  sendFooter();
-//
-//  server.sendContent("");
-//  server.client().stop();
-//  digitalWrite(LED_ONBOARD, LED_OFF);
-//}
-
 #if COMPILE_NEWS
 void handleNewsConfigure() {
   if (!authentication()) {
     return server.requestAuthentication();
   }
-  digitalWrite(LED_ONBOARD, LED_ON);
+  onBoardLed(LED_ON);
 
   sendHeader();
 
@@ -1110,7 +1082,7 @@ void handleNewsConfigure() {
 
   server.sendContent("");
   server.client().stop();
-  digitalWrite(LED_ONBOARD, LED_OFF);
+  onBoardLed(LED_OFF);
 }
 #endif
 
@@ -1119,7 +1091,7 @@ void handleOctoprintConfigure() {
   if (!authentication()) {
     return server.requestAuthentication();
   }
-  digitalWrite(LED_ONBOARD, LED_ON);
+  onBoardLed(LED_ON);
 
   sendHeader();
 
@@ -1137,7 +1109,7 @@ void handleOctoprintConfigure() {
 
   server.sendContent("");
   server.client().stop();
-  digitalWrite(LED_ONBOARD, LED_OFF);
+  onBoardLed(LED_OFF);
 }
 #endif
 
@@ -1146,7 +1118,7 @@ void handlePiholeConfigure() {
   if (!authentication()) {
     return server.requestAuthentication();
   }
-  digitalWrite(LED_ONBOARD, LED_ON);
+  onBoardLed(LED_ON);
 
   sendHeader();
 
@@ -1165,7 +1137,7 @@ void handlePiholeConfigure() {
 
   server.sendContent("");
   server.client().stop();
-  digitalWrite(LED_ONBOARD, LED_OFF);
+  onBoardLed(LED_OFF);
 }
 #endif
 
@@ -1174,7 +1146,7 @@ void handleMqttConfigure() {
   if (!authentication()) {
     return server.requestAuthentication();
   }
-  digitalWrite(LED_ONBOARD, LED_ON);
+  onBoardLed(LED_ON);
 
   sendHeader();
 
@@ -1193,7 +1165,7 @@ void handleMqttConfigure() {
 
   server.sendContent("");
   server.client().stop();
-  digitalWrite(LED_ONBOARD, LED_OFF);
+  onBoardLed(LED_OFF);
 }
 #endif
 
@@ -1201,7 +1173,7 @@ void handleConfigure() {
   if (!authentication()) {
     return server.requestAuthentication();
   }
-  digitalWrite(LED_ONBOARD, LED_ON);
+  onBoardLed(LED_ON);
 
   sendHeader();
 
@@ -1239,6 +1211,7 @@ void handleConfigure() {
   options.replace(">" + minutes + "<", " selected>" + minutes + "<");
   form.replace(F("%RFSH_OPT%"), options);
   form.replace(F("%RFSH_DISP%"), String(displayScrollingInterval));
+  form.replace(F("%SYSLED_CB%"), (isSysLed) ? "checked" : "");
   // Wide display options
   //FIXME String clockOptions = F("<option value='1'>HH:MM Temperature</option><option value='2'>HH:MM:SS</option><option value='3'>HH:MM</option>");
  // NEW: 1=HH:MM, 2=HH:MM:SS, 3=HH:MM *CF, 4=HH:MM %RH, 5=mm dd HH:MM, 6=HH:MM MMDD, 7=HH:MM WwwDD
@@ -1266,7 +1239,7 @@ void handleConfigure() {
 
   server.sendContent("");
   server.client().stop();
-  digitalWrite(LED_ONBOARD, LED_OFF);
+  onBoardLed(LED_OFF);
 }
 
 void handleDisplay() {
@@ -1282,7 +1255,7 @@ void handleDisplay() {
 //***********************************************************************
 void getWeatherData() //client function to send/receive GET request data.
 {
-  digitalWrite(LED_ONBOARD, LED_ON);
+  onBoardLed(LED_ON);
   matrix.fillScreen(CLEAR); // show black
   Serial.println();
 
@@ -1339,11 +1312,11 @@ void getWeatherData() //client function to send/receive GET request data.
 
   Serial.println(F("Version: " VERSION));
   Serial.println();
-  digitalWrite(LED_ONBOARD, LED_OFF);
+  onBoardLed(LED_OFF);
 }
 
 void displayMessage(String message) {
-  digitalWrite(LED_ONBOARD, LED_ON);
+  onBoardLed(LED_ON);
 
   sendHeader();
   server.sendContent(message);
@@ -1351,7 +1324,7 @@ void displayMessage(String message) {
   server.sendContent("");
   server.client().stop();
 
-  digitalWrite(LED_ONBOARD, LED_OFF);
+  onBoardLed(LED_OFF);
 }
 
 void redirectHome() {
@@ -1406,7 +1379,7 @@ void sendFooter() {
 }
 
 void displayWeatherData() {
-  digitalWrite(LED_ONBOARD, LED_ON);
+  onBoardLed(LED_ON);
   String html;
 
   sendHeader(true);
@@ -1570,7 +1543,7 @@ void displayWeatherData() {
   sendFooter();
   server.sendContent("");
   server.client().stop();
-  digitalWrite(LED_ONBOARD, LED_OFF);
+  onBoardLed(LED_OFF);
 }
 
 void configModeCallback(WiFiManager* myWiFiManager) {
@@ -1584,15 +1557,21 @@ void configModeCallback(WiFiManager* myWiFiManager) {
   centerPrint("wifi");
 }
 
+void onBoardLed(boolean on) {
+  if (isSysLed) {
+    digitalWrite(LED_ONBOARD, on);
+  }
+}
+
 void flashLED(int number, int delayTime) {
   for (int inx = 0; inx < number; inx++) {
 #ifdef BUZZER_PIN
     tone(BUZZER_PIN, 440, delayTime);
 #endif
     delay(delayTime);
-    digitalWrite(LED_ONBOARD, LED_ON);
+    onBoardLed(LED_ON);
     delay(delayTime);
-    digitalWrite(LED_ONBOARD, LED_OFF);
+    onBoardLed(LED_OFF);
     delay(delayTime);
   }
 #ifdef BUZZER_PIN
@@ -1718,6 +1697,7 @@ void writeConfiguration() {
     f.println(F("isPM=") + String(IS_PM));
     f.println(F("isMetric=") + String(IS_METRIC));
     f.println(F("isStatDisp=") + String(isStaticDisplay));
+    f.println(F("isSysLed=") + String(isSysLed));
     f.println(F("refreshRate=") + String(refreshDataInterval));
     f.println(F("dispInterval=") + String(displayScrollingInterval));
     f.println(F("displayWidth=") + String(displayWidth));
@@ -1849,6 +1829,9 @@ void readConfiguration() {
     }
     if ((idx = line.indexOf(F("isStatDisp="))) >= 0) {
       isStaticDisplay = line.substring(idx + 11).toInt();
+    }
+    if ((idx = line.indexOf(F("isSysLed="))) >= 0) {
+      isSysLed = line.substring(idx + 9).toInt();
     }
     if ((idx = line.indexOf(F("refreshRate="))) >= 0) {
       refreshDataInterval = line.substring(idx + 12).toInt();

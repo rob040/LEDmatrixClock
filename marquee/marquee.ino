@@ -27,7 +27,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.28"
+#define VERSION "3.1.29"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
@@ -261,9 +261,6 @@ static const char WEB_ACTIONS1[] PROGMEM =
   #if COMPILE_OCTOPRINT
   "<a class='w3-bar-item w3-button' href='/configureoctoprint'><i class='fas fa-cube'></i> OctoPrint</a>"
   #endif
-  ;
-
-static const char WEB_ACTIONS2[] PROGMEM =
   #if COMPILE_PIHOLE
   "<a class='w3-bar-item w3-button' href='/configurepihole'><i class='fas fa-network-wired'></i> Pi-hole</a>"
   #endif
@@ -272,6 +269,11 @@ static const char WEB_ACTIONS2[] PROGMEM =
   #endif
   "<a class='w3-bar-item w3-button' href='/pull'><i class='fas fa-cloud-download-alt'></i> Refresh Data</a>"
   "<a class='w3-bar-item w3-button' href='/display'>";
+
+static const char WEB_ACTIONS2_on[] PROGMEM =
+  "<i class='fas fa-eye-slash'></i> Turn Display OFF";
+static const char WEB_ACTIONS2_off[] PROGMEM =
+  "<i class='fas fa-eye'></i> Turn Display ON";
 
 static const char WEB_ACTION3[] PROGMEM =
   "</a><a class='w3-bar-item w3-button' href='/systemreset' onclick='return confirm(\"Do you want to reset to default weather settings?\")'>"
@@ -290,7 +292,7 @@ static const char CHANGE_FORM1[] PROGMEM =
   "<input class='w3-input w3-border' type='text' name='city' value='%CITY%' onkeypress='return isNumberKey(event)'></p>"
   "</fieldset>\n"
   "<fieldset><legend>LED Display scrolling data options</legend>"
-  "<p><input name='showtemp' class='w3-check' type='checkbox' checked disabled> Display Temperature (always on)</p>"
+  "<p><input name='showtemp' class='w3-check' type='checkbox' %TEMP_CB%> Display Temperature</p>"
   "<p><input name='showdate' class='w3-check' type='checkbox' %DATE_CB%> Display Date</p>"
   "<p><input name='showcity' class='w3-check' type='checkbox' %CITY_CB%> Display City Name</p>"
   "<p><input name='showhighlow' class='w3-check' type='checkbox' %HILO_CB%> Display Current High/Low Temperatures</p>"
@@ -658,7 +660,9 @@ void loop() {
       if (SHOW_CITY) {
         msg += weatherClient.getCity() + "  ";
       }
-      msg += temperature + getTempSymbol() + "  ";
+      if (SHOW_TEMPERATURE) {
+        msg += temperature + getTempSymbol() + "  ";
+      }
 
       //show high/low temperature
       if (SHOW_HIGHLOW) {
@@ -716,25 +720,28 @@ void loop() {
         msg += String(mqttClient.getLastMqttMessage());
       }
       #endif
-
-      if ((int)(msg.length()-2) <= ((displayWidth * 8) / 6)) {
-        msg.trim(); // remove 2 trailing spaces
-        // msg fits on one screen : no scroll necessary
-        matrix.fillScreen(CLEAR);
-        centerPrint(msg, true);
-        // show msg for 5 seconds every minute at default scroll speed
-        for (int i = 0; i < 200; i++) {
-          delay(displayScrollSpeed);
-          if (WEBSERVER_ENABLED) {
-            server.handleClient();
+      String static_msg = msg;
+      static_msg.trim();
+      if ((int)(static_msg.length()) > 0) {
+        if ((int)(static_msg.length()) <= ((displayWidth * 8) / 6)) {
+          // msg fits on one screen : no scroll necessary
+          matrix.fillScreen(CLEAR);
+          centerPrint(static_msg, true);
+          // show msg for 5 seconds every minute at default scroll speed
+          for (int i = 0; i < 200; i++) {
+            delay(displayScrollSpeed);
+            if (WEBSERVER_ENABLED) {
+              server.handleClient();
+            }
+            if (ENABLE_OTA) {
+              ArduinoOTA.handle();
+            }
           }
-          if (ENABLE_OTA) {
-            ArduinoOTA.handle();
-          }
+          //return;
+        } else {
+          scrollMessage(msg);
         }
-        return;
       }
-      scrollMessage(msg);
       #if COMPILE_PIHOLE
       drawPiholeGraph();
       #endif
@@ -949,6 +956,7 @@ void handleSaveConfig() {
     flashOnSeconds = server.hasArg(F("flashseconds")); // means blinking ":" on clock
     IS_24HOUR = server.hasArg(F("is24hour"));
     IS_PM = server.hasArg(F("isPM"));
+    SHOW_TEMPERATURE = server.hasArg(F("showtemp"));
     SHOW_DATE = server.hasArg(F("showdate"));
     SHOW_CITY = server.hasArg(F("showcity"));
     SHOW_CONDITION = server.hasArg(F("showcondition"));
@@ -1166,6 +1174,7 @@ void handleConfigure() {
   form.replace(F("%CTYNM%"), (weatherClient.getCity() != "") ? weatherClient.getCity() + ", " + weatherClient.getCountry() : "");
   form.replace(F("%CITY%"), String(CityID));
   form.replace(F("%MSG%"), marqueeMessage);
+  form.replace(F("%TEMP_CB%"), (SHOW_TEMPERATURE) ? "checked" : "");
   form.replace(F("%DATE_CB%"), (SHOW_DATE) ? "checked" : "");
   form.replace(F("%CITY_CB%"), (SHOW_CITY) ? "checked" : "");
   form.replace(F("%COND_CB%"), (SHOW_CONDITION) ? "checked" : "");
@@ -1338,16 +1347,7 @@ void sendHeader(boolean isMainPage) {
   server.sendContent(html);
 
   server.sendContent(FPSTR(WEB_ACTIONS1));
-  //Serial.println("Displays: " + String(displayWidth));
-//  if (displayWidth >= 8) {
-//    server.sendContent(F("<a class='w3-bar-item w3-button' href='/configurewideclock'><i class='far fa-clock'></i> Wide Clock</a>"));
-//  }
-  server.sendContent(FPSTR(WEB_ACTIONS2));
-  if (displayOn) {
-    server.sendContent(F("<i class='fas fa-eye-slash'></i> Turn Display OFF"));
-  } else {
-    server.sendContent(F("<i class='fas fa-eye'></i> Turn Display ON"));
-  }
+  server.sendContent(FPSTR((displayOn)? WEB_ACTIONS2_on:WEB_ACTIONS2_off));
   server.sendContent(FPSTR(WEB_ACTION3));
 
   server.sendContent(FPSTR(WEB_BODY2));
@@ -1708,6 +1708,7 @@ void writeConfiguration() {
     f.println(F("SHOW_PRESSURE=") + String(SHOW_PRESSURE));
     f.println(F("SHOW_HIGHLOW=") + String(SHOW_HIGHLOW));
     f.println(F("SHOW_DATE=") + String(SHOW_DATE));
+    f.println(F("SHOW_TEMP=") + String(SHOW_TEMPERATURE));
     #if COMPILE_PIHOLE
     f.println(F("USE_PIHOLE=") + String(USE_PIHOLE));
     f.println(F("PiHoleServer=") + PiHoleServer);
@@ -1911,6 +1912,9 @@ void readConfiguration() {
     }
     if ((idx = line.indexOf(F("SHOW_DATE="))) >= 0) {
       SHOW_DATE = line.substring(idx + 10).toInt();
+    }
+    if ((idx = line.indexOf(F("SHOW_TEMP="))) >= 0) {
+      SHOW_TEMPERATURE = line.substring(idx + 10).toInt();
     }
     #if COMPILE_PIHOLE
     if ((idx = line.indexOf(F("USE_PIHOLE="))) >= 0) {

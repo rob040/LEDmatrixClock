@@ -114,6 +114,7 @@ String marqueeMessage = "";
 
 // (some) Default Weather Settings
 //FIXME TODO: do not use uppercase for variables
+boolean SHOW_TEMPERATURE = true;
 boolean SHOW_DATE = false;
 boolean SHOW_CITY = true;
 boolean SHOW_CONDITION = true;

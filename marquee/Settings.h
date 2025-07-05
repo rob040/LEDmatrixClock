@@ -35,6 +35,20 @@ SOFTWARE.
  * the Web Interface.
  ******************************************************************************/
 
+//Compilation options (can also be set as compiler commandline define)
+#ifndef COMPILE_NEWS
+#define COMPILE_NEWS 0  // this newsservice is not free but rather expensive to use
+#endif
+#ifndef COMPILE_PIHOLE
+#define COMPILE_PIHOLE 1 // current implementation does not work anymore, needs updating
+#endif
+#ifndef COMPILE_OCTOPRINT
+#define COMPILE_OCTOPRINT 1  // unsure if it works, untested
+#endif
+#ifndef COMPILE_MQTT
+#define COMPILE_MQTT 1  // tried and tested
+#endif
+
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPUpdateServer.h>
@@ -50,10 +64,18 @@ SOFTWARE.
 #include "OpenWeatherMapClient.h"
 #include "TimeNTP.h"
 #include "TimeStr.h"
+#if COMPILE_NEWS
 #include "NewsApiClient.h"
+#endif
+#if COMPILE_OCTOPRINT
 #include "OctoPrintClient.h"
+#endif
+#if COMPILE_PIHOLE
 #include "PiHoleClient.h"
+#endif
+#if COMPILE_MQTT
 #include "MqttClient.h"
+#endif
 
 //******************************
 // Hard(-ware related) settings
@@ -128,13 +150,16 @@ int wideClockStyle = 1; // 1=HH:MM, 2=HH:MM:SS, 3=HH:MM *CF, 4=HH:MM %RH, 5=mm d
 #define  WIDE_CLOCK_STYLE_LAST      WIDE_CLOCK_STYLE_HHMM_WWWDD
 #define  WIDE_CLOCK_STYLE_FIRST     WIDE_CLOCK_STYLE_HHMM
 
+#if COMPILE_NEWS
 boolean NEWS_ENABLED = false;
 String NEWS_API_KEY = ""; // Get your News API Key from https://newsapi.org
 String NEWS_SOURCE = "reuters";  // https://newsapi.org/sources to get full list of news sources available
+#endif
 
 String timeDisplayTurnsOn = "06:30";  // 24 Hour Format HH:MM -- Leave blank for always on. (ie 05:30)
 String timeDisplayTurnsOff = "23:00"; // 24 Hour Format HH:MM -- Leave blank for always on. Both must be set to work.
 
+#if COMPILE_OCTOPRINT
 // OctoPrint Monitoring -- Monitor your 3D printer OctoPrint Server
 boolean OCTOPRINT_ENABLED = false;
 boolean OCTOPRINT_PROGRESS = true;
@@ -143,21 +168,26 @@ String OctoPrintServer = "";  // IP or Address of your OctoPrint Server (DO NOT 
 int OctoPrintPort = 80;       // the port you are running your OctoPrint server on (usually 80);
 String OctoAuthUser = "";     // only used if you have HAproxy or basic authentication turned on (not default)
 String OctoAuthPass = "";     // only used with HAproxy or basic auth (only needed if you must authenticate)
+#endif
 
+#if COMPILE_PIHOLE
 // Pi-hole Client -- monitor basic stats from your Pi-hole server (see http://pi-hole.net)
 boolean USE_PIHOLE = false;   // Set true to display your Pi-hole details
 String PiHoleServer = "";     // IP or Address only (DO NOT include http://)
 int PiHolePort = 80;          // Port of your Pi-hole address (default 80)
 String PiHoleApiKey = "";   // Optional -- only needed to see top blocked clients
+#endif
 
+#if COMPILE_MQTT
 // Mqtt add scrolling messages with Mqtt
 boolean USE_MQTT = false;             // Set true to display mqtt messages
 String MqttServer = "";               // IP or Address only (DO NOT include http://)
 int MqttPort = 1883;                  // Port of your mqtt server (default 1883)
 String MqttTopic = "display/message"; // Topic on which to listen
 String  MqttAuthUser, MqttAuthPass;   // mqtt server authentication
+#endif
 
-boolean ENABLE_OTA = true;    // this will allow you to load firmware to the device over WiFi (see OTA for ESP8266)
+const boolean ENABLE_OTA = true;    // this will allow you to load firmware to the device over WiFi (see OTA for ESP8266)
 String OTA_Password = "";     // Set an OTA password here -- leave blank if you don't want to be prompted for password
 
 //blue-grey

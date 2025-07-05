@@ -63,8 +63,25 @@ void OpenWeatherMapClient::updateWeather() {
 
   Serial.println(F("Waiting for data"));
 
-//TODO: add timeout, we don't want to wait forever
-  while(weatherClient.connected() && !weatherClient.available()) delay(1); //waits for data
+  // Wait for data, with timeout
+  uint32_t start = millis();
+  const int timeout_ms = 2000;
+  while (weatherClient.connected() &&
+        !weatherClient.available() &&
+        ((millis()-start) < timeout_ms))
+  {
+          delay(1); //waits for data
+  }
+  if ((millis()-start) > timeout_ms) {
+    errorMsg = F("TIMEOUT on weatherClient data receive");
+    Serial.println(errorMsg);
+    cached = false;
+    return;
+  }
+  //else { //FIXME DEBUG
+  //  Serial.print("Wait for data took ");
+  //  Serial.println((millis()-start));
+  //}
 
   // Check HTTP status
   char status[32] = {0};
@@ -145,19 +162,19 @@ void OpenWeatherMapClient::updateWeather() {
 
 #if 1 //DEBUG
   Serial.println(F("Weather data:"));
-  Serial.print(F("lat: ")); Serial.println(lat);
-  Serial.print(F("lon: ")); Serial.println(lon);
+  //Serial.print(F("lat: ")); Serial.println(lat);
+  //Serial.print(F("lon: ")); Serial.println(lon);
   Serial.print(F("reportTimestamp: ")); Serial.println(reportTimestamp);
-  Serial.print(F("city: ")); Serial.println(city);
-  Serial.print(F("country: ")); Serial.println(country);
+  //Serial.print(F("city: ")); Serial.println(city);
+  //Serial.print(F("country: ")); Serial.println(country);
   Serial.print(F("temperature: ")); Serial.println(temperature);
   Serial.print(F("humidity: ")); Serial.println(humidity);
-  Serial.print(F("weatherCondition: ")); Serial.println(weatherCondition);
   Serial.print(F("wind: ")); Serial.println(windSpeed);
   Serial.print(F("windDirection: ")); Serial.println(windDirection);
-  Serial.print(F("weatherId: ")); Serial.println(weatherId);
+  //Serial.print(F("weatherId: ")); Serial.println(weatherId);
+  Serial.print(F("weatherCondition: ")); Serial.println(weatherCondition);
   Serial.print(F("weatherDescription: ")); Serial.println(weatherDescription);
-  Serial.print(F("icon: ")); Serial.println(icon);
+  //Serial.print(F("icon: ")); Serial.println(icon);
   Serial.print(F("timezone: ")); Serial.println(getTimeZone());
   Serial.println();
 #endif

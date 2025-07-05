@@ -71,67 +71,65 @@ void OpenWeatherMapClient::updateWeather() {
   weatherClient.readBytesUntil('\r', status, sizeof(status));
   Serial.println(F("Response Header: ") + String(status));
   if (strcmp(status, "HTTP/1.1 200 OK") != 0) {
-    Serial.print(F("Unexpected response: "));
-    Serial.println(status);
+    errorMsg = F("Unexpected response: ") + String(status);
+    Serial.println(errorMsg);
     cached = false;
-    errorMsg = F("Weather Data Error: ") + String(status);
     return;
   }
 
   // Skip HTTP headers
   char endOfHeaders[] = "\r\n\r\n";
   if (!weatherClient.find(endOfHeaders)) {
-    Serial.println(F("Invalid response"));
+    errorMsg = F("Invalid response endOfHeaders");
+    Serial.println(errorMsg);
     cached = false;
     return;
   }
 
-  //todo: move to ArduinoJson v7, should be simple!
-  const size_t bufferSize = 2710;
-  DynamicJsonBuffer jsonBuffer(bufferSize);
-
   // Parse JSON object
-  JsonObject& root = jsonBuffer.parseObject(weatherClient);
-  if (!root.success()) {
-    Serial.println(F("Weather Data Parsing failed!"));
+  JsonDocument jdoc;
+  DeserializationError error = deserializeJson(jdoc, weatherClient);
+  if (error) {
     errorMsg = F("Weather Data Parsing failed!");
+    Serial.println(errorMsg);
     cached = false;
     return;
   }
 
   weatherClient.stop(); //stop client
 
-  if (root.measureLength() <= 150) {
-    Serial.println(F("Error Does not look like we got the data.  Size: ") + String(root.measureLength()));
+  //TODO: check: does this fit the "unautorized access" reply?
+  if (int len = measureJson(jdoc) <= 150) {
+    Serial.println(F("Error Does not look like we got the data.  Size: ") + String(len));
+    errorMsg = F("Error: ") + jdoc[F("message")].as<String>();
+    Serial.println(errorMsg);
     cached = false;
-    errorMsg = (const char*)root[F("message")];
-    Serial.println(F("Error: ") + errorMsg);
     return;
   }
 
 
-  lat = root["coord"]["lat"];
-  lon = root["coord"]["lon"];
-  reportTimestamp = root["dt"];
-  city = (const char*)root["name"];
-  country = (const char*)root["sys"]["country"];
-  temperature = root["main"]["temp"];
-  humidity = root["main"]["humidity"];
-  weatherId = root["weather"][0]["id"];
-  weatherCondition = (const char*)root["weather"][0]["main"];
-  weatherDescription = (const char*)root["weather"][0]["description"];
-  icon = (const char*)root["weather"][0]["icon"];
-  pressure = root["main"]["grnd_level"];
+  lat = jdoc["coord"]["lat"];
+  lon = jdoc["coord"]["lon"];
+  reportTimestamp = jdoc["dt"];
+  city = jdoc["name"].as<String>();
+  country = jdoc["sys"]["country"].as<String>();
+  temperature = jdoc["main"]["temp"];
+  humidity = jdoc["main"]["humidity"];
+  weatherId = jdoc["weather"][0]["id"];
+  weatherCondition = jdoc["weather"][0]["main"].as<String>();
+  weatherDescription = jdoc["weather"][0]["description"].as<String>();
+  icon = jdoc["weather"][0]["icon"].as<String>();
+  pressure = jdoc["main"]["grnd_level"];
   if (pressure == 0) // no local ground level pressure? then get main pressure (at sea level)
-    pressure = root["main"]["pressure"];
-  windSpeed = root["wind"]["speed"];
-  windDirection = root["wind"]["deg"];
-  cloudCoverage = root["clouds"]["all"];
-  tempHigh = root["main"]["temp_max"];
-  tempLow = root["main"]["temp_min"];
-  timeZone = root["timezone"];
-  sunRise = root["sys"]["sunrise"];
-  sunSet = root["sys"]["sunset"];
+    pressure = jdoc["main"]["pressure"];
+  windSpeed = jdoc["wind"]["speed"];
+  windDirection = jdoc["wind"]["deg"];
+  cloudCoverage = jdoc["clouds"]["all"];
+  tempHigh = jdoc["main"]["temp_max"];
+  tempLow = jdoc["main"]["temp_min"];
+  timeZone = jdoc["timezone"];
+  sunRise = jdoc["sys"]["sunrise"];
+  sunSet = jdoc["sys"]["sunset"];
 
   if (isMetric) {
     // convert m/s to kmh
@@ -146,15 +144,16 @@ void OpenWeatherMapClient::updateWeather() {
   }
 
 #if 1 //DEBUG
-  //Serial.print(F("lat: ")); Serial.println(lat);
-  //Serial.print(F("lon: ")); Serial.println(lon);
+  Serial.println(F("Weather data:"));
+  Serial.print(F("lat: ")); Serial.println(lat);
+  Serial.print(F("lon: ")); Serial.println(lon);
   Serial.print(F("reportTimestamp: ")); Serial.println(reportTimestamp);
-  //Serial.print(F("city: ")); Serial.println(city);
-  //Serial.print(F("country: ")); Serial.println(country);
+  Serial.print(F("city: ")); Serial.println(city);
+  Serial.print(F("country: ")); Serial.println(country);
   Serial.print(F("temperature: ")); Serial.println(temperature);
   Serial.print(F("humidity: ")); Serial.println(humidity);
   Serial.print(F("weatherCondition: ")); Serial.println(weatherCondition);
-  //Serial.print(F("wind: ")); Serial.println(windSpeed);
+  Serial.print(F("wind: ")); Serial.println(windSpeed);
   Serial.print(F("windDirection: ")); Serial.println(windDirection);
   Serial.print(F("weatherId: ")); Serial.println(weatherId);
   Serial.print(F("weatherDescription: ")); Serial.println(weatherDescription);

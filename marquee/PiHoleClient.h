@@ -24,7 +24,7 @@ SOFTWARE.
 #pragma once
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
-#include "libs/ArduinoJson/ArduinoJson.h"
+#include <ArduinoJson.h>
 
 class PiHoleClient {
 
@@ -47,6 +47,7 @@ private:
 
   ClientBlocked blockedClients[3];
 
+  // TODO: check if "String" is sensible type for all parameters
   typedef struct {
     String domains_being_blocked;
     String dns_queries_today;

@@ -23,7 +23,7 @@ SOFTWARE.
 
 #pragma once
 #include <ESP8266WiFi.h>
-#include "libs/ArduinoJson/ArduinoJson.h"
+#include <ArduinoJson.h>
 
 class OpenWeatherMapClient {
 

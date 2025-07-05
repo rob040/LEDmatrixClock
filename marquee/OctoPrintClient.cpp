@@ -110,26 +110,25 @@ void OctoPrintClient::getPrinterJobResults() {
     return;
   }
 
-  const size_t bufferSize = JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + 2*JSON_OBJECT_SIZE(5) + JSON_OBJECT_SIZE(6) + 710;
-  DynamicJsonBuffer jsonBuffer(bufferSize);
-
   // Parse JSON object
-  JsonObject& root = jsonBuffer.parseObject(printClient);
-  if (!root.success()) {
+  JsonDocument jdoc;
+  DeserializationError error = deserializeJson(jdoc, printClient);
+  if (error) {
     Serial.println(F("OctoPrint Data Parsing failed!"));
     return;
   }
 
-  printerData.averagePrintTime = (const char*)root["job"]["averagePrintTime"];
-  printerData.estimatedPrintTime = (const char*)root["job"]["estimatedPrintTime"];
-  printerData.fileName = (const char*)root["job"]["file"]["name"];
-  printerData.fileSize = (const char*)root["job"]["file"]["size"];
-  printerData.lastPrintTime = (const char*)root["job"]["lastPrintTime"];
-  printerData.progressCompletion = (const char*)root["progress"]["completion"];
-  printerData.progressFilepos = (const char*)root["progress"]["filepos"];
-  printerData.progressPrintTime = (const char*)root["progress"]["printTime"];
-  printerData.progressPrintTimeLeft = (const char*)root["progress"]["printTimeLeft"];
-  printerData.state = (const char*)root["state"];
+  // TODO: check if "String" is sensible type for all parameters
+  printerData.averagePrintTime = jdoc["job"]["averagePrintTime"].as<String>();
+  printerData.estimatedPrintTime = jdoc["job"]["estimatedPrintTime"].as<String>();
+  printerData.fileName = jdoc["job"]["file"]["name"].as<String>();
+  printerData.fileSize = jdoc["job"]["file"]["size"].as<String>();
+  printerData.lastPrintTime = jdoc["job"]["lastPrintTime"].as<String>();
+  printerData.progressCompletion = jdoc["progress"]["completion"].as<String>();
+  printerData.progressFilepos = jdoc["progress"]["filepos"].as<String>();
+  printerData.progressPrintTime = jdoc["progress"]["printTime"].as<String>();
+  printerData.progressPrintTimeLeft = jdoc["progress"]["printTimeLeft"].as<String>();
+  printerData.state = jdoc["state"].as<String>();
 
   if (isPrinting()) {
     Serial.println("Status: " + printerData.state + " " + printerData.fileName + "(" + printerData.progressCompletion + "%)");

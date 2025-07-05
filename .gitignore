@@ -2,6 +2,7 @@
 .vscode
 binaries
 logs
+marquee.ino.cpp
 *.bak
 *.log
 *.???-

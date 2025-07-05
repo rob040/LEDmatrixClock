@@ -63,33 +63,32 @@ void PiHoleClient::getPiHoleData(const String &server, int port, const String &a
     return;
   }
 
-  const size_t bufferSize = 2*JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(17) + 470;
-  DynamicJsonBuffer jsonBuffer(bufferSize);
-
   // Parse JSON object
-  JsonObject& root = jsonBuffer.parseObject(response);
-  if (!root.success()) {
+  JsonDocument jdoc;
+  DeserializationError error = deserializeJson(jdoc, response);
+  if (error) {
     errorMessage = "Data Summary Parsing failed: " + apiGetData;
     Serial.println(errorMessage);
     return;
   }
 
-  piHoleData.domains_being_blocked = (const char*)root["domains_being_blocked"];
-  piHoleData.dns_queries_today = (const char*)root["dns_queries_today"];
-  piHoleData.ads_blocked_today = (const char*)root["ads_blocked_today"];
-  piHoleData.ads_percentage_today = (const char*)root["ads_percentage_today"];
-  piHoleData.unique_domains = (const char*)root["unique_domains"];
-  piHoleData.queries_forwarded = (const char*)root["queries_forwarded"];
-  piHoleData.queries_cached = (const char*)root["queries_cached"];
-  piHoleData.clients_ever_seen = (const char*)root["clients_ever_seen"];
-  piHoleData.unique_clients = (const char*)root["unique_clients"];
-  piHoleData.dns_queries_all_types = (const char*)root["dns_queries_all_types"];
-  piHoleData.reply_NODATA = (const char*)root["reply_NODATA"];
-  piHoleData.reply_NXDOMAIN = (const char*)root["reply_NXDOMAIN"];
-  piHoleData.reply_CNAME = (const char*)root["reply_CNAME"];
-  piHoleData.reply_IP = (const char*)root["reply_IP"];
-  piHoleData.privacy_level = (const char*)root["privacy_level"];
-  piHoleData.piHoleStatus = (const char*)root["status"];
+  // TODO: check if "String" is sensible type for all parameters
+  piHoleData.domains_being_blocked = jdoc["domains_being_blocked"].as<String>();
+  piHoleData.dns_queries_today = jdoc["dns_queries_today"].as<String>();
+  piHoleData.ads_blocked_today = jdoc["ads_blocked_today"].as<String>();
+  piHoleData.ads_percentage_today = jdoc["ads_percentage_today"].as<String>();
+  piHoleData.unique_domains = jdoc["unique_domains"].as<String>();
+  piHoleData.queries_forwarded = jdoc["queries_forwarded"].as<String>();
+  piHoleData.queries_cached = jdoc["queries_cached"].as<String>();
+  piHoleData.clients_ever_seen = jdoc["clients_ever_seen"].as<String>();
+  piHoleData.unique_clients = jdoc["unique_clients"].as<String>();
+  piHoleData.dns_queries_all_types = jdoc["dns_queries_all_types"].as<String>();
+  piHoleData.reply_NODATA = jdoc["reply_NODATA"].as<String>();
+  piHoleData.reply_NXDOMAIN = jdoc["reply_NXDOMAIN"].as<String>();
+  piHoleData.reply_CNAME = jdoc["reply_CNAME"].as<String>();
+  piHoleData.reply_IP = jdoc["reply_IP"].as<String>();
+  piHoleData.privacy_level = jdoc["privacy_level"].as<String>();
+  piHoleData.piHoleStatus = jdoc["status"].as<String>();
 
   Serial.println("Pi-Hole Status: " + piHoleData.piHoleStatus);
   Serial.println("Todays Percentage Blocked: " + piHoleData.ads_percentage_today);
@@ -132,22 +131,20 @@ void PiHoleClient::getTopClientsBlocked(const String &server, int port, const St
     return;
   }
 
-  const size_t bufferSize = JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(3) + 70;
-  DynamicJsonBuffer jsonBuffer(bufferSize);
-
   // Parse JSON object
-  JsonObject& root = jsonBuffer.parseObject(response);
-  if (!root.success()) {
+  JsonDocument jdoc;
+  DeserializationError error = deserializeJson(jdoc, response);
+  if (error) {
     errorMessage = "Data Parsing failed -- verify your Pi-hole API key.";
     Serial.println(errorMessage);
     return;
   }
 
-  JsonObject& blocked = root["top_sources_blocked"];
+  JsonObject blocked = jdoc["top_sources_blocked"];
   int count = 0;
   for (JsonPair p : blocked) {
-    blockedClients[count].clientAddress = (const char*)p.key;
-    blockedClients[count].blockedCount = p.value.as<int>();
+    blockedClients[count].clientAddress = p.key().c_str();
+    blockedClients[count].blockedCount = p.value().as<int>();
     Serial.println("Blocked Client " + String(count+1) + ": " + blockedClients[count].clientAddress + " (" + String(blockedClients[count].blockedCount) + ")");
     count++;
   }

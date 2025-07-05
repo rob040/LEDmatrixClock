@@ -40,7 +40,7 @@ SOFTWARE.
 #define COMPILE_NEWS 0  // this newsservice is not free but rather expensive to use
 #endif
 #ifndef COMPILE_PIHOLE
-#define COMPILE_PIHOLE 1 // current implementation does not work anymore, needs updating
+#define COMPILE_PIHOLE 0 // current implementation does not work anymore, needs updating
 #endif
 #ifndef COMPILE_OCTOPRINT
 #define COMPILE_OCTOPRINT 1  // unsure if it works, untested

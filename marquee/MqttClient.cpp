@@ -24,13 +24,6 @@ SOFTWARE.
 
 #include "MqttClient.h"
 
-/* TODO: for mqtt server login name + password, use like:
-  if (client.connect("arduinoClient", "testuser", "testpass")) {
-    client.publish("outTopic","hello world");
-    client.subscribe("inTopic");
-  }
-*/
-
 WiFiClient wclient;
 
 char lastMqttMessage[128];

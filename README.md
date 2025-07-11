@@ -1,4 +1,4 @@
-# LED Matrix Clock a.k.a. Marquee Scroller (Clock, Weather, News, and More)
+# LED Matrix Clock a.k.a. Marquee Scroller (Clock, Weather, and More)
 
 ## NOTICE
 This fork enhances the Qrome Marquee Scroller version 3.03 from february 2023, that was developed during 2018-2022 period.
@@ -12,8 +12,8 @@ Read the [feature enhancements below](#feature-enhancements)
 * Accurate Clock refresh from Internet Time Servers
 * Display Local Weather and conditions (refreshed every 10 - 30 minutes, configurable)
 * <del>Display News Headlines from all the major sources</del> -- removed, not free, see #1
-* <del>Display 3D print progress from your OctoPrint Server</del> -- removed, until upgrade available
-* Display Pi-hole status and graph (each pixel across is 10 minutes)
+* <del>Display 3D print progress from your OctoPrint Server</del> -- removed, not well suited for scrolling text display; better use [Qrome printer monitor with 128x64 pixel OLED display](https://github.com/Qrome/printer-monitor)
+* <del>Display Pi-hole status and graph (each pixel across is 10 minutes)</del> -- removed, does not work, needs upgrade, not well suited for scrolling text display; better use [Qrome Pi-hole monitor with 128x64 pixel OLED display](https://github.com/Qrome/Pi-hole-Monitor)
 * Configured through Web Interface
 * Basic Authorization to access Configuration web interface
 * Update firmware through web interface over WiFi (OTA)
@@ -40,25 +40,30 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 * Support for different display sizes without re-compilation, via configuration page (device will reboot upon change).
 * Using the 'LittleFS' filesystem in stead of the depecated 'SPIFFS' filesystem
 * Using ArduinoJson upgraded to version 7
+* Webpage now has switchable dark-mode view
+* Webpage now has switchable automatic page update
+* Instead of scrolling text, there is also a static display mode for short messages, date, temperature or humidity only next to the time display.
+*
 
 
 ### known issues
-* web-page updates halts scrolling display for a moment
-* optional Pi-Hole, OctoPi remain untested and may not work properly.
+* Webpage update does halt the scrolling display for a moment. This cannot be prevented, only shortened with optimizations, such as reduction of 'String' usage.
+* Scrolling text appears to have some 'flex' in it, due to variations in display data update. This is being worked on.
+* When using the LED display at lowest intensity, some pixel flicker might be visible. It varies with display module HW. This is being worked on.
 
 
 ## Required Parts:
 * Wemos D1 Mini ESP8266: https://amzn.to/3tMl81U
 * LED Dot Matrix Module: https://amzn.to/2HtnQlD
 
-Note: Using the links provided here help to support [Qrome](https://github.com/Qrome) for his efforts. Thank you for the support.
+**Note:** Using the links provided here help to support [Qrome](https://github.com/Qrome) for his efforts. Thank you for the support.
 
 ## Wiring for the Wemos D1 Mini to the LED Dot Matrix Display
 
-| LED | D1 mini |
-| --- | --- |
-| VCC | 5V+       |
-| GND | GND-      |
+| LED | D1 mini   |
+| --- | ---       |
+| VCC | 5V        |
+| GND | G (GND)   |
 | CLK | D5 (SCK)  |
 | CS  | D6        |
 | DIN | D7 (MOSI) |
@@ -67,6 +72,8 @@ The Connections in a picture:
 <p align="left" title="Wires from D1-mini to LED display">
   <img src="/images/marquee_scroller_pins.png" width="400"/>
 </p>
+Be aware that the display in above picture is actually upside-down; when viewed from front, the data input DIN is at the right hand side; the text on the PCB is usually upside-down.
+
 
 ## 3D Printed Case by David Payne:
 Original Single Panel version: https://www.thingiverse.com/thing:2867294 <br>
@@ -99,7 +106,7 @@ Double Wide LED version: https://www.thingiverse.com/thing:2989552
 
 ## Compiling and Loading to Wemos D1 Mini (ESP8266)
 ### Using Arduino 2.x IDE
-It is NOT recommended to use Arduino IDE. It might be difficult to get the right library versions together, especially when using it also for other Arduino projects.<br>
+It is no longer recommended to use the Arduino IDE. It might be difficult to get the right library versions together, especially when using it also for other Arduino projects.<br>
 Still, the source directory structure is kept such that this project can be build with little to no effort. This might change in the future.
 * Support for ESP8266 Boards is included in Arduino v2.x
 * Select Board:  "ESP8266" --> "LOLIN(WEMOS) D1 R2 & mini"
@@ -120,36 +127,34 @@ Use the Arduino guide for details on how to installing and manage libraries http
 ## Building with PlatformIO.
 Use [**VScode**](https://code.visualstudio.com/docs) with [**PlatformIO**](https://platformio.org/) or better, its desendant fork [**PIOarduino**](https://marketplace.visualstudio.com/items?itemName=pioarduino.pioarduino-ide) extension.
 
-Please refer to the links on how to install VScode on your OS.
+Please refer to the provided links on how to install VScode on your OS.
 
 Then, open this project with `Visual Studio Code`, via File --> Open Folder: select folder containing `platformio.ini` file.
 
 The `platformio.ini` file contains the references to the required external libraries and version numbers.
 
-To build, open the `pioarduino` or `platformio` extension (left hand side icon), then under *PROJECT TASKS* -> *Default* -> *General* : select **Build** and then **Upload**
+To build, open the `pioarduino` or `platformio` extension (icon on left hand side bar), then under *PROJECT TASKS* -> *Default* -> *General* : select **Build** and then **Upload**
 
 ## Initial Configuration
 Editing the **Settings.h** file is totally optional and not required.
-All API Keys are managed in the Web Interface.
-It is not required to edit the Settings.h file and re-compiling the code.
+All settings and API Keys are managed from the Web Interface.
 * Open Weather Map free service API key: http://openweathermap.org/  -- this is used to get weather data and the current time zone from the selected City. This API key is required for correct time.
 * <del>TimeZoneDB free registration for API key: https://timezonedb.com/register -- this is used for setting the time and getting the correct time zone as well as managing time changes due to Day Light Savings time by regions.  This key is set and managed only through the web interface. TimeZoneDB key is required for correct time display.</del><br> This is no longer needed nor requested!
-* Your OctoPrint API Key -- optional if you use the OctoPrint status.
-* Your Pi-hole API Key -- optional if you use the Pi-hole status.
-* Supports Chained 4x1 LED matrix displays -- configure up to 16x1 in the Settings.h file.
+* <del>Your OctoPrint API Key -- optional if you use the OctoPrint status.</del> This function has been removed, see above.
+* <del>Your Pi-hole API Key -- optional if you use the Pi-hole status.</del> This function has been removed, see above.
 
-NOTE: The settings in the Settings.h are the default settings for the first loading. After loading you will manage changes to the settings via the Web Interface. If you want to change settings again in the settings.h, you will need to erase the file system on the Wemos or use the “Reset Settings” option in the Web Interface.
+**NOTE:** The settings in the Settings.h are the default settings for the first loading. After loading you will manage changes to the settings via the Web Interface. If you want to change settings again in the settings.h, you will need to erase the file system on the Wemos or use the `Reset Settings` option in the Web Interface.
 
 ## Web Interface
-The Marquee Scroller uses the **WiFiManager** so when it can't find the last network it was connected to
-it will become a **Access Point Hotspot** -- connect to it with your phone at http://192.168.4.1/ and you can then enter your WiFi connection information.
+The Marquee Scroller uses the **WiFiManager** so when it can't find the last network it was connected to,
+it will become an **Access Point Hotspot** -- connect to it with your phone at http://192.168.4.1/ and you can then enter your WiFi connection information.
 
 After connected to your WiFi network it will display the IP address assigned to it and that can be
 used to open a browser to the Web Interface.  You will be able to manage your API Keys through the web interface.
 
 The default user / password for the configuration page is: admin / password
 
-The Clock will display the time of the City selected for the weather.
+The Clock will display the local time of the City selected for the weather after a short synchronization period.
 
 <p align="left" title="the (old) webinterface on a phone">
   <img src="/images/20180419_065805.png" width="200"/>

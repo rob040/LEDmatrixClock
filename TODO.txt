@@ -54,7 +54,8 @@ TODO items
     ==> DONE v3.1.24 #9364fb50 20250701: Adds autorefresh and darkmode.
 17. Enhance display off quiet period with options like {display off, dimmed, dimmed time + temp, dimmed only time}. Should we configure dimmed level as well?
 18. Add local temperature sensor and show inside temperature. Support only a few I2C sensors. Caveat: here we might get requests like can you support this or that sensor....
-19. Add Config option: "Flash System LED on Service Calls"; the blue onboard LED is quite bright, shining through the case and can be annoying.
+19. Add Config option: "Flash System LED on WiFi activity"; the blue onboard LED is quite bright, shining through the case and can be annoying.
+      ==> DONE v3.1.31
 20. config page rework; In general, create more logical order, it is a mess now.
 20.1  group 'Display' items name 'LED display',
       ==> Done v3.1.25 All config page items are now re-grouped
@@ -82,6 +83,18 @@ TODO items
 22. Change to use latest Arduino json V7 library. this makes the JsonStreamingParser and json buffer size (mis)calculation unnecessary.
     ==> Done v3.1.27  (thanks to bit4man)
 23. Update to new PiHole by bit4man
+24. Fix potential wait forever loop in OWMClient; add timeout of 2s to wait for data from OWM server after connect.
+    ==> Done in v3.1.28
+25. Make Display Temperature also configurable, to allow for time only display. (weather APIkey is still needed for automatic DST timezone).
+    ==> Done in v3.1.29
+26. Add a "Do not scroll weather data display" option to display weather data fitting on one screen to NOT scroll but shown sequentially.
+    Multiple Display options can be ticked, only weather items that fit on the display are displayed sequentially for 5s each.
+    This is the option for motion sensible persons. This changes point 13.
+    ==> Done in v3.1.30
+    Extend this also to MQTT message fitting on display; larger messages will be scrolled.
+27. Scrolling messages are clocked with fluctuating timings (clock jitter), causing irregular and inconsistent spacing and distortion of the text.
+    Using a HW timer interrupt to shift SPI data to display will improve this considerably.
+28.
 
 Future
 - Add REST API for various controls

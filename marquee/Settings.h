@@ -43,7 +43,7 @@ SOFTWARE.
 #define COMPILE_PIHOLE 0 // current implementation does not work anymore, needs updating
 #endif
 #ifndef COMPILE_OCTOPRINT
-#define COMPILE_OCTOPRINT 1  // unsure if it works, untested
+#define COMPILE_OCTOPRINT 0  // unsure if it works, untested
 #endif
 #ifndef COMPILE_MQTT
 #define COMPILE_MQTT 1  // tried and tested
@@ -86,7 +86,7 @@ SOFTWARE.
 // DIN -> D7 (MOSI) GPIO13 on ESP8266
 const int pinCS = D6; // Attach CS to this pin, DIN to MOSI and CLK to SCK (cf http://arduino.cc/en/Reference/SPI )
 int displayIntensity = 1;  //(This can be set from 0 - 15)
-int displayWidth = 4; // default 4 for standard 4 x 1 display Max size of 16 (FIXME: rename to displayTilesWidth)
+int displayWidth = 4; // default 4 for standard 4 x 1 display Max size of 16
 const int displayHeight = 1; // default 1 for a single row height (do not change, this SW does not support multiple lines, nor double hight chars)
 /* set ledRotation for LED Display panels (3 is default)
 0: no rotation
@@ -101,10 +101,19 @@ const int ledRotation = 3;
 #define LED_ON  LOW   // define polarity of LED_ONBOARD
 #define LED_OFF HIGH  // define polarity of LED_ONBOARD
 
+// uncomment define BUZZER pin when BUZZER is installed
+// #define BUZZER_PIN  D2
+
+// ESP Accesspoint hostname by WifiManager; The device MAC address will be added
+#define AP_HOSTNAME_BASE "CLOCK-"
+// Configuration.ini file is stored in local filesystem
+#define CONFIG "/conf.txt"
+
+
 
 //******************************
 // Configuration default Settings
-// (no need to change; all can be set on configuration page)
+// (no need to change; these can be set on configuration page)
 //******************************
 
 String APIKEY = ""; // Your API Key from http://openweathermap.org/
@@ -114,6 +123,7 @@ String marqueeMessage = "";
 
 // (some) Default Weather Settings
 //FIXME TODO: do not use uppercase for variables
+//FIXME: inconsistent use of "Show" and "Display"; sometimes it refers to LED display, and sometimes to WebPage
 boolean SHOW_TEMPERATURE = true;
 boolean SHOW_DATE = false;
 boolean SHOW_CITY = true;
@@ -124,9 +134,10 @@ boolean SHOW_WINDDIR = true;
 boolean SHOW_PRESSURE = false;
 boolean SHOW_HIGHLOW = true;
 
+const int staticDisplayTime = 5000;  // static display time per item, in ms
 boolean isStaticDisplay = false; // static display above SHOW_* items
 boolean IS_METRIC = true; // false = Imperial and true = Metric
-boolean IS_24HOUR = true; // 23:00 military 24 hour clock
+boolean IS_24HOUR = true; // 24 hour clock is displayed, false = 12 hour clock (for configuration, 24h time is always used)
 boolean IS_PM = true; // Show PM indicator on Clock when in AM/PM mode
 boolean isSysLed = true; // flash onboard LED on system actions
 const int WEBSERVER_PORT = 80; // The port you can access this device on over HTTP

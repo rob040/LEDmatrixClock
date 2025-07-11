@@ -27,15 +27,10 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.32"
-
-#define HOSTNAME "CLOCK-"
-#define CONFIG "/conf.txt"
-// uncomment Define buzzer pin when installed
-// #define BUZZER_PIN  D2
+#define VERSION "3.1.33"
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
-#define WEBPAGE_AUTOREFRESH   20
+#define WEBPAGE_AUTOREFRESH   30
 // DARK mode: Add button to main page to toggle webpage dark mode
 #define WEBPAGE_DARKMODE
 
@@ -50,21 +45,23 @@ void centerPrint(const String &msg, boolean extraStuff = false);
 
 
 
-// LED Settings
-//n.u. const int offset = 1; // unused? (very generic name with no function)
-int refresh = 0; // unused? debug? Set this to 1 forces a scrolling message to start from beginning
-const int spacer = 1;  // dots between letters //FIXME: give this a better fitting name: font_space
-const int width = 5 + spacer; // The font width is 5 pixels + spacer //FIXME: give this a better fitting name: font_width
+// LED font Settings
+const int font_space = 1;  // dots between letters
+const int font_width = 5 + font_space; // The font width is 5 pixels + font_space
+
 Max72xxPanel matrix = Max72xxPanel(pinCS, 0, 0); // will be re-instantiated later in setup()
 
 // Time
 int lastMinute;
 int displayRefreshCount = 1;
-//TODO FIXME bad usage of "epoch" -> use timestamp instead
-long lastEpoch = 0;
-long firstEpoch = 0;
-long displayOffEpoch = 0;
+long lastRefreshDataTimestamp;
+long firstTimeSync;
+long displayOffTimestamp;
 boolean displayOn = true;
+
+//Static data display
+String staticDisplay[8];
+int staticDisplayIdx;
 
 #if COMPILE_NEWS
 // News Client
@@ -317,11 +314,6 @@ static const char CHANGE_FORM3[] PROGMEM =
   "<br><button class='w3-button w3-block w3-green w3-section w3-padding' type='submit'>Save</button></form>"
   "<script>function isNumberKey(e){var h=e.which?e.which:event.keyCode;return!(h>31&&(h<48||h>57))}</script>";
 
-//static const char WIDECLOCK_FORM[] PROGMEM =
-//  "<form class='w3-container' action='/savewideclock' method='get'><h2>Wide Clock Configuration:</h2>"
-//  "<p>Wide Clock Display Format <select class='w3-option w3-padding' name='wideclockformat'>%WCLK_OPT%</select></p>"
-//  "<button class='w3-button w3-block w3-grey w3-section w3-padding' type='submit'>Save</button></form>";
-
 #if COMPILE_PIHOLE
 static const char PIHOLE_FORM[] PROGMEM =
   "<form class='w3-container' action='/savepihole' method='get'><h2>Pi-hole Configuration:</h2>"
@@ -407,8 +399,6 @@ static const char COLOR_THEMES[] PROGMEM =
   "<option>black</option>"
   "<option>w3schools</option>";
 
-//n.u. const int TIMEOUT = 500; // 500 = 1/2 second
-//n.u. int timeoutCount = 0;
 
 
 void setup() {
@@ -471,20 +461,22 @@ void setup() {
   //noTone(BUZZER_PIN);
 #endif
 
-  //WiFiManager
+  // WiFiManager
+
   //Local initialization. Once its business is done, there is no need to keep it around
   WiFiManager wifiManager;
 
   // Uncomment for testing wifi manager
   //wifiManager.resetSettings();
+
   wifiManager.setAPCallback(configModeCallback);
-
-  //Custom Station (client) Static IP Configuration - Set custom IP for your Network (IP, Gateway, Subnet mask)
-  //wifiManager.setSTAStaticIPConfig(IPAddress(192,168,0,99), IPAddress(192,168,0,1), IPAddress(255,255,255,0));
-
-  String hostname(HOSTNAME);
+  // ADD device MAC address to AP_HOSTNAME_BASE
+  // note that last 6 hex digits of ESP.chipid(), WiFi.macAddress() and WiFi.softAPmacAddress() are identical.
+  String hostname(AP_HOSTNAME_BASE);
   hostname += String(ESP.getChipId(), HEX);
-  if (!wifiManager.autoConnect((const char *)hostname.c_str())) {// new addition
+  hostname.toUpperCase();
+
+  if (!wifiManager.autoConnect((const char *)hostname.c_str())) {
     delay(3000);
     WiFi.disconnect(true);
     ESP.reset();
@@ -498,10 +490,10 @@ void setup() {
 
   if (ENABLE_OTA) {
     ArduinoOTA.onStart([]() {
-      Serial.println(F("Start"));
+      Serial.println(F("Start OTA"));
     });
     ArduinoOTA.onEnd([]() {
-      Serial.println(F("\nEnd"));
+      Serial.println(F("\nEnd OTA"));
     });
     ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
       Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
@@ -522,10 +514,9 @@ void setup() {
   }
 
   if (WEBSERVER_ENABLED) {
-    server.on("/", displayWeatherData);
+    server.on("/", webDisplayWeatherData);
     server.on("/pull", handlePull);
     server.on("/saveconfig", handleSaveConfig);
-  //  server.on("/savewideclock", handleSaveWideClock);
     #if COMPILE_NEWS
     server.on("/savenews", handleSaveNews);
     #endif
@@ -542,7 +533,6 @@ void setup() {
     server.on("/forgetwifi", handleForgetWifi);
     server.on("/restart", restartEsp);
     server.on("/configure", handleConfigure);
-  //  server.on("/configurewideclock", handleWideClockConfigure);
     #if COMPILE_NEWS
     server.on("/configurenews", handleNewsConfigure);
     #endif
@@ -576,8 +566,9 @@ void setup() {
 }
 
 //************************************************************
-// Main Looop
+// Main Loop
 //************************************************************
+//TODO FIXME: assure loop is not blocked for any length of time
 void loop() {
 
   #if COMPILE_MQTT
@@ -592,7 +583,7 @@ void loop() {
   #endif
 
   //Get some Weather Data to serve
-  if ((getMinutesFromLastRefresh() >= refreshDataInterval) || lastEpoch == 0) {
+  if ((getMinutesFromLastRefresh() >= refreshDataInterval) || lastRefreshDataTimestamp == 0) {
     getWeatherData();
   }
   checkDisplay(); // this will see if we need to turn it on or off for night mode.
@@ -626,13 +617,12 @@ void loop() {
     displayRefreshCount --;
     // Check to see if we need to Scroll some Data
     if (displayRefreshCount <= 0) {
-      String staticDisplay[8];
-      int staticDisplayIdx=0;
       displayRefreshCount = displayScrollingInterval;
+      String msg = " ";
       String temperature = String(weatherClient.getTemperature(),0);
       String weatherDescription = weatherClient.getWeatherDescription();
       weatherDescription.toUpperCase();
-      String msg = " ";
+      staticDisplayIdx=0;
 
       if (SHOW_DATE) {
         if (!isStaticDisplay) {
@@ -764,7 +754,7 @@ void loop() {
   String currentTime = hourMinutes(false);
 
   if (displayWidth >= 8) {
-    // NEW wide clock style config, different screen formats for 8+ tiles: HH:MM, HH:MM:SS, HH:MM *CF, HH:MM %RH, mm dd HH:MM,  HH:MM Www DD (12 chars! 8 tiles fit 10 chars! ,
+    // wide clock style config, different screen formats for 8+ tiles: HH:MM, HH:MM:SS, HH:MM *CF, HH:MM %RH, mm dd HH:MM,  HH:MM Www DD (12 chars! 8 tiles fit 10 chars! ,
     // 1=HH:MM, 2=HH:MM:SS, 3=HH:MM *CF, 4=HH:MM %RH, 5=mm dd HH:MM, 6=HH:MM mmdd, 7=HH:MM ddmm, 8=HH:MMWwwDD (or HH:MM Www DD on >= 10 tile display)
     String add;
 
@@ -847,7 +837,7 @@ boolean authentication() {
 
 void handlePull() {
   getWeatherData(); // this will force a data pull for new weather
-  displayWeatherData();
+  webDisplayWeatherData();
 }
 
 #if COMPILE_NEWS
@@ -1189,9 +1179,7 @@ void handleConfigure() {
   form.replace(F("%RFSH_OPT%"), options);
   form.replace(F("%RFSH_DISP%"), String(displayScrollingInterval));
   form.replace(F("%SYSLED_CB%"), (isSysLed) ? "checked" : "");
-  // Wide display options
-  //FIXME String clockOptions = F("<option value='1'>HH:MM Temperature</option><option value='2'>HH:MM:SS</option><option value='3'>HH:MM</option>");
- // NEW: 1=HH:MM, 2=HH:MM:SS, 3=HH:MM *CF, 4=HH:MM %RH, 5=mm dd HH:MM, 6=HH:MM MMDD, 7=HH:MM WwwDD
+  // Wide display options: 1=HH:MM, 2=HH:MM:SS, 3=HH:MM *CF, 4=HH:MM %RH, 5=mm dd HH:MM, 6=HH:MM mmdd, 7=HH:MM ddmm, 8=HH:MM WwwDD,
   String clockOptions = F("<option value=1>HH:MM</option><option value=2>HH:MM:SS</option><option value=3>HH:MM *CF</option><option value=4>HH:MM %RH</option><option value=5>mmdd HH:MM</option><option value=6>HH:MM mmdd</option><option value=7>HH:MM ddmm</option><option value=8>HH:MMWwwDD</option>");
   clockOptions.replace(String(wideClockStyle) + ">", String(wideClockStyle) + F(" selected>"));
   form.replace(F("%WCLK_OPT%"), clockOptions);
@@ -1238,7 +1226,7 @@ void getWeatherData() //client function to send/receive GET request data.
 
   if (displayOn) {
     // only pull the weather data if display is on
-    if (firstEpoch != 0) {
+    if (firstTimeSync != 0) {
       centerPrint(hourMinutes(true), true);
     } else {
       centerPrint("...");
@@ -1264,15 +1252,14 @@ void getWeatherData() //client function to send/receive GET request data.
   matrix.drawPixel(0, 4, HIGH);
   matrix.drawPixel(0, 3, HIGH);
   matrix.drawPixel(0, 2, HIGH);
-  //Serial.println(F("matrix Width:") + String(matrix.width()));
   matrix.write();
 
-  lastEpoch = now();
+  lastRefreshDataTimestamp = now();
   if (timeStatus() != timeNotSet) {
-    if (firstEpoch == 0) {
-      firstEpoch = now();
+    if (firstTimeSync == 0) {
+      firstTimeSync = now();
       setSyncInterval(refreshDataInterval*SECS_PER_MIN);
-      Serial.println(F("firstEpoch is: ") + String(firstEpoch));
+      Serial.println(F("firstTimeSync is: ") + String(firstTimeSync));
     }
   }
 
@@ -1355,7 +1342,7 @@ void sendFooter() {
   server.sendContent(html);
 }
 
-void displayWeatherData() {
+void webDisplayWeatherData() {
   onBoardLed(LED_ON);
   String html;
 
@@ -1588,7 +1575,7 @@ int8_t getWifiQuality() {
 String getTimeTillUpdate() {
   String rtnValue;
 
-  long timeToUpdate = (((refreshDataInterval * 60) + lastEpoch) - now());
+  long timeToUpdate = (((refreshDataInterval * 60) + lastRefreshDataTimestamp) - now());
 
   int hours = numberOfHours(timeToUpdate);
   int minutes = numberOfMinutes(timeToUpdate);
@@ -1608,12 +1595,12 @@ String getTimeTillUpdate() {
 }
 
 int getMinutesFromLastRefresh() {
-  int minutes = (now() - lastEpoch) / 60;
+  int minutes = (now() - lastRefreshDataTimestamp) / 60;
   return minutes;
 }
 
 int getMinutesFromLastDisplay() {
-  int minutes = (now() - displayOffEpoch) / 60;
+  int minutes = (now() - displayOffTimestamp) / 60;
   return minutes;
 }
 
@@ -1622,8 +1609,8 @@ void enableDisplay(boolean enable) {
   if (enable) {
     if (getMinutesFromLastDisplay() >= refreshDataInterval) {
       // The display has been off longer than the minutes between refresh -- need to get fresh data
-      lastEpoch = 0; // this should force a data pull of the weather
-      displayOffEpoch = 0;  // reset
+      lastRefreshDataTimestamp = 0; // this should force a data pull of the weather
+      displayOffTimestamp = 0;  // reset
     }
     matrix.shutdown(false);
     matrix.fillScreen(CLEARSCREEN);
@@ -1631,7 +1618,7 @@ void enableDisplay(boolean enable) {
   } else {
     matrix.shutdown(true);
     Serial.println(F("Display was turned OFF: ") + get24HrColonMin(now()));
-    displayOffEpoch = lastEpoch;
+    displayOffTimestamp = lastRefreshDataTimestamp;
   }
 }
 
@@ -1981,28 +1968,26 @@ void readConfiguration() {
 
 void scrollMessage(String msg) {
   msg += " "; // add a space at the end
-  for (int i = 0; i < (width * (int)msg.length() + (matrix.width() - 1) - spacer); i++) {
+  for (int i = 0; i < (font_width * (int)msg.length() + (matrix.width() - 1) - font_space); i++) {
     if (WEBSERVER_ENABLED) {
       server.handleClient();
     }
     if (ENABLE_OTA) {
       ArduinoOTA.handle();
     }
-    if (refresh == 1) i = 0;
-    refresh = 0;
     matrix.fillScreen(CLEARSCREEN);
 
-    int letter = i / width;
-    int x = (matrix.width() - 1) - i % width;
+    int letter = i / font_width;
+    int x = (matrix.width() - 1) - i % font_width;
     int y = (matrix.height() - 8) / 2; // center the text vertically
 
-    while (((x + width - spacer) >= 0) && letter >= 0) {
+    while (((x + font_width - font_space) >= 0) && letter >= 0) {
       if (letter < (int)msg.length()) {
         matrix.drawChar(x, y, msg[letter], HIGH, LOW, 1);
       }
 
       letter--;
-      x -= width;
+      x -= font_width;
     }
 
     matrix.write(); // Send bitmap to display
@@ -2061,7 +2046,7 @@ void drawPiholeGraph() {
 #endif
 
 void centerPrint(const String &msg, boolean extraStuff) {
-  int x = (matrix.width() - (msg.length() * width)) / 2;
+  int x = (matrix.width() - (msg.length() * font_width)) / 2;
   if (x < 0) {
     Serial.print(F("Error: centerPrint msg too large! len="));
     Serial.print(msg.length());

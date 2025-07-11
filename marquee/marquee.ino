@@ -27,22 +27,27 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.31"
+#define VERSION "3.1.32"
 
 #define HOSTNAME "CLOCK-"
 #define CONFIG "/conf.txt"
 // uncomment Define buzzer pin when installed
 // #define BUZZER_PIN  D2
 
-// Refresh main web page every x seconds, or disable by uncomment or set to 0
+// Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   20
 // DARK mode: Add button to main page to toggle webpage dark mode
 #define WEBPAGE_DARKMODE
+
+// matrix fillscreen clear color is 0
+#define CLEARSCREEN  0
 
 //declaring prototypes
 void configModeCallback(WiFiManager *myWiFiManager);
 int8_t getWifiQuality();
 void sendHeader(boolean isMainPage = false);
+void centerPrint(const String &msg, boolean extraStuff = false);
+
 
 
 // LED Settings
@@ -113,17 +118,7 @@ static const char WEB_HEADER[] PROGMEM = "<!DOCTYPE HTML>"
       "font-family:Arial, sans-serif;"
       "font-size:16px;"
     "}"
-    "fieldset{"
-      "margin:24px 2px 24px;"
-    "}"
-    ".w3-bar{"
-      "padding:10px;"
-    "}"
-    ".w3-bar-item{"
-      "margin-right:20px;"
-    "}"
     ".w3-button{"
-      "padding:10px 20px;"
       "border:none;"
       "border-radius:5px;"
       "cursor:pointer;"
@@ -131,13 +126,7 @@ static const char WEB_HEADER[] PROGMEM = "<!DOCTYPE HTML>"
     ".w3-button:hover{"
       "background-color:#ccc;"
     "}"
-    ".w3-right .w3-button{"
-      "display:block;"
-      "margin-bottom:5px;"
-    "}"
-    ".w3-right .w3-button:last-child{"
-      "margin-bottom:0;"
-    "}"
+    ".w3-small{margin:4px 0 4px;}"
     ".dark-mode{"
       "background-color:#333;"
       "color:#fff;"
@@ -155,16 +144,6 @@ static const char WEB_HEADER[] PROGMEM = "<!DOCTYPE HTML>"
     ".dark-mode i{"
       "color:#fff;"
     "}"
-    "@media only screen and (max-width:768px){"
-      ".w3-right{"
-        "float:none;"
-      "}"
-      ".w3-right .w3-button{"
-        "display:inline-block;"
-        "margin-right:20px;"
-        "margin-bottom:0;"
-      "}"
-    "}"
   "</style>"
   "</head>\n"
 "<body>\n"
@@ -172,14 +151,14 @@ static const char WEB_HEADER[] PROGMEM = "<!DOCTYPE HTML>"
   "<button class='w3-bar-item w3-button w3-xxxlarge w3-hover-theme' onclick='openSidebar()'>"
   "<i class='fas fa-bars'></i>"
   "</button>"
-  "<h2 class='w3-bar-item'>Weather Marquee</h2>"
+  "<h3 class='w3-bar-item'>Weather Marquee</h3>"
   ;
 static const char WEB_HEADER_MAIN[] PROGMEM =
   "<div class='w3-right'>"
     #if defined (WEBPAGE_AUTOREFRESH) && (WEBPAGE_AUTOREFRESH > 0)
     "<button id='autorefresh-button' class='w3-button w3-small' onclick='toggleAutoRefresh()' title='toggle Auto Refresh Mode'>"
        "<i id='autorefresh-icon' class='fas fa-sync'></i>"
-    "</button>"
+    "</button><br>"
     #endif
     #if defined (WEBPAGE_DARKMODE)
     "<button id='darkmode-button' class='w3-button w3-small' onclick='toggleDarkMode()' title='toggle Dark Mode '>"
@@ -191,7 +170,7 @@ static const char WEB_HEADER_MAIN[] PROGMEM =
 
 static const char WEB_BODY1[] PROGMEM =
   "</header>\n"
-  "<nav class='w3-sidebar w3-bar-block w3-card' style='margin-topNOT:108px' id='mySidebar'>"
+  "<nav id='mySidebar' class='w3-sidebar w3-bar-block w3-card'>"
   "<div class='w3-container w3-theme-d2'>"
   "<span onclick='closeSidebar()' class='w3-button w3-display-topright w3-large'><i class='fas fa-times'></i></span>"
   "<div class='w3-left'><img src='http://openweathermap.org/img/w/$ICO$.png' alt='$IDES$'></div>"
@@ -209,7 +188,7 @@ static const char WEB_BODY2[] PROGMEM =
   "restoreDarkMode();"
   #endif
   "</script>\n"
-  "<div class='w3-container w3-large' style='margin-top:108px'>\n";
+  "<div class='w3-container w3-large' style='margin-top:88px'>\n";
 
 static const char WEB_BODY2_MAIN[] PROGMEM =
   "<script>"
@@ -431,8 +410,6 @@ static const char COLOR_THEMES[] PROGMEM =
 //n.u. const int TIMEOUT = 500; // 500 = 1/2 second
 //n.u. int timeoutCount = 0;
 
-// matrix fillscreen clear color is 0
-#define CLEAR  0
 
 void setup() {
   Serial.begin(115200);
@@ -461,7 +438,7 @@ void setup() {
   }
 
   Serial.println(F("matrix created"));
-  matrix.fillScreen(CLEAR); // show black
+  matrix.fillScreen(CLEARSCREEN);
   centerPrint(F("hello"));
 
 #ifdef BUZZER_PIN
@@ -631,7 +608,7 @@ void loop() {
     if (displayOn) {
       matrix.shutdown(false);
     }
-    matrix.fillScreen(CLEAR); // show black
+    matrix.fillScreen(CLEARSCREEN);
 
     #if COMPILE_OCTOPRINT
     if (OCTOPRINT_ENABLED) {
@@ -761,7 +738,7 @@ void loop() {
           int len = staticDisplay[idx].length();
           if (len <= 0 || len > maxMsgLen) continue; // can't display this statically
           // msg fits on one screen : no scroll necessary
-          matrix.fillScreen(CLEAR);
+          matrix.fillScreen(CLEARSCREEN);
           centerPrint(staticDisplay[idx], true);
           // show each msg for 5 seconds at default scroll speed
           for (int i = 0; i < 200; i++) {
@@ -833,7 +810,7 @@ void loop() {
         break;
     }
   }
-  matrix.fillScreen(CLEAR);
+  matrix.fillScreen(CLEARSCREEN);
   centerPrint(currentTime, true);
 
   if (WEBSERVER_ENABLED) {
@@ -884,7 +861,7 @@ void handleSaveNews() {
     NEWS_ENABLED = server.hasArg(F("displaynews"));
     NEWS_API_KEY = server.arg(F("newsApiKey"));
     NEWS_SOURCE = server.arg(F("newssource"));
-    matrix.fillScreen(CLEAR); // show black
+    matrix.fillScreen(CLEARSCREEN);
     writeConfiguration();
     #if COMPILE_NEWS
     newsClient.updateNews();
@@ -910,7 +887,7 @@ void handleSaveOctoprint() {
     OctoPrintPort = server.arg(F("octoPrintPort")).toInt();
     OctoAuthUser = server.arg(F("octoUser"));
     OctoAuthPass = server.arg(F("octoPass"));
-    matrix.fillScreen(CLEAR); // show black
+    matrix.fillScreen(CLEARSCREEN);
     writeConfiguration();
     if (OCTOPRINT_ENABLED) {
       printerClient.getPrinterJobResults();
@@ -1026,7 +1003,7 @@ void handleSaveConfig() {
     temp.trim();
     temp.toCharArray(www_password, sizeof(www_password));
     weatherClient.setMetric(IS_METRIC);
-    matrix.fillScreen(CLEAR); // show black
+    matrix.fillScreen(CLEARSCREEN);
     writeConfiguration();
     Serial.println(F("handleSaveConfig: saved"));
     getWeatherData(); // this will force a data pull for new weather
@@ -1256,7 +1233,7 @@ void handleDisplay() {
 void getWeatherData() //client function to send/receive GET request data.
 {
   onBoardLed(LED_ON);
-  matrix.fillScreen(CLEAR); // show black
+  matrix.fillScreen(CLEARSCREEN);
   Serial.println();
 
   if (displayOn) {
@@ -1649,7 +1626,7 @@ void enableDisplay(boolean enable) {
       displayOffEpoch = 0;  // reset
     }
     matrix.shutdown(false);
-    matrix.fillScreen(CLEAR); // show black
+    matrix.fillScreen(CLEARSCREEN);
     Serial.println(F("Display was turned ON: ") + get24HrColonMin(now()));
   } else {
     matrix.shutdown(true);
@@ -2013,7 +1990,7 @@ void scrollMessage(String msg) {
     }
     if (refresh == 1) i = 0;
     refresh = 0;
-    matrix.fillScreen(CLEAR);
+    matrix.fillScreen(CLEARSCREEN);
 
     int letter = i / width;
     int x = (matrix.width() - 1) - i % width;
@@ -2070,6 +2047,7 @@ void drawPiholeGraph() {
     row--;
   }
   matrix.write();
+  //TODO refactor this!
   for (int wait = 0; wait < 500; wait++) {
     if (WEBSERVER_ENABLED) {
       server.handleClient();
@@ -2082,22 +2060,26 @@ void drawPiholeGraph() {
 }
 #endif
 
-void centerPrint(const String &msg) {
-  centerPrint(msg, false);
-}
-
 void centerPrint(const String &msg, boolean extraStuff) {
   int x = (matrix.width() - (msg.length() * width)) / 2;
+  if (x < 0) {
+    Serial.print(F("Error: centerPrint msg too large! len="));
+    Serial.print(msg.length());
+    Serial.print(':');
+    Serial.println(msg);
+  }
 
   // Print the static portions of the display before the main Message
   if (extraStuff) {
     if (!IS_24HOUR && IS_PM && isPM()) {
+      // Place PM indicator pixel at right edge, bottom line of digits
       matrix.drawPixel(matrix.width() - 1, 6, HIGH);
     }
 
     #if COMPILE_OCTOPRINT
     if (OCTOPRINT_ENABLED && OCTOPRINT_PROGRESS && printerClient.isPrinting()) {
       int numberOfLightPixels = (printerClient.getProgressCompletion().toFloat() / float(100)) * (matrix.width() - 1);
+      // draw horizontal line from left to right, just below Clock digits
       matrix.drawFastHLine(0, 7, numberOfLightPixels, HIGH);
     }
     #endif

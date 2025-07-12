@@ -55,8 +55,10 @@ private:
   uint32_t reportTimestamp;
   uint32_t sunRise;
   uint32_t sunSet;
-  boolean cached;
+  boolean isValid;
   boolean isMetric;
+  const int dataGetRetryCountError = 10; // Amount of data get timeouts until we invalidate all data
+  int dataGetRetryCount;
 
 
 public:
@@ -88,10 +90,10 @@ public:
   inline int getWeatherId() {return weatherId;};
   inline String getWeatherDescription() {return weatherDescription;};
   inline String getIcon() {return icon;};
-  inline boolean getCached() {return cached;};
+  inline boolean getWeatherDataValid() {return isValid;};
   inline int getMyCityID() {return myCityID;};
   inline String getErrorMessage() {return errorMsg;};
-  inline int getTimeZone() {return timeZone/3600;};
+  inline int getTimeZone() {return timeZone/3600;}; // Local TimeZone delta with UTC in Hours
   inline int getTimeZoneSeconds() {return timeZone;};
   inline uint32_t getSunRise() {return sunRise;};
   inline uint32_t getSunSet() {return sunSet;};

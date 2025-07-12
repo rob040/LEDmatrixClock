@@ -22,6 +22,7 @@ SOFTWARE.
 
 Change History:
 20250628 rob040   Completely changed this OWM client API and OWM access API to use the Free Service
+20250712 rob040   Revised data invalidation and data get retry count until data invalid error. New API dataGetRetryCount(), removed API getCached().
 */
 
 #include "OpenWeatherMapClient.h"
@@ -31,7 +32,7 @@ OpenWeatherMapClient::OpenWeatherMapClient(const String &ApiKey, int CityID, boo
   myCityID = CityID;
   myApiKey = ApiKey;
   this->isMetric = isMetric;
-  cached = false;
+  isValid = false;
 }
 
 void OpenWeatherMapClient::updateWeather() {
@@ -39,13 +40,12 @@ void OpenWeatherMapClient::updateWeather() {
   if (myApiKey == "") {
     errorMsg = F("Please provide an API key for weather.");
     Serial.println(errorMsg);
-    cached = false;
+    isValid = false;
     return;
   }
   String apiGetData = F("GET /data/2.5/weather?id=") + String(myCityID) + F("&units=") + ((isMetric) ? F("metric") : F("imperial")) + F("&APPID=") + myApiKey + F(" HTTP/1.1");
   Serial.println(F("Getting Weather Data"));
   Serial.println(apiGetData);
-  cached = true;
   errorMsg = "";
   if (weatherClient.connect(servername, 80)) {  //starts client connection, checks for connection
     weatherClient.println(apiGetData);
@@ -55,9 +55,9 @@ void OpenWeatherMapClient::updateWeather() {
     weatherClient.println();
   }
   else {
-    Serial.println(F("connection for weather data failed")); //error message if no client connect
-    Serial.println();
     errorMsg = F("Connection for weather data failed");
+    Serial.println(errorMsg);
+    if (++dataGetRetryCount > dataGetRetryCountError) isValid = false;
     return;
   }
 
@@ -75,7 +75,7 @@ void OpenWeatherMapClient::updateWeather() {
   if ((millis()-start) > timeout_ms) {
     errorMsg = F("TIMEOUT on weatherClient data receive");
     Serial.println(errorMsg);
-    cached = false;
+    if (++dataGetRetryCount > dataGetRetryCountError) isValid = false;
     return;
   }
   //else { //FIXME DEBUG
@@ -90,7 +90,7 @@ void OpenWeatherMapClient::updateWeather() {
   if (strcmp(status, "HTTP/1.1 200 OK") != 0) {
     errorMsg = F("Unexpected response: ") + String(status);
     Serial.println(errorMsg);
-    cached = false;
+    if (++dataGetRetryCount > dataGetRetryCountError) isValid = false;
     return;
   }
 
@@ -99,7 +99,7 @@ void OpenWeatherMapClient::updateWeather() {
   if (!weatherClient.find(endOfHeaders)) {
     errorMsg = F("Invalid response endOfHeaders");
     Serial.println(errorMsg);
-    cached = false;
+    if (++dataGetRetryCount > dataGetRetryCountError) isValid = false;
     return;
   }
 
@@ -109,7 +109,7 @@ void OpenWeatherMapClient::updateWeather() {
   if (error) {
     errorMsg = F("Weather Data Parsing failed!");
     Serial.println(errorMsg);
-    cached = false;
+    if (++dataGetRetryCount > dataGetRetryCountError) isValid = false;
     return;
   }
 
@@ -120,7 +120,7 @@ void OpenWeatherMapClient::updateWeather() {
     Serial.println(F("Error Does not look like we got the data.  Size: ") + String(len));
     errorMsg = F("Error: ") + jdoc[F("message")].as<String>();
     Serial.println(errorMsg);
-    cached = false;
+    if (++dataGetRetryCount > dataGetRetryCountError) isValid = false;
     return;
   }
 
@@ -147,6 +147,7 @@ void OpenWeatherMapClient::updateWeather() {
   timeZone = jdoc["timezone"];
   sunRise = jdoc["sys"]["sunrise"];
   sunSet = jdoc["sys"]["sunset"];
+  isValid = true;
 
   if (isMetric) {
     // convert m/s to kmh

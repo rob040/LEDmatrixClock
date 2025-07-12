@@ -27,7 +27,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.36"
+#define VERSION "3.1.37"
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -456,7 +456,7 @@ void setup() {
 
   readConfiguration();
 
-  Serial.println(F("Number of LED Display tiles wide: ") + String(displayWidth));
+  Serial.printf_P(PSTR("LED Display tiles wide: %d\n"), displayWidth);
   // initialize display
   matrix = Max72xxPanel(pinCS, displayWidth, displayHeight);
   matrix.setIntensity(0); // Use a value between 0 and 15 for brightness
@@ -525,9 +525,7 @@ void setup() {
   }
 
   // print the received signal strength:
-  Serial.print(F("Signal Strength (RSSI): "));
-  Serial.print(getWifiQuality());
-  Serial.println("%");
+  Serial.printf_P(PSTR("Signal Strength (RSSI): %d%%\n"), getWifiQuality());
 
   if (ENABLE_OTA) {
     ArduinoOTA.onStart([]() {
@@ -537,10 +535,10 @@ void setup() {
       Serial.println(F("\nEnd OTA"));
     });
     ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-      Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+      Serial.printf_P(PSTR("Progress: %u%%\r"), (progress / (total / 100)));
     });
     ArduinoOTA.onError([](ota_error_t error) {
-      Serial.printf("Error[%u]: ", error);
+      Serial.printf_P(PSTR("OTA Error[%u]: "), error);
       if (error == OTA_AUTH_ERROR) Serial.println(F("Auth Failed"));
       else if (error == OTA_BEGIN_ERROR) Serial.println(F("Begin Failed"));
       else if (error == OTA_CONNECT_ERROR) Serial.println(F("Connect Failed"));
@@ -591,11 +589,13 @@ void setup() {
     serverUpdater.setup(&server, "/update", www_username, www_password);
     // Start the server
     server.begin();
-    Serial.println(F("Server started"));
+    Serial.print(F("Server started "));
     // Print the IP address
-    String webAddress = F("http://") + WiFi.localIP().toString() + ':' + String(WEBSERVER_PORT) + '/';
-    Serial.print(F("Use this URL : ")); Serial.println(webAddress);
-    displayScrollErrorMessage(" v" + String(VERSION) + "  IP: " + WiFi.localIP().toString() + "  ", true);
+    char webAddress[32];
+    sprintf_P(webAddress, PSTR("v" VERSION "  IP: %s  "), WiFi.localIP().toString().c_str());
+    Serial.println(webAddress);
+    displayScrollErrorMessage(webAddress, true);
+    //displayScrollErrorMessage(" v" + String(VERSION) + "  IP: " + WiFi.localIP().toString() + "  ", true);
     timeNTPsetup();
   } else {
     String msg = F("Web Interface is Disabled");
@@ -626,13 +626,7 @@ void loop() {
   SCHEDULE_INTERVAL(staticDisplayLastTime, staticDisplayTime, staticDisplayNext);
 
   if (loopState != lastState) {
-    Serial.print('[');
-    Serial.print(millis()&0xFFFF);
-    Serial.print(']');
-    Serial.print(F(" loopstate "));
-    Serial.print(lastState);
-    Serial.print("->");
-    Serial.println(loopState);
+    Serial.printf_P(PSTR("[%u] loopstate %d -> %d\n"), millis()&0xFFFF, lastState, loopState);
     lastState = loopState;
   }
   switch (loopState) {
@@ -688,11 +682,7 @@ void loop() {
       break;
   }
   if (loopState != lastState) {
-    Serial.print('[');
-    Serial.print(millis()&0xFFFF);
-    Serial.print(']');
-    Serial.print(F(" loopstate -> "));
-    Serial.println(loopState);
+    Serial.printf_P(PSTR("[%u] loopstate -> %d\n"), millis()&0xFFFF, loopState);
   }
 
 
@@ -713,8 +703,7 @@ void displayScrollMessage(String msg)
 
 void displayScrollErrorMessage(String msg, boolean showOnce)
 {
-  Serial.print(F("set display ERROR messsage: "));
-  Serial.println(msg);
+  Serial.printf_P(PSTR("setDispERRmsg: %s\n"), msg.c_str());
   displayScrollErrorMsgStr = msg;
   isDisplayScrollErrorMsgNew = true;
   isDisplayScrollErrorMsgOnce = showOnce;
@@ -1407,8 +1396,8 @@ void getWeatherData() //client function to send/receive GET request data.
 
     if (firstTimeSync == 0) {
       firstTimeSync = now();
-      setSyncInterval(refreshDataInterval*SECS_PER_MIN);
-      Serial.println(F("firstTimeSync is: ") + String(firstTimeSync));
+      setSyncInterval(refreshDataInterval * SECS_PER_MIN);
+      Serial.printf_P(PSTR("firstTimeSync is: %d\n"), firstTimeSync);
     }
   }
 
@@ -1934,10 +1923,7 @@ void readConfiguration() {
       int n = line.substring(idx + 15).toInt();
       if (n < WIDE_CLOCK_STYLE_FIRST || n > WIDE_CLOCK_STYLE_LAST) n = 1;
       if (wideClockStyle != n) {
-        Serial.print(F("wideClockStyle changed "));
-        Serial.print(wideClockStyle);
-        Serial.print(" -> ");
-        Serial.println(n);
+        Serial.printf_P(PSTR("wideClockStyle changed %d->%d\n"), wideClockStyle, n);
         wideClockStyle = n;
       }
     }
@@ -1968,10 +1954,7 @@ void readConfiguration() {
       int n = line.substring(idx + 13).toInt();
       if ((n < 4) && (n > 32)) n = 4;
       if (displayWidth != n) {
-        Serial.print(F("displayWidth changed "));
-        Serial.print(displayWidth);
-        Serial.print(" -> ");
-        Serial.println(n);
+        Serial.printf_P(PSTR("displayWidth changed %d->%d\n"), displayWidth, n);
         displayWidth = n;
       }
     }
@@ -2283,10 +2266,7 @@ void drawPiholeGraph() {
 void centerPrint(const String &msg, boolean extraStuff) {
   int x = (matrix.width() - (msg.length() * font_width)) / 2;
   if (x < 0) {
-    Serial.print(F("Error: centerPrint msg too large! len="));
-    Serial.print(msg.length());
-    Serial.print(':');
-    Serial.println(msg);
+    Serial.printf_P(PSTR("Error: centerPrint msg too large! len=%u:%s\n"), msg.length(), msg);
   }
 
   // Print the static portions of the display before the main Message
@@ -2312,8 +2292,10 @@ void centerPrint(const String &msg, boolean extraStuff) {
 }
 
 String decodeHtmlString(const String &msg) {
-  String decodedMsg = msg;
-  // Restore special characters that are misformed to %char by the client browser
+  String decodedMsg;
+  Serial.printf_P(PSTR("decodeHTML in:  %s"), msg);
+  decodedMsg = msg;
+  // Restore special characters that were converted to %<hexvalue> by the client browser
   decodedMsg.replace("+", " ");
   decodedMsg.replace("%21", "!");
   decodedMsg.replace("%22", "\"");
@@ -2337,5 +2319,6 @@ String decodeHtmlString(const String &msg) {
   decodedMsg.replace("%40", "@");
   decodedMsg.toUpperCase();
   decodedMsg.trim();
+  Serial.printf_P(PSTR("decodeHTML out: %s"), decodedMsg);
   return decodedMsg;
 }

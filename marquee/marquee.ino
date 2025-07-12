@@ -21,13 +21,9 @@
   SOFTWARE.
 */
 
-/**********************************************
-  Edit Settings.h for personalization
-***********************************************/
-
 #include "Settings.h"
 
-#define VERSION "3.1.37"
+#define VERSION "3.1.38"
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -1100,9 +1096,9 @@ void handleSaveConfig() {
     isStaticDisplay = server.hasArg(F("statdisp"));
     isSysLed = server.hasArg(F("sysled"));
     IS_METRIC = server.hasArg(F("metric"));
-    marqueeMessage = decodeHtmlString(server.arg(F("marqueeMsg")));
-    timeDisplayTurnsOn = decodeHtmlString(server.arg(F("startTime")));
-    timeDisplayTurnsOff = decodeHtmlString(server.arg(F("endTime")));
+    marqueeMessage = server.arg(F("marqueeMsg"));
+    timeDisplayTurnsOn = server.arg(F("startTime"));
+    timeDisplayTurnsOff = server.arg(F("endTime"));
     displayIntensity = server.arg(F("ledintensity")).toInt();
     int n = server.arg(F("displaywidth")).toInt();
     if ((displayWidth != n) && (n >= 4) && (n <= 32)) {
@@ -2291,6 +2287,8 @@ void centerPrint(const String &msg, boolean extraStuff) {
   matrix.write();
 }
 
+/* This function is no longer needed; the webserver will do the decoding for us
+   However, we do need to have an ENCODE function for strings with special chars in html page
 String decodeHtmlString(const String &msg) {
   String decodedMsg;
   Serial.printf_P(PSTR("decodeHTML in:  %s"), msg);
@@ -2321,4 +2319,4 @@ String decodeHtmlString(const String &msg) {
   decodedMsg.trim();
   Serial.printf_P(PSTR("decodeHTML out: %s"), decodedMsg);
   return decodedMsg;
-}
+}*/

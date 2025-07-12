@@ -23,7 +23,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.38"
+#define VERSION "3.1.39"
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -314,7 +314,7 @@ static const char CHANGE_FORM1[] PROGMEM =
   "<p><input name='showpressure' class='w3-check' type='checkbox' %PRES_CB%> Display Barometric Pressure</p>"
   "</fieldset>\n"
   "<fieldset><legend>LED Display scrolling message</legend>"
-  "<p><label>Marquee Message (up to 60 chars)</label><input class='w3-input w3-border' type='text' name='marqueeMsg' value='%MSG%' maxlength='60'></p>"
+  "<p><label>Marquee Message (up to 80 chars)</label><input class='w3-input w3-border' type='text' name='marqueeMsg' value='%MSG%' maxlength='80'></p>"
   "</fieldset>\n";
 
 static const char CHANGE_FORM2[] PROGMEM =
@@ -1274,7 +1274,7 @@ void handleConfigure() {
   form.replace(F("%OWMKEY%"), APIKEY);
   form.replace(F("%CTYNM%"), (weatherClient.getCity() != "") ? weatherClient.getCity() + ", " + weatherClient.getCountry() : "");
   form.replace(F("%CITY%"), String(CityID));
-  form.replace(F("%MSG%"), marqueeMessage);
+  form.replace(F("%MSG%"), EncodeHtmlSpecialChars(marqueeMessage.c_str()));
   form.replace(F("%TEMP_CB%"), (SHOW_TEMPERATURE) ? "checked" : "");
   form.replace(F("%DATE_CB%"), (SHOW_DATE) ? "checked" : "");
   form.replace(F("%CITY_CB%"), (SHOW_CITY) ? "checked" : "");
@@ -1607,7 +1607,7 @@ void webDisplayWeatherData() {
   if (USE_MQTT) {
     if (mqttClient.getError().length() == 0) {
       html = F("<div class='w3-cell-row'><b>MQTT</b><br>"
-             "Last Message: <b>") + String(mqttClient.getLastMqttMessage()) + F("</b><br>"
+             "Last Message: <b>") + EncodeHtmlSpecialChars(mqttClient.getLastMqttMessage()) + F("</b><br>"
              "</div><br><hr>");
     } else {
       html = F("<div class='w3-cell-row'><b>MQTT Error</b><br>"
@@ -2287,36 +2287,30 @@ void centerPrint(const String &msg, boolean extraStuff) {
   matrix.write();
 }
 
-/* This function is no longer needed; the webserver will do the decoding for us
-   However, we do need to have an ENCODE function for strings with special chars in html page
-String decodeHtmlString(const String &msg) {
-  String decodedMsg;
-  Serial.printf_P(PSTR("decodeHTML in:  %s"), msg);
-  decodedMsg = msg;
-  // Restore special characters that were converted to %<hexvalue> by the client browser
-  decodedMsg.replace("+", " ");
-  decodedMsg.replace("%21", "!");
-  decodedMsg.replace("%22", "\"");
-  decodedMsg.replace("%23", "#");
-  decodedMsg.replace("%24", "$");
-  decodedMsg.replace("%25", "%");
-  decodedMsg.replace("%26", "&");
-  decodedMsg.replace("%27", "'");
-  decodedMsg.replace("%28", "(");
-  decodedMsg.replace("%29", ")");
-  decodedMsg.replace("%2A", "*");
-  decodedMsg.replace("%2B", "+");
-  decodedMsg.replace("%2C", ",");
-  decodedMsg.replace("%2F", "/");
-  decodedMsg.replace("%3A", ":");
-  decodedMsg.replace("%3B", ";");
-  decodedMsg.replace("%3C", "<");
-  decodedMsg.replace("%3D", "=");
-  decodedMsg.replace("%3E", ">");
-  decodedMsg.replace("%3F", "?");
-  decodedMsg.replace("%40", "@");
-  decodedMsg.toUpperCase();
-  decodedMsg.trim();
-  Serial.printf_P(PSTR("decodeHTML out: %s"), decodedMsg);
-  return decodedMsg;
-}*/
+
+String EncodeHtmlSpecialChars(const char *msg)
+{
+  String encoded;
+  int inIdx;
+  char ch;
+  const int inLen = strlen(msg);
+  //Serial.printf_P(PSTR("EncodeHTML in:  %s\n"), msg);
+  encoded.reserve(inLen+128);
+  for (inIdx=0; inIdx < inLen; inIdx++) {
+    ch = msg[inIdx];
+    if (ch < ' ') continue; // skip all non printable chars
+    if ( ch == '\'' || ch == '"' || ch == '<' || ch == '>')
+    {
+      // convert character to "&#<decimal>;"
+      encoded += '&';
+      encoded += '#';
+      encoded += (int)ch;
+      encoded += ';';
+    }
+    else {
+      encoded += ch;
+    }
+  }
+  //Serial.printf_P(PSTR("EncodeHTML out: %s\n"), encoded.c_str());
+  return encoded;
+}

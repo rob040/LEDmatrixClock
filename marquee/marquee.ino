@@ -27,7 +27,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.33"
+#define VERSION "3.1.36"
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -53,15 +53,55 @@ Max72xxPanel matrix = Max72xxPanel(pinCS, 0, 0); // will be re-instantiated late
 
 // Time
 int lastMinute;
+int lastSecond;
 int displayRefreshCount = 1;
 long lastRefreshDataTimestamp;
 long firstTimeSync;
 long displayOffTimestamp;
 boolean displayOn = true;
+boolean isDisplayTimeNew;
+boolean isDisplayMessageNew;
+boolean isDisplayScrollErrorMsgNew;
+boolean isDisplayScrollErrorMsgOnce;
+String displayTime;
+char * newMqttMessage;
+String displayScrollMessageStr;
+String displayScrollErrorMsgStr;
+
+
+// Scroll message variables
+boolean scrlBusy;
+int scrlPixTotal;
+int scrlPixIdx;
+int scrlPixY;
+int scrlMsgLen;
+unsigned long scrlPixelLastTime;
+String scrlMsg; // copy of scrolling message
 
 //Static data display
 String staticDisplay[8];
+boolean isStaticDisplayNew;
+boolean isStaticDisplayBusy;
 int staticDisplayIdx;
+int staticDisplayIdxOut;
+unsigned long staticDisplayLastTime;
+
+
+// loop() FSM statemachine
+enum loopState_e {
+  lStateIdle,
+  lStateScrollMsgPix,
+  lStateScrollNewMqttMsgPix,
+  lStateScrollErrMsgPix,
+  lStateDispStaticMsg,
+};
+enum loopState_e loopState, lastState;
+
+// Scheduler macro
+// SCHEDULE_INTERVAL(unsigned long work_variable, int intervaltime_ms, function)
+//   will call the function at regular time intervals, when included in loop().
+#define SCHEDULE_INTERVAL(_var,_interval_ms,_func) { if((millis()-(_var))>(unsigned)(_interval_ms)){_var=millis();_func();}}
+#define SCHEDULE_INTERVAL_START(_var,_delay) {_var=millis()-(_delay);}
 
 #if COMPILE_NEWS
 // News Client
@@ -404,6 +444,7 @@ static const char COLOR_THEMES[] PROGMEM =
 void setup() {
   Serial.begin(115200);
   FS.begin();
+  // uncomment for testing, comment for release!
   //FS.remove(CONFIG);
   delay(10);
 
@@ -552,47 +593,138 @@ void setup() {
     server.begin();
     Serial.println(F("Server started"));
     // Print the IP address
-    String webAddress = F("http://") + WiFi.localIP().toString() + ":" + String(WEBSERVER_PORT) + "/";
+    String webAddress = F("http://") + WiFi.localIP().toString() + ':' + String(WEBSERVER_PORT) + '/';
     Serial.print(F("Use this URL : ")); Serial.println(webAddress);
-    scrollMessage(" v" + String(VERSION) + "  IP: " + WiFi.localIP().toString() + "  ");
-
+    displayScrollErrorMessage(" v" + String(VERSION) + "  IP: " + WiFi.localIP().toString() + "  ", true);
     timeNTPsetup();
   } else {
-    Serial.println(F("Web Interface is Disabled"));
-    scrollMessage(F("Web Interface is Disabled"));
+    String msg = F("Web Interface is Disabled");
+    Serial.println(msg);
+    displayScrollErrorMessage(msg, true);
   }
-
+  SCHEDULE_INTERVAL_START(scrlPixelLastTime, 2000);
   flashLED(1, 500);
 }
 
 //************************************************************
 // Main Loop
 //************************************************************
-//TODO FIXME: assure loop is not blocked for any length of time
 void loop() {
 
-  #if COMPILE_MQTT
-  // allow the mqtt client to do its thing
-  if (USE_MQTT) {
-    mqttClient.loop();
-    String newMqttMessage = mqttClient.getNewMqttMessage();
-    if (newMqttMessage != "") {
-      scrollMessage(newMqttMessage);
-    }
+  if (lastSecond != second()) {
+    lastSecond = second();
+    processEverySecond();
   }
-  #endif
-
-  //Get some Weather Data to serve
-  if ((getMinutesFromLastRefresh() >= refreshDataInterval) || lastRefreshDataTimestamp == 0) {
-    getWeatherData();
-  }
-  checkDisplay(); // this will see if we need to turn it on or off for night mode.
 
   if (lastMinute != minute()) {
     lastMinute = minute();
+    processEveryMinute();
+  }
 
+  SCHEDULE_INTERVAL(scrlPixelLastTime, displayScrollSpeed, scrollMessageNext);
+
+  SCHEDULE_INTERVAL(staticDisplayLastTime, staticDisplayTime, staticDisplayNext);
+
+  if (loopState != lastState) {
+    Serial.print('[');
+    Serial.print(millis()&0xFFFF);
+    Serial.print(']');
+    Serial.print(F(" loopstate "));
+    Serial.print(lastState);
+    Serial.print("->");
+    Serial.println(loopState);
+    lastState = loopState;
+  }
+  switch (loopState) {
+  default:
+  case lStateIdle: // Idle: Show time on display, when ON
+      if (isDisplayScrollErrorMsgNew) {
+        scrollMessageSetup(displayScrollErrorMsgStr);
+        if (isDisplayScrollErrorMsgOnce) {
+          isDisplayScrollErrorMsgNew = false;
+          isDisplayScrollErrorMsgOnce = false;
+        }
+        loopState = lStateScrollErrMsgPix;
+      } else
+      if (newMqttMessage[0] != 0) {
+        // if static display mode enabled and message length fits screen
+        if (staticDisplaySetupSingle(newMqttMessage)) {
+          newMqttMessage[0] = 0;
+          loopState = lStateDispStaticMsg;
+        } else {
+          scrollMessageSetup(newMqttMessage);
+          newMqttMessage[0] = 0;
+          loopState = lStateScrollNewMqttMsgPix;
+        }
+      } else
+      if (isDisplayMessageNew) {
+        scrollMessageSetup(displayScrollMessageStr);
+        isDisplayMessageNew = false;
+        loopState = lStateScrollMsgPix;
+      } else
+      if (isStaticDisplayNew) {
+        staticDisplaySetup();
+        loopState = lStateDispStaticMsg;
+      } else
+      if (isDisplayTimeNew) {
+        isDisplayTimeNew = false;
+        if (displayOn) {
+          matrix.fillScreen(CLEARSCREEN);
+          centerPrint(displayTime, true);
+        }
+      }
+      break;
+  case lStateScrollMsgPix:
+      if (!scrlBusy) loopState = lStateIdle;
+      break;
+  case lStateScrollNewMqttMsgPix:
+      if (!scrlBusy) loopState = lStateIdle;
+      break;
+  case lStateScrollErrMsgPix:
+      if (!scrlBusy) loopState = lStateIdle;
+      break;
+  case lStateDispStaticMsg:
+      if (!isStaticDisplayNew)  loopState = lStateIdle;
+      break;
+  }
+  if (loopState != lastState) {
+    Serial.print('[');
+    Serial.print(millis()&0xFFFF);
+    Serial.print(']');
+    Serial.print(F(" loopstate -> "));
+    Serial.println(loopState);
+  }
+
+
+  if (WEBSERVER_ENABLED) {
+    server.handleClient();
+  }
+  if (ENABLE_OTA) {
+    ArduinoOTA.handle();
+  }
+
+}
+
+void displayScrollMessage(String msg)
+{
+  displayScrollMessageStr = msg;
+  isDisplayMessageNew = true;
+}
+
+void displayScrollErrorMessage(String msg, boolean showOnce)
+{
+  Serial.print(F("set display ERROR messsage: "));
+  Serial.println(msg);
+  displayScrollErrorMsgStr = msg;
+  isDisplayScrollErrorMsgNew = true;
+  isDisplayScrollErrorMsgOnce = showOnce;
+}
+
+
+void processEveryMinute() {
+  if (1) {
     if (weatherClient.getErrorMessage() != "") {
-      scrollMessage(weatherClient.getErrorMessage());
+      displayScrollErrorMessage(weatherClient.getErrorMessage(), true);
       return;
     }
 
@@ -614,20 +746,21 @@ void loop() {
     }
     #endif
 
-    displayRefreshCount --;
+    displayRefreshCount--;
     // Check to see if we need to Scroll some Data
     if (displayRefreshCount <= 0) {
       displayRefreshCount = displayScrollingInterval;
       String msg = " ";
+     if (weatherClient.getWeatherDataValid()) {
       String temperature = String(weatherClient.getTemperature(),0);
       String weatherDescription = weatherClient.getWeatherDescription();
       weatherDescription.toUpperCase();
-      staticDisplayIdx=0;
+      staticDisplayIdx = 0;
 
       if (SHOW_DATE) {
         if (!isStaticDisplay) {
-        msg += getDayName(weekday()) + ", ";
-        msg += getMonthName(month()) + " " + day() + "  ";
+          msg += getDayName(weekday()) + ", ";
+          msg += getMonthName(month()) + " " + day() + "  ";
         } else {
           if (IS_METRIC) {
             staticDisplay[staticDisplayIdx] = zeroPad(month()) + "-" + zeroPad(day());
@@ -684,6 +817,7 @@ void loop() {
           staticDisplayIdx++;
         }
       }
+     }
       if (marqueeMessage.length() > 0) {
         msg += marqueeMessage + "  ";
       }
@@ -717,42 +851,58 @@ void loop() {
 
       #if COMPILE_MQTT
       if (USE_MQTT) {
-        // add mqtt message if there is one
-        msg += String(mqttClient.getLastMqttMessage());
+        char * mqttmsg = mqttClient.getLastMqttMessage();
+        if (strlen(mqttmsg)> 0) {
+          if (isStaticDisplay &&
+            ((int)strlen(mqttmsg) <= ((displayWidth * 8) / 6)))
+          {
+            staticDisplay[staticDisplayIdx] = mqttmsg;
+            staticDisplayIdx++;
+          } else {
+            // add mqtt message if there is one
+            msg += mqttmsg;
+          }
+        }
       }
       #endif
 
       if (isStaticDisplay) {
-        int maxMsgLen = (displayWidth * 8) / 6;
-        for (int idx = 0; idx < staticDisplayIdx; idx++) {
-          int len = staticDisplay[idx].length();
-          if (len <= 0 || len > maxMsgLen) continue; // can't display this statically
-          // msg fits on one screen : no scroll necessary
-          matrix.fillScreen(CLEARSCREEN);
-          centerPrint(staticDisplay[idx], true);
-          // show each msg for 5 seconds at default scroll speed
-          for (int i = 0; i < 200; i++) {
-            delay(displayScrollSpeed);
-            if (WEBSERVER_ENABLED) {
-              server.handleClient();
-            }
-            if (ENABLE_OTA) {
-              ArduinoOTA.handle();
-            }
-          }
+
+        if (staticDisplayIdx != 0) {
+          isStaticDisplayNew = true;
+          staticDisplayIdxOut = 0;
         }
+
       }
       if (msg.length() > 3) {
-        scrollMessage(msg);
+        displayScrollMessage(msg);
       }
       #if COMPILE_PIHOLE
+      /TODO: refactor this!
       drawPiholeGraph();
       #endif
     }
   }
+}
 
-  String currentTime = hourMinutes(false);
+void processEverySecond() {
 
+  #if COMPILE_MQTT
+  // allow the mqtt client to do its thing
+  if (USE_MQTT) {
+    mqttClient.loop();
+    newMqttMessage = mqttClient.getNewMqttMessage();
+  }
+  #endif
+
+  //Get some Weather Data to serve
+  if ((getMinutesFromLastRefresh() >= refreshDataInterval) || lastRefreshDataTimestamp == 0) {
+    getWeatherData();
+  }
+  checkDisplay(); // this will see if we need to turn it on or off for night mode.
+
+  displayTime = hourMinutes(false);
+  isDisplayTimeNew = true;
   if (displayWidth >= 8) {
     // wide clock style config, different screen formats for 8+ tiles: HH:MM, HH:MM:SS, HH:MM *CF, HH:MM %RH, mm dd HH:MM,  HH:MM Www DD (12 chars! 8 tiles fit 10 chars! ,
     // 1=HH:MM, 2=HH:MM:SS, 3=HH:MM *CF, 4=HH:MM %RH, 5=mm dd HH:MM, 6=HH:MM mmdd, 7=HH:MM ddmm, 8=HH:MMWwwDD (or HH:MM Www DD on >= 10 tile display)
@@ -765,65 +915,56 @@ void loop() {
         // No change this is normal clock display
         break;
     case WIDE_CLOCK_STYLE_HHMMSS:
-        currentTime += secondsIndicator(false) + zeroPad(second());
+        displayTime += secondsIndicator(false) + zeroPad(second());
         break;
     case WIDE_CLOCK_STYLE_HHMM_CF:
         // On Wide Display -- show the current temperature as well
         add = String(weatherClient.getTemperature(),0);
-        currentTime += " " + add + getTempSymbol();
+        displayTime += " " + add + getTempSymbol();
         break;
     case WIDE_CLOCK_STYLE_HHMM_RH:
-        currentTime += " " + String(weatherClient.getHumidity()) + "%";
+        displayTime += " " + String(weatherClient.getHumidity()) + "%";
         break;
     case WIDE_CLOCK_STYLE_MMDD_HHMM:
         add = zeroPad(month())+zeroPad(day());
-        currentTime = add + " " + currentTime;
+        displayTime = add + " " + displayTime;
         break;
     case WIDE_CLOCK_STYLE_HHMM_MMDD:
         add = zeroPad(month())+zeroPad(day());
-        currentTime += " " + add;
+        displayTime += " " + add;
         break;
     case WIDE_CLOCK_STYLE_HHMM_DDMM:
         add = zeroPad(day())+zeroPad(month());
-        currentTime += " " + add;
+        displayTime += " " + add;
         break;
     case WIDE_CLOCK_STYLE_HHMM_WWWDD:
         String add = getDayName(weekday());
         if (displayWidth >= 10) {
           add.remove(3);
-          add += " ";
+          add = " " + add + " ";
         } else {
           add.remove(3);
         }
         add += spacePad(day());
-        currentTime += add;
+        displayTime += add;
         break;
     }
-  }
-  matrix.fillScreen(CLEARSCREEN);
-  centerPrint(currentTime, true);
-
-  if (WEBSERVER_ENABLED) {
-    server.handleClient();
-  }
-  if (ENABLE_OTA) {
-    ArduinoOTA.handle();
   }
 }
 
 
 String hourMinutes(boolean isRefresh) {
   if (IS_24HOUR) {
-    return String(hour()) + secondsIndicator(isRefresh) + zeroPad(minute());
+    return spacePad(hour()) + secondsIndicator(isRefresh) + zeroPad(minute());
   } else {
-    return String(hourFormat12()) + secondsIndicator(isRefresh) + zeroPad(minute());
+    return spacePad(hourFormat12()) + secondsIndicator(isRefresh) + zeroPad(minute());
   }
 }
 
-String secondsIndicator(boolean isRefresh) {
-  String rtnValue = ":";
+char secondsIndicator(boolean isRefresh) {
+  char rtnValue = ':';
   if (isRefresh == false && (flashOnSeconds && (second() % 2) == 0)) {
-    rtnValue = " ";
+    rtnValue = ' ';
   }
   return rtnValue;
 }
@@ -956,7 +1097,7 @@ void handleSaveConfig() {
     }
     APIKEY = server.arg(F("openWeatherMapApiKey"));
     CityID = server.arg(F("city")).toInt();
-    flashOnSeconds = server.hasArg(F("flashseconds")); // means blinking ":" on clock
+    flashOnSeconds = server.hasArg(F("flashseconds")); // flashOnSeconds means blinking ':' on clock
     IS_24HOUR = server.hasArg(F("is24hour"));
     IS_PM = server.hasArg(F("isPM"));
     SHOW_TEMPERATURE = server.hasArg(F("showtemp"));
@@ -1212,7 +1353,7 @@ void handleDisplay() {
     return server.requestAuthentication();
   }
   enableDisplay(!displayOn);
-  displayMessage(F("Display is now ") + String((displayOn) ? "ON" : "OFF"));
+  webDisplayMessage(F("Display is now ") + String((displayOn) ? "ON" : "OFF"));
   delay(1000);
   redirectHome();
 }
@@ -1220,6 +1361,7 @@ void handleDisplay() {
 //***********************************************************************
 void getWeatherData() //client function to send/receive GET request data.
 {
+  bool updateTime = false;
   onBoardLed(LED_ON);
   matrix.fillScreen(CLEARSCREEN);
   Serial.println();
@@ -1227,7 +1369,7 @@ void getWeatherData() //client function to send/receive GET request data.
   if (displayOn) {
     // only pull the weather data if display is on
     if (firstTimeSync != 0) {
-      centerPrint(hourMinutes(true), true);
+      centerPrint(displayTime, true);
     } else {
       centerPrint("...");
     }
@@ -1238,24 +1380,31 @@ void getWeatherData() //client function to send/receive GET request data.
 
     weatherClient.updateWeather();
     if (weatherClient.getErrorMessage() != "") {
-      scrollMessage(weatherClient.getErrorMessage());
+      displayScrollErrorMessage(weatherClient.getErrorMessage(), true);
     } else {
       // Set current timezone (adapts to DST when region supports that)
       // when time was potentially changed, do reset the sync interval
-      if (set_timeZoneSec(weatherClient.getTimeZoneSeconds()))
+      if (set_timeZoneSec(weatherClient.getTimeZoneSeconds())) {
+        updateTime = true;
         setSyncInterval(refreshDataInterval*SECS_PER_MIN);
+      }
     }
   }
-
-  Serial.println(F("Updating Time..."));
-  //Update the Time
-  matrix.drawPixel(0, 4, HIGH);
-  matrix.drawPixel(0, 3, HIGH);
-  matrix.drawPixel(0, 2, HIGH);
-  matrix.write();
-
   lastRefreshDataTimestamp = now();
-  if (timeStatus() != timeNotSet) {
+
+// FIXME: potential bug: with time sync provider (timeNTP) set, the call to TimeStatus will sync the
+// time before returning, so that status timeNeedsSync is never set, unless the sync has failed...
+// hence Updating time is never shown, although it has happened.
+// Solution: do not setup sync provider, but call getNtpTime() here explicitly
+
+  if (timeStatus() != timeSet  || updateTime) { // when timeNotSet OR timeNeedsSync
+    Serial.println(F("Updating Time..."));
+    //Update the Time
+    matrix.drawPixel(0, 4, HIGH);
+    matrix.drawPixel(0, 3, HIGH);
+    matrix.drawPixel(0, 2, HIGH);
+    matrix.write();
+
     if (firstTimeSync == 0) {
       firstTimeSync = now();
       setSyncInterval(refreshDataInterval*SECS_PER_MIN);
@@ -1279,7 +1428,7 @@ void getWeatherData() //client function to send/receive GET request data.
   onBoardLed(LED_OFF);
 }
 
-void displayMessage(String message) {
+void webDisplayMessage(String message) {
   onBoardLed(LED_ON);
 
   sendHeader();
@@ -1359,17 +1508,17 @@ void webDisplayWeatherData() {
     dtstr = getDayName(weekday()) + ", " + getMonthName(month()) + " " + day() + ", " + hourFormat12() + ":" + zeroPad(minute()) + ", " + getAmPm(isPM());
   }
 
-  Serial.println(weatherClient.getCity());
+  Serial.println(dtstr);
+  Serial.println(temperature);
+  //Serial.println(weatherClient.getCity());
   Serial.println(weatherClient.getWeatherCondition());
   Serial.println(weatherClient.getWeatherDescription());
   Serial.print(F("UpdateTime: "));
   Serial.println(get24HrColonMin(weatherClient.getReportTimestamp() + weatherClient.getTimeZoneSeconds()));
-  Serial.print(F("SunRiseTime: "));
-  Serial.println(get24HrColonMin(weatherClient.getSunRise() + weatherClient.getTimeZoneSeconds()));
-  Serial.print(F("SunSetTime: "));
-  Serial.println(get24HrColonMin(weatherClient.getSunSet() + weatherClient.getTimeZoneSeconds()));
-  Serial.println(temperature);
-  Serial.println(dtstr);
+  //Serial.print(F("SunRiseTime: "));
+  //Serial.println(get24HrColonMin(weatherClient.getSunRise() + weatherClient.getTimeZoneSeconds()));
+  //Serial.print(F("SunSetTime: "));
+  //Serial.println(get24HrColonMin(weatherClient.getSunSet() + weatherClient.getTimeZoneSeconds()));
 
   if (timeStatus() == timeNotSet) {
     html += F("<p>waiting for first time sync...</p>");
@@ -1517,7 +1666,7 @@ void configModeCallback(WiFiManager* myWiFiManager) {
   Serial.println(F("Please connect to AP"));
   Serial.println(myWiFiManager->getConfigPortalSSID());
   Serial.println(F("To setup Wifi Configuration"));
-  scrollMessage(F("Please Connect to AP: ") + String(myWiFiManager->getConfigPortalSSID()));
+  scrollMessageWait(F("Please Connect to AP: ") + String(myWiFiManager->getConfigPortalSSID()));
   centerPrint("wifi");
 }
 
@@ -1548,6 +1697,7 @@ String getTempSymbol() {
 }
 
 String getTempSymbol(bool forWeb) {
+  // Note: The forWeb degrees character is an UTF8 double byte character!
   return ((forWeb) ? "°" : String(char(248))) + String((IS_METRIC) ? 'C' : 'F');
 }
 
@@ -1557,7 +1707,7 @@ String getSpeedSymbol() {
 
 String getPressureSymbol()
 {
-  return (IS_METRIC) ? "mb":"inHg";
+  return (IS_METRIC) ? "mb" : "inHg";
 }
 
 // converts the dBm to a range between 0 and 100%
@@ -1624,6 +1774,9 @@ void enableDisplay(boolean enable) {
 
 // Toggle on and off the display if user defined times
 void checkDisplay() {
+  //TODO: change from ON/OFF to quiet time operation with several options
+  //TODO: save timeDisplay as int HH*3600+MM*60+00 or -1 if not set, same goes for currentTime
+
   if (timeDisplayTurnsOn.length() == 0 || timeDisplayTurnsOff.length() == 0) {
     return; // nothing to do
   }
@@ -1966,7 +2119,39 @@ void readConfiguration() {
   #endif
 }
 
-void scrollMessage(String msg) {
+void scrollMessageSetup(String msg) {
+  msg += " "; // add one more space at the end
+  scrlMsg = msg;
+  scrlMsgLen = (int)msg.length();
+  scrlPixTotal = (font_width * (int)msg.length() + (matrix.width() - 1) - font_space);
+  scrlPixY = (matrix.height() - 8) / 2; // center the text vertically
+  scrlPixIdx = 0;
+  scrlBusy = true;
+  SCHEDULE_INTERVAL_START(scrlPixelLastTime,100);
+}
+
+// Call this every <displayScrollSpeed> ms
+boolean scrollMessageNext() {
+  if (scrlBusy) {
+    int msgIdx = scrlPixIdx / font_width;
+    int x = (matrix.width() - 1) - scrlPixIdx % font_width;
+    matrix.fillScreen(CLEARSCREEN);
+    while (((x + font_width - font_space) >= 0) && msgIdx >= 0) {
+      if (msgIdx < scrlMsgLen) {
+        matrix.drawChar(x, scrlPixY, scrlMsg[msgIdx], 1/*FGcolor*/, 0/*BGcolor*/, 1/*sizefactor*/);
+      }
+      msgIdx--;
+      x -= font_width;
+    }
+    // TODO: perform matrix.write() on HW timer interrupt for more exact timings
+    matrix.write(); // Send bitmap to display
+    scrlPixIdx++;
+  }
+  scrlBusy = scrlPixIdx < scrlPixTotal;
+  return scrlBusy;
+}
+
+void scrollMessageWait(String msg) {
   msg += " "; // add a space at the end
   for (int i = 0; i < (font_width * (int)msg.length() + (matrix.width() - 1) - font_space); i++) {
     if (WEBSERVER_ENABLED) {
@@ -1994,6 +2179,56 @@ void scrollMessage(String msg) {
     delay(displayScrollSpeed);
   }
   matrix.setCursor(0, 0);
+}
+
+boolean staticDisplaySetupSingle(char * message) {
+  if (isStaticDisplay &&
+      ((int)strlen(message) > 0) &&
+      ((int)strlen(message) <= ((displayWidth * 8) / 6)))
+  {
+    // msg fits on one screen : no scroll necessary
+    matrix.fillScreen(CLEARSCREEN);
+    centerPrint(String(message), false);
+    SCHEDULE_INTERVAL_START(staticDisplayLastTime,0);
+    isStaticDisplayBusy = true;
+    isStaticDisplayNew = true;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+void staticDisplaySetup(void) {
+  if (isStaticDisplayNew && !isStaticDisplayBusy) {
+    isStaticDisplayBusy = true;
+    SCHEDULE_INTERVAL_START(staticDisplayLastTime,0);
+    staticDisplayNext();
+  }
+}
+
+void staticDisplayNext(void) {
+  if (isStaticDisplayBusy) {
+    int maxMsgLen = (displayWidth * 8) / 6;
+    // find (next) fitting message (too long messages will not be shown)
+    while (staticDisplayIdxOut < staticDisplayIdx) {
+      int len = staticDisplay[staticDisplayIdxOut].length();
+      if (len > 0 && len <= maxMsgLen) break;
+      staticDisplayIdxOut++;
+    }
+
+    if (staticDisplayIdxOut < staticDisplayIdx) {
+      // msg fits on one screen : no scroll necessary
+      matrix.fillScreen(CLEARSCREEN);
+      centerPrint(staticDisplay[staticDisplayIdxOut], false);
+      staticDisplayIdxOut++;
+    } else {
+      // at end of list: reset and continue
+      staticDisplayIdx = 0;
+      staticDisplayIdxOut = 0;
+      isStaticDisplayNew = false;
+      isStaticDisplayBusy = false;
+    }
+  }
 }
 
 #if COMPILE_PIHOLE
@@ -2081,7 +2316,7 @@ String decodeHtmlString(const String &msg) {
   // Restore special characters that are misformed to %char by the client browser
   decodedMsg.replace("+", " ");
   decodedMsg.replace("%21", "!");
-  decodedMsg.replace("%22", "");
+  decodedMsg.replace("%22", "\"");
   decodedMsg.replace("%23", "#");
   decodedMsg.replace("%24", "$");
   decodedMsg.replace("%25", "%");

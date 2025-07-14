@@ -99,25 +99,8 @@ enum loopState_e loopState, lastState;
 #define SCHEDULE_INTERVAL(_var,_interval_ms,_func) { if((millis()-(_var))>(unsigned)(_interval_ms)){_var=millis();_func();}}
 #define SCHEDULE_INTERVAL_START(_var,_delay) {_var=millis()-(_delay);}
 
-#if COMPILE_NEWS
-// News Client
-NewsApiClient newsClient(NEWS_API_KEY, NEWS_SOURCE);
-int newsIndex = 0;
-#endif
-
 // Weather Client
 OpenWeatherMapClient weatherClient(APIKEY, IS_METRIC);
-
-#if COMPILE_OCTOPRINT
-// OctoPrint Client
-OctoPrintClient printerClient(OctoPrintApiKey, OctoPrintServer, OctoPrintPort, OctoAuthUser, OctoAuthPass);
-int printerCount = 0;
-#endif
-
-#if COMPILE_PIHOLE
-// Pi-hole Client
-PiHoleClient piholeClient;
-#endif
 
 #if COMPILE_MQTT
 // Mqtt Client
@@ -254,7 +237,6 @@ static const char WEB_BODY2_MAIN[] PROGMEM =
   #endif
   "</script>\n";
 
-
 static const char WEB_FOOTER[] PROGMEM = "<br><br><br>"
   "</div>\n"
   "<footer class='w3-container w3-bottom w3-theme'>"
@@ -267,15 +249,6 @@ static const char WEB_FOOTER[] PROGMEM = "<br><br><br>"
 static const char WEB_ACTIONS1[] PROGMEM =
   "<a class='w3-bar-item w3-button' href='/'><i class='fas fa-home'></i> Home</a>"
   "<a class='w3-bar-item w3-button' href='/configure'><i class='fas fa-cog'></i> Configure</a>"
-  #if COMPILE_NEWS
-  "<a class='w3-bar-item w3-button' href='/configurenews'><i class='far fa-newspaper'></i> News</a>"
-  #endif
-  #if COMPILE_OCTOPRINT
-  "<a class='w3-bar-item w3-button' href='/configureoctoprint'><i class='fas fa-cube'></i> OctoPrint</a>"
-  #endif
-  #if COMPILE_PIHOLE
-  "<a class='w3-bar-item w3-button' href='/configurepihole'><i class='fas fa-network-wired'></i> Pi-hole</a>"
-  #endif
   #if COMPILE_MQTT
   "<a class='w3-bar-item w3-button' href='/configuremqtt'><i class='fas fa-network-wired'></i> MQTT</a>"
   #endif
@@ -353,27 +326,6 @@ static const char CHANGE_FORM3[] PROGMEM =
   "<br><button class='w3-button w3-block w3-green w3-section w3-padding' type='submit'>Save</button></form>"
   "<script>function isNumberKey(e){var h=e.which?e.which:event.keyCode;return!(h>31&&(h<48||h>57))}</script>";
 
-#if COMPILE_PIHOLE
-static const char PIHOLE_FORM[] PROGMEM =
-  "<form class='w3-container' action='/savepihole' method='get'><h2>Pi-hole Configuration:</h2>"
-  "<p><input name='displaypihole' class='w3-check' type='checkbox' %PIHO_CB%> Show Pi-hole Statistics</p>"
-  "<label>Pi-hole Address (do not include http://)</label><input class='w3-input w3-border' type='text' name='piholeAddress' id='piholeAddress' value='%PIHO_ADR%' maxlength='60'>"
-  "<label>Pi-hole Port</label><input class='w3-input w3-border' type='text' name='piholePort' id='piholePort' value='%PIHO_PRT%' maxlength='5'  onkeypress='return isNumberKey(event)'>"
-  "<label>Pi-hole API Token (from Pi-hole &rarr; Settings &rarr; API/Web interface)</label>"
-  "<input class='w3-input w3-border' type='text' name='piApiToken' id='piApiToken' value='%PIHO_API%' maxlength='65'>"
-  "<input type='button' value='Test Connection and JSON Response' onclick='testPiHole()'><p id='PiHoleTest'></p>"
-  "<button class='w3-button w3-block w3-green w3-section w3-padding' type='submit'>Save</button></form>"
-  "<script>function isNumberKey(e){var h=e.which?e.which:event.keyCode;return!(h>31&&(h<48||h>57))}</script>";
-#endif
-
-#if COMPILE_PIHOLE
-static const char PIHOLE_TEST[] PROGMEM =
-  "<script>function testPiHole(){var e=document.getElementById(\"PiHoleTest\"),t=document.getElementById(\"piholeAddress\").value,"
-  "n=document.getElementById(\"piholePort\").value,api=document.getElementById(\"piApiToken\").value;;"
-  "if(e.innerHTML=\"\",\"\"==t||\"\"==n)return e.innerHTML=\"* Address and Port are required\","
-  "void(e.style.background=\"\");var r=\"http://\"+t+\":\"+n;r+=\"/admin/api.php?summary=3&auth=\"+api,window.open(r,\"_blank\").focus()}</script>";
-#endif
-
 #if COMPILE_MQTT
 static const char MQTT_FORM[] PROGMEM =
   "<form class='w3-container' action='/savemqtt' method='get'><h2>MQTT Configuration:</h2>"
@@ -386,32 +338,6 @@ static const char MQTT_FORM[] PROGMEM =
   "<button class='w3-button w3-block w3-green w3-section w3-padding' type='submit'>Save</button></form>"
   "<script>function isNumberKey(e){var h=e.which?e.which:event.keyCode;return!(h>31&&(h<48||h>57))}</script>";
 #endif
-
-#if COMPILE_NEWS
-static const char NEWS_FORM1[] PROGMEM =
-  "<form class='w3-container' action='/savenews' method='get'><h2>News Configuration:</h2>"
-  "<p><input name='displaynews' class='w3-check' type='checkbox' %NEWS_CB%> Display News Headlines</p>"
-  "<label>News API Key (get from <a href='https://newsapi.org/' target='_BLANK'>here</a>)</label>"
-  "<input class='w3-input w3-border' type='text' name='newsApiKey' value='%NEWSKEY%' maxlength='60'>"
-  "<p>Select News Source <select class='w3-option w3-padding' name='newssource' id='newssource'></select></p>"
-  "<script>var s='%NEWSSRC%';var tt;var xmlhttp=new XMLHttpRequest();xmlhttp.open('GET','https://raw.githubusercontent.com/Qrome/marquee-scroller/master/sources.json',!0);"
-  "xmlhttp.onreadystatechange=function(){if(xmlhttp.readyState==4){if(xmlhttp.status==200){var obj=JSON.parse(xmlhttp.responseText);"
-  "obj.sources.forEach(t)}}};xmlhttp.send();function t(it){if(it!=null){if(s==it.id){se=' selected'}else{se=''}tt+='<option'+se+'>'+it.id+'</option>';"
-  "document.getElementById('newssource').innerHTML=tt}}</script>"
-  "<button class='w3-button w3-block w3-green w3-section w3-padding' type='submit'>Save</button></form>";
-#endif
-
-static const char OCTO_FORM[] PROGMEM =
-  "<form class='w3-container' action='/saveoctoprint' method='get'><h2>OctoPrint Configuration:</h2>"
-  "<p><input name='displayoctoprint' class='w3-check' type='checkbox' %OCTO_CB%> Show OctoPrint Status</p>"
-  "<p><input name='octoprintprogress' class='w3-check' type='checkbox' %OCTPG_CB%> Show OctoPrint progress with clock</p>"
-  "<label>OctoPrint API Key (get from your server)</label><input class='w3-input w3-border' type='text' name='octoPrintApiKey' value='%OCTOKEY%' maxlength='60'>"
-  "<label>OctoPrint Address (do not include http://)</label><input class='w3-input w3-border' type='text' name='octoPrintAddress' value='%OCTOADR%' maxlength='60'>"
-  "<label>OctoPrint Port</label><input class='w3-input w3-border' type='text' name='octoPrintPort' value='%OCTOPOR%' maxlength='5'  onkeypress='return isNumberKey(event)'>"
-  "<label>OctoPrint User (only needed if you have haproxy or basic auth turned on)</label><input class='w3-input w3-border' type='text' name='octoUser' value='%OCTOUSR%' maxlength='30'>"
-  "<label>OctoPrint Password </label><input class='w3-input w3-border' type='password' name='octoPass' value='%OCTOPW%'>"
-  "<button class='w3-button w3-block w3-green w3-section w3-padding' type='submit'>Save</button></form>"
-  "<script>function isNumberKey(e){var h=e.which?e.which:event.keyCode;return!(h>31&&(h<48||h>57))}</script>";
 
 static const char COLOR_THEMES[] PROGMEM =
   "<option>red</option>"
@@ -555,15 +481,6 @@ void setup() {
     server.on("/", webDisplayWeatherData);
     server.on("/pull", handlePull);
     server.on("/saveconfig", handleSaveConfig);
-    #if COMPILE_NEWS
-    server.on("/savenews", handleSaveNews);
-    #endif
-    #if COMPILE_OCTOPRINT
-    server.on("/saveoctoprint", handleSaveOctoprint);
-    #endif
-    #if COMPILE_PIHOLE
-    server.on("/savepihole", handleSavePihole);
-    #endif
     #if COMPILE_MQTT
     server.on("/savemqtt", handleSaveMqtt);
     #endif
@@ -571,15 +488,6 @@ void setup() {
     server.on("/forgetwifi", handleForgetWifi);
     server.on("/restart", restartEsp);
     server.on("/configure", handleConfigure);
-    #if COMPILE_NEWS
-    server.on("/configurenews", handleNewsConfigure);
-    #endif
-    #if COMPILE_OCTOPRINT
-    server.on("/configureoctoprint", handleOctoprintConfigure);
-    #endif
-    #if COMPILE_PIHOLE
-    server.on("/configurepihole", handlePiholeConfigure);
-    #endif
     #if COMPILE_MQTT
     server.on("/configuremqtt", handleMqttConfigure);
     #endif
@@ -721,19 +629,6 @@ void processEveryMinute() {
     }
     matrix.fillScreen(CLEARSCREEN);
 
-    #if COMPILE_OCTOPRINT
-    if (OCTOPRINT_ENABLED) {
-      if (displayOn && ((printerClient.isOperational() || printerClient.isPrinting()) || printerCount == 0)) {
-        // This should only get called if the printer is actually running or if it has been 2 minutes since last check
-        printerClient.getPrinterJobResults();
-      }
-      printerCount += 1;
-      if (printerCount > 2) {
-        printerCount = 0;
-      }
-    }
-    #endif
-
     displayRefreshCount--;
     // Check to see if we need to Scroll some Data
     if (displayRefreshCount <= 0) {
@@ -810,33 +705,6 @@ void processEveryMinute() {
         msg += marqueeMessage + "  ";
       }
 
-      #if COMPILE_NEWS
-      if (NEWS_ENABLED) {
-        msg += "  " + NEWS_SOURCE + ": " + newsClient.getTitle(newsIndex) + "  ";
-        newsIndex += 1;
-        if (newsIndex > 9) {
-          newsIndex = 0;
-        }
-      }
-      #endif
-
-      #if COMPILE_OCTOPRINT
-      if (OCTOPRINT_ENABLED && printerClient.isPrinting()) {
-        msg += "  " + printerClient.getFileName() + " ";
-        msg += "(" + printerClient.getProgressCompletion() + "%)  ";
-      }
-      #endif
-
-      #if COMPILE_PIHOLE
-      if (USE_PIHOLE) {
-        piholeClient.getPiHoleData(PiHoleServer, PiHolePort, PiHoleApiKey);
-        piholeClient.getGraphData(PiHoleServer, PiHolePort, PiHoleApiKey);
-        if (piholeClient.getPiHoleStatus() != "") {
-          msg += F("    Pi-hole (") + piholeClient.getPiHoleStatus() + "): " + piholeClient.getAdsPercentageToday() + "% ";
-        }
-      }
-      #endif
-
       #if COMPILE_MQTT
       if (USE_MQTT) {
         char * mqttmsg = mqttClient.getLastMqttMessage();
@@ -865,10 +733,6 @@ void processEveryMinute() {
       if (msg.length() > 3) {
         displayScrollMessage(msg);
       }
-      #if COMPILE_PIHOLE
-      /TODO: refactor this!
-      drawPiholeGraph();
-      #endif
     }
   }
 }
@@ -968,79 +832,6 @@ void handlePull() {
   getWeatherData(); // this will force a data pull for new weather
   webDisplayWeatherData();
 }
-
-#if COMPILE_NEWS
-void handleSaveNews() {
-  // test that important args are present to accept new config
-  if (server.hasArg(F("newsApiKey")) &&
-      server.hasArg(F("newssource"))) {
-    if (!authentication()) {
-      return server.requestAuthentication();
-    }
-    NEWS_ENABLED = server.hasArg(F("displaynews"));
-    NEWS_API_KEY = server.arg(F("newsApiKey"));
-    NEWS_SOURCE = server.arg(F("newssource"));
-    matrix.fillScreen(CLEARSCREEN);
-    writeConfiguration();
-    #if COMPILE_NEWS
-    newsClient.updateNews();
-    #endif
-  }
-  redirectHome();
-}
-#endif
-
-#if COMPILE_OCTOPRINT
-void handleSaveOctoprint() {
-  // test that important args are present to accept new config
-  if (server.hasArg(F("octoPrintApiKey")) &&
-      server.hasArg(F("octoUser"))
-      ) {
-    if (!authentication()) {
-      return server.requestAuthentication();
-    }
-    OCTOPRINT_ENABLED = server.hasArg(F("displayoctoprint"));
-    OCTOPRINT_PROGRESS = server.hasArg(F("octoprintprogress"));
-    OctoPrintApiKey = server.arg(F("octoPrintApiKey"));
-    OctoPrintServer = server.arg(F("octoPrintAddress"));
-    OctoPrintPort = server.arg(F("octoPrintPort")).toInt();
-    OctoAuthUser = server.arg(F("octoUser"));
-    OctoAuthPass = server.arg(F("octoPass"));
-    matrix.fillScreen(CLEARSCREEN);
-    writeConfiguration();
-    if (OCTOPRINT_ENABLED) {
-      printerClient.getPrinterJobResults();
-    }
-  }
-  redirectHome();
-}
-#endif
-
-#if COMPILE_PIHOLE
-void handleSavePihole() {
-  // test that some important args are present to accept new config
-  if (server.hasArg(F("piholeAddress")) &&
-      server.hasArg(F("piholePort")) &&
-      server.hasArg(F("piApiToken"))
-      ) {
-
-    if (!authentication()) {
-      return server.requestAuthentication();
-    }
-    USE_PIHOLE = server.hasArg(F("displaypihole"));
-    PiHoleServer = server.arg(F("piholeAddress"));
-    PiHolePort = server.arg(F("piholePort")).toInt();
-    PiHoleApiKey = server.arg(F("piApiToken"));
-    Serial.println(F("PiHoleApiKey from save: ") + PiHoleApiKey);
-    writeConfiguration();
-    if (USE_PIHOLE) {
-      piholeClient.getPiHoleData(PiHoleServer, PiHolePort, PiHoleApiKey);
-      piholeClient.getGraphData(PiHoleServer, PiHolePort, PiHoleApiKey);
-    }
-  }
-  redirectHome();
-}
-#endif
 
 #if COMPILE_MQTT
 void handleSaveMqtt() {
@@ -1159,84 +950,6 @@ void handleForgetWifi() {
   wifiManager.resetSettings();
   ESP.restart();
 }
-
-#if COMPILE_NEWS
-void handleNewsConfigure() {
-  if (!authentication()) {
-    return server.requestAuthentication();
-  }
-  onBoardLed(LED_ON);
-
-  sendHeader();
-
-  String form = FPSTR(NEWS_FORM1);
-  form.replace(F("%NEWS_CB%"), (NEWS_ENABLED) ? "checked" : "");
-  form.replace(F("%NEWSKEY%"), NEWS_API_KEY);
-  form.replace(F("%NEWSSRC%"), NEWS_SOURCE);
-  server.sendContent(form); //Send news form
-
-  sendFooter();
-
-  server.sendContent("");
-  server.client().stop();
-  onBoardLed(LED_OFF);
-}
-#endif
-
-#if COMPILE_OCTOPRINT
-void handleOctoprintConfigure() {
-  if (!authentication()) {
-    return server.requestAuthentication();
-  }
-  onBoardLed(LED_ON);
-
-  sendHeader();
-
-  String form = FPSTR(OCTO_FORM);
-  form.replace(F("%OCTO_CB%"), (OCTOPRINT_ENABLED) ? "checked" : "");
-  form.replace(F("%OCTPG_CB%"), (OCTOPRINT_PROGRESS) ? "checked" : "");
-  form.replace(F("%OCTOKEY%"), OctoPrintApiKey);
-  form.replace(F("%OCTOADR%"), OctoPrintServer);
-  form.replace(F("%OCTOPOR%"), String(OctoPrintPort));
-  form.replace(F("%OCTOUSR%"), OctoAuthUser);
-  form.replace(F("%OCTOPW%"), OctoAuthPass);
-  server.sendContent(form);
-
-  sendFooter();
-
-  server.sendContent("");
-  server.client().stop();
-  onBoardLed(LED_OFF);
-}
-#endif
-
-#if COMPILE_PIHOLE
-void handlePiholeConfigure() {
-  if (!authentication()) {
-    return server.requestAuthentication();
-  }
-  onBoardLed(LED_ON);
-
-  sendHeader();
-
-  server.sendContent(FPSTR(PIHOLE_TEST));
-
-  String form = FPSTR(PIHOLE_FORM);
-  form.replace(F("%PIHO_CB%"), (USE_PIHOLE) ? "checked" : "");
-  form.replace(F("%PIHO_ADR%"), PiHoleServer);
-  form.replace(F("%PIHO_PRT%"), String(PiHolePort));
-  form.replace(F("%PIHO_API%"), PiHoleApiKey);
-
-  server.sendContent(form);
-  form.clear();
-
-  sendFooter();
-
-  server.sendContent("");
-  server.client().stop();
-  onBoardLed(LED_OFF);
-}
-#endif
 
 #if COMPILE_MQTT
 void handleMqttConfigure() {
@@ -1402,17 +1115,6 @@ void getWeatherData() //client function to send/receive GET request data.
     }
   }
 
-  #if COMPILE_NEWS
-  if (NEWS_ENABLED && displayOn) {
-    matrix.drawPixel(0, 2, HIGH);
-    matrix.drawPixel(0, 1, HIGH);
-    matrix.drawPixel(0, 0, HIGH);
-    matrix.write();
-    //Serial.println(F("Getting News Data for ") + NEWS_SOURCE);
-    newsClient.updateNews();
-  }
-  #endif
-
   Serial.println(F("Version: " VERSION));
   Serial.println();
   onBoardLed(LED_OFF);
@@ -1554,59 +1256,6 @@ void webDisplayWeatherData() {
   server.sendContent(html); // spit out what we got
   html.clear(); // fresh start
 
-  #if COMPILE_OCTOPRINT
-  if (OCTOPRINT_ENABLED) {
-    html = F("<div class='w3-cell-row'><b>OctoPrint Status:</b> ");
-    if (printerClient.isPrinting()) {
-      int val = printerClient.getProgressPrintTimeLeft().toInt();
-      int hours = numberOfHours(val);
-      int minutes = numberOfMinutes(val);
-      int seconds = numberOfSeconds(val);
-      html += F("Online and Printing<br>"
-        "Est. Print Time Left: ") + zeroPad(hours) + ":" + zeroPad(minutes) + ":" + zeroPad(seconds) + "<br>";
-
-      val = printerClient.getProgressPrintTime().toInt();
-      hours = numberOfHours(val);
-      minutes = numberOfMinutes(val);
-      seconds = numberOfSeconds(val);
-      html += "Printing Time: " + zeroPad(hours) + ":" + zeroPad(minutes) + ":" + zeroPad(seconds) + "<br>" +
-        printerClient.getState() + " " + printerClient.getFileName() + F("<br>"
-        "<style>#myProgress {width: 100%;background-color: #ddd;}#myBar {width: ") + printerClient.getProgressCompletion() + F("%;height: 30px;background-color: #4CAF50;}</style>"
-        "<div id=\"myProgress\"><div id=\"myBar\" class=\"w3-medium w3-center\">") + printerClient.getProgressCompletion() + F("%</div></div>");
-    } else if (printerClient.isOperational()) {
-      html += printerClient.getState();
-    } else if (printerClient.getError() != "") {
-      html += printerClient.getError();
-    } else {
-      html += F("Not Connected");
-    }
-    html += F("</div><br><hr>");
-    server.sendContent(html);
-    html.clear();
-  }
-  #endif
-
-  #if COMPILE_PIHOLE
-  if (USE_PIHOLE) {
-    if (piholeClient.getError().length() == 0) {
-      html = F("<div class='w3-cell-row'><b>Pi-hole</b><br>"
-        "Total Queries (") + piholeClient.getUniqueClients() + F(" clients): <b>") + piholeClient.getDnsQueriesToday() + F("</b><br>"
-        "Queries Blocked: <b>") + piholeClient.getAdsBlockedToday() + F("</b><br>"
-        "Percent Blocked: <b>") + piholeClient.getAdsPercentageToday() + F("%</b><br>"
-        "Domains on Blocklist: <b>") + piholeClient.getDomainsBeingBlocked() + F("</b><br>"
-        "Status: <b>") + piholeClient.getPiHoleStatus() + F("</b><br>"
-        "</div><br><hr>");
-    } else {
-      html = F("<div class='w3-cell-row'><b>Pi-hole Error</b><br>"
-        "Please <a href='/configurepihole' title='Configure'>Configure</a> for Pi-hole <a href='/configurepihole' title='Configure'><i class='fas fa-cog'></i></a><br>"
-        "Status: Error Getting Data<br>"
-        "Reason: ") + piholeClient.getError() + F("<br></div><br><hr>");
-    }
-    server.sendContent(html);
-    html.clear();
-  }
-  #endif
-
   #if COMPILE_MQTT
   if (USE_MQTT) {
     if (mqttClient.getError().length() == 0) {
@@ -1621,24 +1270,6 @@ void webDisplayWeatherData() {
     }
     server.sendContent(html);
     html.clear();
-  }
-  #endif
-
-  #if COMPILE_NEWS
-  if (NEWS_ENABLED) {
-    html = F("<div class='w3-cell-row' style='width:100%'><h2>News (") + NEWS_SOURCE + F(")</h2></div>");
-    if (newsClient.getTitle(0).length() == 0) {
-      html += F("<p>Please <a href='/configurenews'>Configure News</a> API</p>");
-      server.sendContent(html);
-      html.clear();
-    } else {
-      for (int inx = 0; inx < 10; inx++) {
-        html = F("<div class='w3-cell-row'><a href='") + newsClient.getUrl(inx) + F("' target='_BLANK'>") + newsClient.getTitle(inx) + "</a></div>" +
-          newsClient.getDescription(inx) + F("<br/><br/>");
-        server.sendContent(html);
-        html.clear();
-      }
-    }
   }
   #endif
 
@@ -1808,20 +1439,6 @@ void writeConfiguration() {
     f.println(F("dispInterval=") + String(displayScrollingInterval));
     f.println(F("displayWidth=") + String(displayWidth));
     f.println(F("wideClockStyle=") + String(wideClockStyle));
-    #if COMPILE_NEWS
-    f.println(F("newsSource=") + NEWS_SOURCE);
-    f.println(F("isNews=") + String(NEWS_ENABLED));
-    f.println(F("newsApiKey=") + NEWS_API_KEY);
-    #endif
-    #if COMPILE_OCTOPRINT
-    f.println(F("isOctoPrint=") + String(OCTOPRINT_ENABLED));
-    f.println(F("isOctoProgress=") + String(OCTOPRINT_PROGRESS));
-    f.println(F("octoKey=") + OctoPrintApiKey);
-    f.println(F("octoServer=") + OctoPrintServer);
-    f.println(F("octoPort=") + String(OctoPrintPort));
-    f.println(F("octoUser=") + OctoAuthUser);
-    f.println(F("octoPass=") + OctoAuthPass);
-    #endif
     f.println(F("www_username=") + String(www_username));
     f.println(F("www_password=") + String(www_password));
     f.println(F("IS_BASIC_AUTH=") + String(IS_BASIC_AUTH));
@@ -1833,12 +1450,6 @@ void writeConfiguration() {
     f.println(F("SHOW_HIGHLOW=") + String(SHOW_HIGHLOW));
     f.println(F("SHOW_DATE=") + String(SHOW_DATE));
     f.println(F("SHOW_TEMP=") + String(SHOW_TEMPERATURE));
-    #if COMPILE_PIHOLE
-    f.println(F("USE_PIHOLE=") + String(USE_PIHOLE));
-    f.println(F("PiHoleServer=") + PiHoleServer);
-    f.println(F("PiHolePort=") + String(PiHolePort));
-    f.println(F("PiHoleApiKey=") + String(PiHoleApiKey));
-    #endif
     #if COMPILE_MQTT
     f.println(F("USE_MQTT=") + String(USE_MQTT));
     f.println(F("MqttServer=") + MqttServer);
@@ -1889,17 +1500,6 @@ void readConfiguration() {
        // using CityID for backwards compatibility
       geoLocation = line.substring(idx + 7);
     }
-    #if COMPILE_NEWS
-    if ((idx = line.indexOf(F("newsSource="))) >= 0) {
-      NEWS_SOURCE = line.substring(idx + 11);
-    }
-    if ((idx = line.indexOf(F("isNews="))) >= 0) {
-      NEWS_ENABLED = line.substring(idx + 7).toInt();
-    }
-    if ((idx = line.indexOf(F("newsApiKey="))) >= 0) {
-      NEWS_API_KEY = line.substring(idx + 11);
-    }
-    #endif
     if ((idx = line.indexOf(F("isFlash="))) >= 0) {
       flashOnSeconds = line.substring(idx + 8).toInt();
     }
@@ -1972,29 +1572,6 @@ void readConfiguration() {
     if ((idx = line.indexOf(F("scrollSpeed="))) >= 0) {
       displayScrollSpeed = line.substring(idx + 12).toInt();
     }
-    #if COMPILE_OCTOPRINT
-    if ((idx = line.indexOf(F("isOctoPrint="))) >= 0) {
-      OCTOPRINT_ENABLED = line.substring(idx + 12).toInt();
-    }
-    if ((idx = line.indexOf(F("isOctoProgress="))) >= 0) {
-      OCTOPRINT_PROGRESS = line.substring(idx + 15).toInt();
-    }
-    if ((idx = line.indexOf(F("octoKey="))) >= 0) {
-      OctoPrintApiKey = line.substring(idx + 8);
-    }
-    if ((idx = line.indexOf(F("octoServer="))) >= 0) {
-      OctoPrintServer = line.substring(idx + 11);
-    }
-    if ((idx = line.indexOf(F("octoPort="))) >= 0) {
-      OctoPrintPort = line.substring(idx + 9).toInt();
-    }
-    if ((idx = line.indexOf(F("octoUser="))) >= 0) {
-      OctoAuthUser = line.substring(idx + 9);
-    }
-    if ((idx = line.indexOf(F("octoPass="))) >= 0) {
-      OctoAuthPass = line.substring(idx + 9);
-    }
-    #endif
     if ((idx = line.indexOf(F("www_username="))) >= 0) {
       String temp = line.substring(idx + 13);
       temp.toCharArray(www_username, sizeof(www_username));
@@ -2030,20 +1607,6 @@ void readConfiguration() {
     if ((idx = line.indexOf(F("SHOW_TEMP="))) >= 0) {
       SHOW_TEMPERATURE = line.substring(idx + 10).toInt();
     }
-    #if COMPILE_PIHOLE
-    if ((idx = line.indexOf(F("USE_PIHOLE="))) >= 0) {
-      USE_PIHOLE = line.substring(idx + 11).toInt();
-    }
-    if ((idx = line.indexOf(F("PiHoleServer="))) >= 0) {
-      PiHoleServer = line.substring(idx + 13);
-    }
-    if ((idx = line.indexOf(F("PiHolePort="))) >= 0) {
-      PiHolePort = line.substring(idx + 11).toInt();
-    }
-    if ((idx = line.indexOf(F("PiHoleApiKey="))) >= 0) {
-      PiHoleApiKey = line.substring(idx + 13);
-    }
-    #endif
     #if COMPILE_MQTT
     if ((idx = line.indexOf(F("USE_MQTT="))) >= 0) {
       USE_MQTT = line.substring(idx + 9).toInt();
@@ -2071,15 +1634,9 @@ void readConfiguration() {
   fr.close();
   Serial.println(F("ReadConfigFile EOF"));
   matrix.setIntensity(displayIntensity);
-  #if COMPILE_NEWS
-  newsClient.updateNewsClient(NEWS_API_KEY, NEWS_SOURCE);
-  #endif
   weatherClient.setWeatherApiKey(APIKEY);
   weatherClient.setMetric(IS_METRIC);
   weatherClient.setGeoLocation(geoLocation);
-  #if COMPILE_OCTOPRINT
-  printerClient.updateOctoPrintClient(OctoPrintApiKey, OctoPrintServer, OctoPrintPort, OctoAuthUser, OctoAuthPass);
-  #endif
   #if COMPILE_MQTT
   mqttClient.updateMqttClient(MqttServer, MqttPort, MqttTopic, MqttAuthUser, MqttAuthPass);
   #endif
@@ -2195,55 +1752,6 @@ void staticDisplayNext(void) {
   }
 }
 
-#if COMPILE_PIHOLE
-void drawPiholeGraph() {
-  if (!USE_PIHOLE || piholeClient.getBlockedCount() == 0) {
-    return;
-  }
-  int count = piholeClient.getBlockedCount();
-  int high = 0;
-  int row = matrix.width() - 1;
-  int yval = 0;
-
-  int totalRows = count - matrix.width();
-
-  if (totalRows < 0) {
-    totalRows = 0;
-  }
-
-  // get the high value for the sample that will be on the screen
-  for (int inx = count; inx >= totalRows; inx--) {
-    if (piholeClient.getBlockedAds()[inx] > high) {
-      high = (int)piholeClient.getBlockedAds()[inx];
-    }
-  }
-
-  int currentVal = 0;
-  for (int inx = (count - 1); inx >= totalRows; inx--) {
-    currentVal = (int)piholeClient.getBlockedAds()[inx];
-    yval = map(currentVal, 0, high, 7, 0);
-    //Serial.println("Value: " + String(currentVal));
-    //Serial.println("x: " + String(row) + " y:" + String(yval) + " h:" + String(8-yval));
-    matrix.drawFastVLine(row, yval, 8 - yval, HIGH);
-    if (row == 0) {
-      break;
-    }
-    row--;
-  }
-  matrix.write();
-  //TODO refactor this!
-  for (int wait = 0; wait < 500; wait++) {
-    if (WEBSERVER_ENABLED) {
-      server.handleClient();
-    }
-    if (ENABLE_OTA) {
-      ArduinoOTA.handle();
-    }
-    delay(20);
-  }
-}
-#endif
-
 void centerPrint(const String &msg, boolean extraStuff) {
   int x = (matrix.width() - (msg.length() * font_width)) / 2;
   if (x < 0) {
@@ -2256,14 +1764,6 @@ void centerPrint(const String &msg, boolean extraStuff) {
       // Place PM indicator pixel at right edge, bottom line of digits
       matrix.drawPixel(matrix.width() - 1, 6, HIGH);
     }
-
-    #if COMPILE_OCTOPRINT
-    if (OCTOPRINT_ENABLED && OCTOPRINT_PROGRESS && printerClient.isPrinting()) {
-      int numberOfLightPixels = (printerClient.getProgressCompletion().toFloat() / float(100)) * (matrix.width() - 1);
-      // draw horizontal line from left to right, just below Clock digits
-      matrix.drawFastHLine(0, 7, numberOfLightPixels, HIGH);
-    }
-    #endif
   }
 
   matrix.setCursor(x, 0);

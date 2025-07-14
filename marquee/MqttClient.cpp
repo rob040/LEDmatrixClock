@@ -30,6 +30,7 @@ char lastMqttMessage[128];
 bool lastMqttMessageNew;
 
 void callback(char* topic, uint8_t* message, unsigned int length) {
+  (void)topic; // unused argument
   memcpy(lastMqttMessage, message, length);
   lastMqttMessage[length] = 0;
   lastMqttMessageNew = true;

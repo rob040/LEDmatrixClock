@@ -98,33 +98,31 @@ const int ledRotation = 3;
 // (no need to change; these can be set on configuration page)
 //******************************
 
-String APIKEY = ""; // Your API Key from http://openweathermap.org/
+String owmApiKey = ""; // Your API Key from http://openweathermap.org/
 // Default GEO Location (use http://openweathermap.org/find to find location name being "cityname,countrycode" or "city ID" or GPS "latitude,longitude")
 String geoLocation = "Breda,NL";
 String marqueeMessage = "";
 
-// (some) Default Weather Settings
-//FIXME TODO: do not use uppercase for variables
-//FIXME: inconsistent use of "Show" and "Display"; sometimes it refers to LED display, and sometimes to WebPage
-boolean SHOW_TEMPERATURE = true;
-boolean SHOW_DATE = false;
-boolean SHOW_CITY = true;
-boolean SHOW_CONDITION = true;
-boolean SHOW_HUMIDITY = true;
-boolean SHOW_WIND = true;
-boolean SHOW_WINDDIR = true;
-boolean SHOW_PRESSURE = false;
-boolean SHOW_HIGHLOW = true;
+// Default Weather Settings
+boolean showTemperature = true;
+boolean showDate = false;
+boolean showCity = true;
+boolean showCondition = true;
+boolean showHumidity = true;
+boolean showWind = true;
+boolean showWindDir = true;
+boolean showPressure = false;
+boolean showHighLow = true;
 
 const int staticDisplayTime = 5000;  // static display time per item, in ms
 boolean isStaticDisplay = false; // static display above SHOW_* items
-boolean IS_METRIC = true; // false = Imperial and true = Metric
-boolean IS_24HOUR = true; // 24 hour clock is displayed, false = 12 hour clock (for configuration, 24h time is always used)
-boolean IS_PM = true; // Show PM indicator on Clock when in AM/PM mode
+boolean isMetric = true; // false = Imperial and true = Metric
+boolean is24hour = true; // 24 hour clock is displayed, false = 12 hour clock (for configuration, 24h time is always used)
+boolean isPmIndicator = true; // Show PM indicator on Clock when in AM/PM mode
 boolean isSysLed = true; // flash onboard LED on system actions
 const int WEBSERVER_PORT = 80; // The port you can access this device on over HTTP
-const boolean WEBSERVER_ENABLED = true;  // Device will provide a web interface via http://[ip]:[port]/
-boolean IS_BASIC_AUTH = false;  // Use Basic Authorization for Configuration security on Web Interface
+const boolean isWebserverEnabled = true;  // Device will provide a web interface via http://[ip]:[port]/
+boolean isBasicAuth = false;  // Use Basic Authorization for Configuration security on Web Interface
 char www_username[32] = {"admin"};  // User account for the Web Interface
 char www_password[32] = {"password"};  // Password for the Web Interface
 int refreshDataInterval = 15;  // Time in minutes between data refresh (default 15 minutes)
@@ -151,14 +149,14 @@ String timeDisplayTurnsOff = "23:00"; // 24 Hour Format HH:MM -- Leave blank for
 
 #if COMPILE_MQTT
 // Mqtt add scrolling messages with Mqtt
-boolean USE_MQTT = false;             // Set true to display mqtt messages
+boolean isMqttEnabled = false;             // Set true to display mqtt messages
 String MqttServer = "";               // IP or Address only (DO NOT include http://)
 int MqttPort = 1883;                  // Port of your mqtt server (default 1883)
 String MqttTopic = "display/message"; // Topic on which to listen
 String  MqttAuthUser, MqttAuthPass;   // mqtt server authentication
 #endif
 
-const boolean ENABLE_OTA = true;    // this will allow you to load firmware to the device over WiFi (see OTA for ESP8266)
+const boolean isOTAenabled = true;    // this will allow you to load firmware to the device over WiFi (see OTA for ESP8266)
 String OTA_Password = "";     // Set an OTA password here -- leave blank if you don't want to be prompted for password
 
 //blue-grey

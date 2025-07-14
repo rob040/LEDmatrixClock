@@ -23,21 +23,67 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.40"
+#define VERSION "3.1.42"
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
+
 // DARK mode: Add button to main page to toggle webpage dark mode
 #define WEBPAGE_DARKMODE
 
 // matrix fillscreen clear color is 0
 #define CLEARSCREEN  0
 
+
 //declaring prototypes
-void configModeCallback(WiFiManager *myWiFiManager);
-int8_t getWifiQuality();
+
+void setup();
+void loop();
+void displayScrollMessage(const String &msg);
+void displayScrollErrorMessage(const String &msg, boolean showOnce);
+void processEveryMinute();
+void processEverySecond();
+String hourMinutes(boolean isRefresh);
+char secondsIndicator(boolean isRefresh);
+boolean authentication();
+void handlePull();
+void handleSaveMqtt();
+void handleSaveConfig();
+void handleSystemReset();
+void restartEsp();
+void handleForgetWifi();
+void handleMqttConfigure();
+void handleConfigure();
+void handleDisplay();
+void getWeatherData();
+void webDisplayMessage(const String &message);
+void redirectHome();
 void sendHeader(boolean isMainPage = false);
+void sendFooter();
+void webDisplayWeatherData();
+void configModeCallback(WiFiManager* myWiFiManager);
+void onBoardLed(boolean on);
+void flashLED(int number, int delayTime);
+String getTempSymbol(bool forWeb = false);
+String getSpeedSymbol();
+String getPressureSymbol();
+String getTimeTillUpdate();
+int8_t getWifiQuality();
+int getMinutesFromLastRefresh();
+int getMinutesFromLastDisplay();
+void enableDisplay(boolean enable);
+void checkDisplay();
+void writeConfiguration();
+void readConfiguration();
+void scrollMessageSetup(const String &msg);
+boolean scrollMessageNext();
+void scrollMessageWait(const String &msg);
+boolean staticDisplaySetupSingle(char * message);
+void staticDisplaySetup(void);
+void staticDisplayNext(void);
 void centerPrint(const String &msg, boolean extraStuff = false);
+String EncodeHtmlSpecialChars(const char *msg);
+String EncodeUrlSpecialChars(const char *msg);
 
 
 
@@ -100,7 +146,7 @@ enum loopState_e loopState, lastState;
 #define SCHEDULE_INTERVAL_START(_var,_delay) {_var=millis()-(_delay);}
 
 // Weather Client
-OpenWeatherMapClient weatherClient(APIKEY, IS_METRIC);
+OpenWeatherMapClient weatherClient(owmApiKey, isMetric);
 
 #if COMPILE_MQTT
 // Mqtt Client
@@ -110,8 +156,8 @@ MqttClient mqttClient(MqttServer, MqttPort, MqttTopic, MqttAuthUser, MqttAuthPas
 ESP8266WebServer server(WEBSERVER_PORT);
 ESP8266HTTPUpdateServer serverUpdater;
 
-//FIXME TODO: do not use uppercase for variables
-static const char WEB_HEADER[] PROGMEM = "<!DOCTYPE HTML>"
+
+static const char webHeaderHtml[] PROGMEM = "<!DOCTYPE HTML>"
   "<html><head>"
   "<title>Marquee LED matrix Clock</title>"
   "<meta charset='UTF-8'>"
@@ -169,7 +215,7 @@ static const char WEB_HEADER[] PROGMEM = "<!DOCTYPE HTML>"
   "</button>"
   "<h3 class='w3-bar-item'>Weather Marquee</h3>"
   ;
-static const char WEB_HEADER_MAIN[] PROGMEM =
+static const char webHeaderMainPage[] PROGMEM =
   "<div class='w3-right'>"
     #if defined (WEBPAGE_AUTOREFRESH) && (WEBPAGE_AUTOREFRESH > 0)
     "<button id='autorefresh-button' class='w3-button w3-small' onclick='toggleAutoRefresh()' title='toggle Auto Refresh Mode'>"
@@ -184,7 +230,7 @@ static const char WEB_HEADER_MAIN[] PROGMEM =
   "</div>"
 ;
 
-static const char WEB_BODY1[] PROGMEM =
+static const char webBody1[] PROGMEM =
   "</header>\n"
   "<nav id='mySidebar' class='w3-sidebar w3-bar-block w3-card'>"
   "<div class='w3-container w3-theme-d2'>"
@@ -192,7 +238,7 @@ static const char WEB_BODY1[] PROGMEM =
   "<div class='w3-left'><img src='http://openweathermap.org/img/w/$ICO$.png' alt='$IDES$'></div>"
   "<div class='w3-padding'>Menu</div></div>";
 
-static const char WEB_BODY2[] PROGMEM =
+static const char webBody2[] PROGMEM =
   "</nav>\n"
   "<script>"
   "function openSidebar(){document.getElementById('mySidebar').style.display='block'}"
@@ -206,7 +252,7 @@ static const char WEB_BODY2[] PROGMEM =
   "</script>\n"
   "<div class='w3-container w3-large' style='margin-top:88px'>\n";
 
-static const char WEB_BODY2_MAIN[] PROGMEM =
+static const char webBody2MainPage[] PROGMEM =
   "<script>"
   #if defined (WEBPAGE_AUTOREFRESH) && (WEBPAGE_AUTOREFRESH > 0)
   "var intervaltimer=0;"
@@ -237,7 +283,7 @@ static const char WEB_BODY2_MAIN[] PROGMEM =
   #endif
   "</script>\n";
 
-static const char WEB_FOOTER[] PROGMEM = "<br><br><br>"
+static const char webFooterHtml[] PROGMEM = "<br><br><br>"
   "</div>\n"
   "<footer class='w3-container w3-bottom w3-theme'>"
   "<i class='far fa-paper-plane'></i> Version: " VERSION " build " __DATE__ " " __TIME__ "<br>"
@@ -246,7 +292,7 @@ static const char WEB_FOOTER[] PROGMEM = "<br><br><br>"
   "</footer>\n"
   "</body></html>\n";
 
-static const char WEB_ACTIONS1[] PROGMEM =
+static const char webActions1[] PROGMEM =
   "<a class='w3-bar-item w3-button' href='/'><i class='fas fa-home'></i> Home</a>"
   "<a class='w3-bar-item w3-button' href='/configure'><i class='fas fa-cog'></i> Configure</a>"
   #if COMPILE_MQTT
@@ -255,12 +301,12 @@ static const char WEB_ACTIONS1[] PROGMEM =
   "<a class='w3-bar-item w3-button' href='/pull'><i class='fas fa-cloud-download-alt'></i> Refresh Data</a>"
   "<a class='w3-bar-item w3-button' href='/display'>";
 
-static const char WEB_ACTIONS2_on[] PROGMEM =
+static const char webActions2_ON[] PROGMEM =
   "<i class='fas fa-eye-slash'></i> Turn Display OFF";
-static const char WEB_ACTIONS2_off[] PROGMEM =
+static const char webActions2_OFF[] PROGMEM =
   "<i class='fas fa-eye'></i> Turn Display ON";
 
-static const char WEB_ACTION3[] PROGMEM =
+static const char webActions3[] PROGMEM =
   "</a><a class='w3-bar-item w3-button' href='/systemreset' onclick='return confirm(\"Do you want to reset to default weather settings?\")'>"
   "<i class='fas fa-undo'></i> Reset Settings</a>"
   "<a class='w3-bar-item w3-button' href='/forgetwifi' onclick='return confirm(\"Do you want to forget to WiFi connection?\")'><i class='fas fa-wifi'></i> Forget WiFi</a>"
@@ -268,7 +314,7 @@ static const char WEB_ACTION3[] PROGMEM =
   "<a class='w3-bar-item w3-button' href='/update'><i class='fas fa-wrench'></i> Firmware Update</a>"
   "<a class='w3-bar-item w3-button' href='https://github.com/rob040/LEDmatrixClock' target='_blank'><i class='fas fa-question-circle'></i> About</a>";
 
-static const char CHANGE_FORM1[] PROGMEM =
+static const char webChangeForm1[] PROGMEM =
   "<form class='w3-container' action='/saveconfig' method='get'><h2>Configure:</h2>"
   "<fieldset><legend>OpenWeatherMap configuration</legend>"
   "<label>OpenWeatherMap API Key (get free access from <a href='https://openweathermap.org/price#freeaccess' target='_BLANK'>openweathermap.org</a>)</label>"
@@ -293,7 +339,7 @@ static const char CHANGE_FORM1[] PROGMEM =
   "<p><label>Marquee Message (up to 80 chars)</label><input class='w3-input w3-border' type='text' name='marqueeMsg' value='%MSG%' maxlength='80'></p>"
   "</fieldset>\n";
 
-static const char CHANGE_FORM2[] PROGMEM =
+static const char webChangeForm2[] PROGMEM =
   "<fieldset><legend>Data Display settings</legend>"
   // title='Any selected Display Scrolling Data is shown in short form without movement (scroll) when fitting within display width.'
   "<p><input name='statdisp' class='w3-check' type='checkbox' %STATDISP_CB%> Do not scroll weather data display</p>"
@@ -316,7 +362,7 @@ static const char CHANGE_FORM2[] PROGMEM =
   "<p><input name='sysled' class='w3-check' type='checkbox' %SYSLED_CB%> Flash System LED on WiFi activity</p>"
   "</fieldset>\n";
 
-static const char CHANGE_FORM3[] PROGMEM =
+static const char webChangeForm3[] PROGMEM =
   "<fieldset><legend>Web page settings</legend>"
   "<p>Theme Color <select class='w3-option w3-padding' name='theme'>%THEME_OPT%</select></p>"
   "<p><input name='isBasicAuth' class='w3-check' type='checkbox' %AUTH_CB%> Use Security Credentials for Configuration Changes</p>"
@@ -327,7 +373,7 @@ static const char CHANGE_FORM3[] PROGMEM =
   "<script>function isNumberKey(e){var h=e.which?e.which:event.keyCode;return!(h>31&&(h<48||h>57))}</script>";
 
 #if COMPILE_MQTT
-static const char MQTT_FORM[] PROGMEM =
+static const char webMQTTform[] PROGMEM =
   "<form class='w3-container' action='/savemqtt' method='get'><h2>MQTT Configuration:</h2>"
   "<p><input name='displaymqtt' class='w3-check' type='checkbox' %MQTT_CB%> Show MQTT Statistics</p>"
   "<label>MQTT Address (do not include http://)</label><input class='w3-input w3-border' type='text' name='mqttAddress' id='mqttAddress' value='%MQTT_ADR%' maxlength='60'>"
@@ -339,7 +385,7 @@ static const char MQTT_FORM[] PROGMEM =
   "<script>function isNumberKey(e){var h=e.which?e.which:event.keyCode;return!(h>31&&(h<48||h>57))}</script>";
 #endif
 
-static const char COLOR_THEMES[] PROGMEM =
+static const char webColorThemes[] PROGMEM =
   "<option>red</option>"
   "<option>pink</option>"
   "<option>purple</option>"
@@ -452,7 +498,7 @@ void setup() {
   // print the received signal strength:
   Serial.printf_P(PSTR("Signal Strength (RSSI): %d%%\n"), getWifiQuality());
 
-  if (ENABLE_OTA) {
+  if (isOTAenabled) {
     ArduinoOTA.onStart([]() {
       Serial.println(F("Start OTA"));
     });
@@ -477,7 +523,7 @@ void setup() {
     ArduinoOTA.begin();
   }
 
-  if (WEBSERVER_ENABLED) {
+  if (isWebserverEnabled) {
     server.on("/", webDisplayWeatherData);
     server.on("/pull", handlePull);
     server.on("/saveconfig", handleSaveConfig);
@@ -593,10 +639,10 @@ void loop() {
   }
 
 
-  if (WEBSERVER_ENABLED) {
+  if (isWebserverEnabled) {
     server.handleClient();
   }
-  if (ENABLE_OTA) {
+  if (isOTAenabled) {
     ArduinoOTA.handle();
   }
 
@@ -640,12 +686,12 @@ void processEveryMinute() {
       weatherDescription.toUpperCase();
       staticDisplayIdx = 0;
 
-      if (SHOW_DATE) {
+      if (showDate) {
         if (!isStaticDisplay) {
           msg += getDayName(weekday()) + ", ";
           msg += getMonthName(month()) + " " + day() + "  ";
         } else {
-          if (IS_METRIC) {
+          if (isMetric) {
             staticDisplay[staticDisplayIdx] = zeroPad(month()) + "-" + zeroPad(day());
           } else {
             staticDisplay[staticDisplayIdx] = zeroPad(day()) + "," + zeroPad(month());
@@ -653,10 +699,10 @@ void processEveryMinute() {
           staticDisplayIdx++;
         }
       }
-      if (SHOW_CITY && !isStaticDisplay) {
+      if (showCity && !isStaticDisplay) {
         msg += weatherClient.getCity() + "  ";
       }
-      if (SHOW_TEMPERATURE) {
+      if (showTemperature) {
         if (!isStaticDisplay) {
           msg += temperature + getTempSymbol() + "  ";
         } else {
@@ -666,13 +712,13 @@ void processEveryMinute() {
       }
 
       //show high/low temperature
-      if (SHOW_HIGHLOW && !isStaticDisplay) {
+      if (showHighLow && !isStaticDisplay) {
         msg += F("High/Low:") + String(weatherClient.getTemperatureHigh(),0) + "/" + String(weatherClient.getTemperatureLow(),0) + "  ";
       }
-      if (SHOW_CONDITION && !isStaticDisplay) {
+      if (showCondition && !isStaticDisplay) {
         msg += weatherDescription + "  ";
       }
-      if (SHOW_HUMIDITY) {
+      if (showHumidity) {
         if (!isStaticDisplay) {
           msg += F("Humidity:") + String(weatherClient.getHumidity()) + "%  ";
         } else {
@@ -680,7 +726,7 @@ void processEveryMinute() {
           staticDisplayIdx++;
         }
       }
-      if (SHOW_WIND) {
+      if (showWind) {
         String windspeed = String(weatherClient.getWindSpeed(),0);
         windspeed.trim();
         if (!isStaticDisplay) {
@@ -691,7 +737,7 @@ void processEveryMinute() {
           staticDisplayIdx++;
         }
       }
-      if (SHOW_PRESSURE) {
+      if (showPressure) {
         if (!isStaticDisplay) {
           msg += F("Pressure:") + String(weatherClient.getPressure()) + getPressureSymbol() + "  ";
         } else {
@@ -706,7 +752,7 @@ void processEveryMinute() {
       }
 
       #if COMPILE_MQTT
-      if (USE_MQTT) {
+      if (isMqttEnabled) {
         char * mqttmsg = mqttClient.getLastMqttMessage();
         if (strlen(mqttmsg)> 0) {
           if (isStaticDisplay &&
@@ -741,7 +787,7 @@ void processEverySecond() {
 
   #if COMPILE_MQTT
   // allow the mqtt client to do its thing
-  if (USE_MQTT) {
+  if (isMqttEnabled) {
     mqttClient.loop();
     newMqttMessage = mqttClient.getNewMqttMessage();
   }
@@ -806,7 +852,7 @@ void processEverySecond() {
 
 
 String hourMinutes(boolean isRefresh) {
-  if (IS_24HOUR) {
+  if (is24hour) {
     return spacePad(hour()) + secondsIndicator(isRefresh) + zeroPad(minute());
   } else {
     return spacePad(hourFormat12()) + secondsIndicator(isRefresh) + zeroPad(minute());
@@ -822,7 +868,7 @@ char secondsIndicator(boolean isRefresh) {
 }
 
 boolean authentication() {
-  if (IS_BASIC_AUTH) {
+  if (isBasicAuth) {
     return server.authenticate(www_username, www_password);
   }
   return true; // Authentication not required
@@ -844,7 +890,7 @@ void handleSaveMqtt() {
     if (!authentication()) {
       return server.requestAuthentication();
     }
-    USE_MQTT = server.hasArg(F("displaymqtt"));
+    isMqttEnabled = server.hasArg(F("displaymqtt"));
     MqttServer = server.arg(F("mqttAddress"));
     MqttPort = server.arg(F("mqttPort")).toInt();
     MqttTopic = server.arg(F("mqttTopic"));
@@ -874,22 +920,22 @@ void handleSaveConfig() {
     if (!authentication()) {
       return server.requestAuthentication();
     }
-    APIKEY = server.arg(F("openWeatherMapApiKey"));
+    owmApiKey = server.arg(F("openWeatherMapApiKey"));
     geoLocation = server.arg(F("gloc"));
     flashOnSeconds = server.hasArg(F("flashseconds")); // flashOnSeconds means blinking ':' on clock
-    IS_24HOUR = server.hasArg(F("is24hour"));
-    IS_PM = server.hasArg(F("isPM"));
-    SHOW_TEMPERATURE = server.hasArg(F("showtemp"));
-    SHOW_DATE = server.hasArg(F("showdate"));
-    SHOW_CITY = server.hasArg(F("showcity"));
-    SHOW_CONDITION = server.hasArg(F("showcondition"));
-    SHOW_HUMIDITY = server.hasArg(F("showhumidity"));
-    SHOW_WIND = server.hasArg(F("showwind"));
-    SHOW_PRESSURE = server.hasArg(F("showpressure"));
-    SHOW_HIGHLOW = server.hasArg(F("showhighlow"));
+    is24hour = server.hasArg(F("is24hour"));
+    isPmIndicator = server.hasArg(F("isPM"));
+    showTemperature = server.hasArg(F("showtemp"));
+    showDate = server.hasArg(F("showdate"));
+    showCity = server.hasArg(F("showcity"));
+    showCondition = server.hasArg(F("showcondition"));
+    showHumidity = server.hasArg(F("showhumidity"));
+    showWind = server.hasArg(F("showwind"));
+    showPressure = server.hasArg(F("showpressure"));
+    showHighLow = server.hasArg(F("showhighlow"));
     isStaticDisplay = server.hasArg(F("statdisp"));
     isSysLed = server.hasArg(F("sysled"));
-    IS_METRIC = server.hasArg(F("metric"));
+    isMetric = server.hasArg(F("metric"));
     marqueeMessage = server.arg(F("marqueeMsg"));
     timeDisplayTurnsOn = server.arg(F("startTime"));
     timeDisplayTurnsOff = server.arg(F("endTime"));
@@ -905,14 +951,14 @@ void handleSaveConfig() {
     displayScrollSpeed = server.arg(F("scrollspeed")).toInt();
     wideClockStyle = server.arg(F("wideclockformat")).toInt();
 
-    IS_BASIC_AUTH = server.hasArg(F("isBasicAuth"));
+    isBasicAuth = server.hasArg(F("isBasicAuth"));
     String temp = server.arg(F("userid"));
     temp.trim();
     temp.toCharArray(www_username, sizeof(www_username));
     temp = server.arg(F("stationpassword"));
     temp.trim();
     temp.toCharArray(www_password, sizeof(www_password));
-    weatherClient.setMetric(IS_METRIC);
+    weatherClient.setMetric(isMetric);
     weatherClient.setGeoLocation(geoLocation);
     matrix.fillScreen(CLEARSCREEN);
     writeConfiguration();
@@ -960,8 +1006,8 @@ void handleMqttConfigure() {
 
   sendHeader();
 
-  String form = FPSTR(MQTT_FORM);
-  form.replace(F("%MQTT_CB%"), (USE_MQTT) ? "checked" : "");
+  String form = FPSTR(webMQTTform);
+  form.replace(F("%MQTT_CB%"), (isMqttEnabled) ? "checked" : "");
   form.replace(F("%MQTT_ADR%"), MqttServer);
   form.replace(F("%MQTT_PRT%"), String(MqttPort));
   form.replace(F("%MQTT_TOP%"), MqttTopic);
@@ -987,26 +1033,26 @@ void handleConfigure() {
 
   sendHeader();
 
-  String form = FPSTR(CHANGE_FORM1);
-  form.replace(F("%OWMKEY%"), APIKEY);
+  String form = FPSTR(webChangeForm1);
+  form.replace(F("%OWMKEY%"), owmApiKey);
   form.replace(F("%CTYNM%"), (weatherClient.getCity() != "") ?
       weatherClient.getCity() + ", " + weatherClient.getCountry() + " @ " + String(weatherClient.getLat(),6) + "," + String(weatherClient.getLon(),6)  : "");
   form.replace(F("%GLOC%"), geoLocation);
   form.replace(F("%MSG%"), EncodeHtmlSpecialChars(marqueeMessage.c_str()));
-  form.replace(F("%TEMP_CB%"), (SHOW_TEMPERATURE) ? "checked" : "");
-  form.replace(F("%DATE_CB%"), (SHOW_DATE) ? "checked" : "");
-  form.replace(F("%CITY_CB%"), (SHOW_CITY) ? "checked" : "");
-  form.replace(F("%COND_CB%"), (SHOW_CONDITION) ? "checked" : "");
-  form.replace(F("%HUM_CB%"), (SHOW_HUMIDITY) ? "checked" : "");
-  form.replace(F("%WIND_CB%"), (SHOW_WIND) ? "checked" : "");
-  form.replace(F("%PRES_CB%"), (SHOW_PRESSURE) ? "checked" : "");
-  form.replace(F("%HILO_CB%"), (SHOW_HIGHLOW) ? "checked" : "");
+  form.replace(F("%TEMP_CB%"), (showTemperature) ? "checked" : "");
+  form.replace(F("%DATE_CB%"), (showDate) ? "checked" : "");
+  form.replace(F("%CITY_CB%"), (showCity) ? "checked" : "");
+  form.replace(F("%COND_CB%"), (showCondition) ? "checked" : "");
+  form.replace(F("%HUM_CB%"), (showHumidity) ? "checked" : "");
+  form.replace(F("%WIND_CB%"), (showWind) ? "checked" : "");
+  form.replace(F("%PRES_CB%"), (showPressure) ? "checked" : "");
+  form.replace(F("%HILO_CB%"), (showHighLow) ? "checked" : "");
   server.sendContent(form);
 
-  form = FPSTR(CHANGE_FORM2);
-  form.replace(F("%24HR_CB%"), (IS_24HOUR) ? "checked" : "");
-  form.replace(F("%METRIC_CB%"), (IS_METRIC) ? "checked" : "");
-  form.replace(F("%PM_CB%"), (IS_PM) ? "checked" : "");
+  form = FPSTR(webChangeForm2);
+  form.replace(F("%24HR_CB%"), (is24hour) ? "checked" : "");
+  form.replace(F("%METRIC_CB%"), (isMetric) ? "checked" : "");
+  form.replace(F("%PM_CB%"), (isPmIndicator) ? "checked" : "");
   form.replace(F("%FLASH_CB%"), (flashOnSeconds) ? "checked" : "");
   form.replace(F("%STATDISP_CB%"), (isStaticDisplay) ? "checked" : "");
   form.replace(F("%STRT_TM%"), timeDisplayTurnsOn);
@@ -1035,11 +1081,11 @@ void handleConfigure() {
 
   server.sendContent(form); //Send another chunk of the form
 
-  form = FPSTR(CHANGE_FORM3);
-  String themeOptions = FPSTR(COLOR_THEMES);
+  form = FPSTR(webChangeForm3);
+  String themeOptions = FPSTR(webColorThemes);
   themeOptions.replace(">" + String(themeColor) + "<", " selected>" + String(themeColor) + "<");
   form.replace(F("%THEME_OPT%"), themeOptions);
-  form.replace(F("%AUTH_CB%"), (IS_BASIC_AUTH) ? "checked" : "");
+  form.replace(F("%AUTH_CB%"), (isBasicAuth) ? "checked" : "");
   form.replace(F("%CFGUID%"), String(www_username));
   form.replace(F("%CFGPW%"), String(www_password));
   server.sendContent(form); // Send the second chunk of Data
@@ -1150,31 +1196,31 @@ void sendHeader(boolean isMainPage) {
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
   server.send(200, F("text/html"), "");
 
-  String html = FPSTR(WEB_HEADER);
+  String html = FPSTR(webHeaderHtml);
   html.replace(F("$COLOR$"), themeColor);
   server.sendContent(html);
   if (isMainPage) {
-    server.sendContent(FPSTR(WEB_HEADER_MAIN));
+    server.sendContent(FPSTR(webHeaderMainPage));
   }
-  html = FPSTR(WEB_BODY1);
+  html = FPSTR(webBody1);
   html.replace(F("$ICO$"), weatherClient.getIcon());
   html.replace(F("$IDES$"), weatherClient.getWeatherDescription());
   server.sendContent(html);
 
-  server.sendContent(FPSTR(WEB_ACTIONS1));
-  server.sendContent(FPSTR((displayOn)? WEB_ACTIONS2_on:WEB_ACTIONS2_off));
-  server.sendContent(FPSTR(WEB_ACTION3));
+  server.sendContent(FPSTR(webActions1));
+  server.sendContent(FPSTR((displayOn)? webActions2_ON:webActions2_OFF));
+  server.sendContent(FPSTR(webActions3));
 
-  server.sendContent(FPSTR(WEB_BODY2));
+  server.sendContent(FPSTR(webBody2));
   if (isMainPage) {
-    server.sendContent(FPSTR(WEB_BODY2_MAIN));
+    server.sendContent(FPSTR(webBody2MainPage));
   }
 }
 
 void sendFooter() {
   int8_t rssi = getWifiQuality();
   Serial.printf_P(PSTR("Signal Strength (RSSI): %d%%\n"), rssi);
-  String html = FPSTR(WEB_FOOTER);
+  String html = FPSTR(webFooterHtml);
 
   html.replace(F("$UPD$"), getTimeTillUpdate());
   html.replace(F("$RSSI$"), String(rssi));
@@ -1190,7 +1236,7 @@ void webDisplayWeatherData() {
   String temperature = String(weatherClient.getTemperature(),1);
 
   String dtstr;
-  if (IS_24HOUR) {
+  if (is24hour) {
     // UK date+time presentation: MSB to LSB
     dtstr = getDayName(weekday()) + ", " + String(year()) + " " + getMonthName(month()) + " " + day() + " " + zeroPad(hour()) + ":" + zeroPad(minute());
   } else {
@@ -1257,7 +1303,7 @@ void webDisplayWeatherData() {
   html.clear(); // fresh start
 
   #if COMPILE_MQTT
-  if (USE_MQTT) {
+  if (isMqttEnabled) {
     if (mqttClient.getError().length() == 0) {
       html = F("<div class='w3-cell-row'><b>MQTT</b><br>"
              "Last Message: <b>") + EncodeHtmlSpecialChars(mqttClient.getLastMqttMessage()) + F("</b><br>"
@@ -1312,22 +1358,18 @@ void flashLED(int number, int delayTime) {
 #endif
 }
 
-String getTempSymbol() {
-  return getTempSymbol(false);
-}
-
 String getTempSymbol(bool forWeb) {
   // Note: The forWeb degrees character is an UTF8 double byte character!
-  return ((forWeb) ? "°" : String(char(248))) + String((IS_METRIC) ? 'C' : 'F');
+  return String((forWeb) ? "°" : String(char(248))) + String((isMetric) ? 'C' : 'F');
 }
 
 String getSpeedSymbol() {
-  return (IS_METRIC) ? "kmh" : "mph";
+  return String((isMetric) ? "kmh" : "mph");
 }
 
 String getPressureSymbol()
 {
-  return (IS_METRIC) ? "mb" : "inHg";
+  return String((isMetric) ? "mb" : "inHg");
 }
 
 // converts the dBm to a range between 0 and 100%
@@ -1343,25 +1385,15 @@ int8_t getWifiQuality() {
 }
 
 String getTimeTillUpdate() {
-  String rtnValue;
-
+  char hms[10];
   long timeToUpdate = (((refreshDataInterval * 60) + lastRefreshDataTimestamp) - now());
 
   int hours = numberOfHours(timeToUpdate);
   int minutes = numberOfMinutes(timeToUpdate);
   int seconds = numberOfSeconds(timeToUpdate);
+  sprintf_P(hms, PSTR("%d:%02d:%02d"), hours, minutes, seconds);
 
-  rtnValue = String(hours) + ":";
-  if (minutes < 10) {
-    rtnValue += "0";
-  }
-  rtnValue += String(minutes) + ":";
-  if (seconds < 10) {
-    rtnValue += "0";
-  }
-  rtnValue += String(seconds);
-
-  return rtnValue;
+  return String(hms);
 }
 
 int getMinutesFromLastRefresh() {
@@ -1422,7 +1454,7 @@ void writeConfiguration() {
     Serial.println(F("File open failed!"));
   } else {
     Serial.println(F("Saving settings now..."));
-    f.println(F("APIKEY=") + APIKEY);
+    f.println(F("APIKEY=") + owmApiKey);
     f.println(F("CityID=") + geoLocation); // using CityID for backwards compatibility
     f.println(F("marqueeMessage=") + marqueeMessage);
     f.println(F("timeDisplayTurnsOn=") + timeDisplayTurnsOn);
@@ -1430,9 +1462,9 @@ void writeConfiguration() {
     f.println(F("ledIntensity=") + String(displayIntensity));
     f.println(F("scrollSpeed=") + String(displayScrollSpeed));
     f.println(F("isFlash=") + String(flashOnSeconds));
-    f.println(F("is24hour=") + String(IS_24HOUR));
-    f.println(F("isPM=") + String(IS_PM));
-    f.println(F("isMetric=") + String(IS_METRIC));
+    f.println(F("is24hour=") + String(is24hour));
+    f.println(F("isPM=") + String(isPmIndicator));
+    f.println(F("isMetric=") + String(isMetric));
     f.println(F("isStatDisp=") + String(isStaticDisplay));
     f.println(F("isSysLed=") + String(isSysLed));
     f.println(F("refreshRate=") + String(refreshDataInterval));
@@ -1441,17 +1473,17 @@ void writeConfiguration() {
     f.println(F("wideClockStyle=") + String(wideClockStyle));
     f.println(F("www_username=") + String(www_username));
     f.println(F("www_password=") + String(www_password));
-    f.println(F("IS_BASIC_AUTH=") + String(IS_BASIC_AUTH));
-    f.println(F("SHOW_CITY=") + String(SHOW_CITY));
-    f.println(F("SHOW_CONDITION=") + String(SHOW_CONDITION));
-    f.println(F("SHOW_HUMIDITY=") + String(SHOW_HUMIDITY));
-    f.println(F("SHOW_WIND=") + String(SHOW_WIND));
-    f.println(F("SHOW_PRESSURE=") + String(SHOW_PRESSURE));
-    f.println(F("SHOW_HIGHLOW=") + String(SHOW_HIGHLOW));
-    f.println(F("SHOW_DATE=") + String(SHOW_DATE));
-    f.println(F("SHOW_TEMP=") + String(SHOW_TEMPERATURE));
+    f.println(F("IS_BASIC_AUTH=") + String(isBasicAuth));
+    f.println(F("SHOW_CITY=") + String(showCity));
+    f.println(F("SHOW_CONDITION=") + String(showCondition));
+    f.println(F("SHOW_HUMIDITY=") + String(showHumidity));
+    f.println(F("SHOW_WIND=") + String(showWind));
+    f.println(F("SHOW_PRESSURE=") + String(showPressure));
+    f.println(F("SHOW_HIGHLOW=") + String(showHighLow));
+    f.println(F("SHOW_DATE=") + String(showDate));
+    f.println(F("SHOW_TEMP=") + String(showTemperature));
     #if COMPILE_MQTT
-    f.println(F("USE_MQTT=") + String(USE_MQTT));
+    f.println(F("USE_MQTT=") + String(isMqttEnabled));
     f.println(F("MqttServer=") + MqttServer);
     f.println(F("MqttPort=") + String(MqttPort));
     f.println(F("MqttTopic=") + MqttTopic);
@@ -1494,7 +1526,7 @@ void readConfiguration() {
       }
     }
     if ((idx = line.indexOf(F("APIKEY="))) >= 0) {
-      APIKEY = line.substring(idx + 7);
+      owmApiKey = line.substring(idx + 7);
     }
     if ((idx = line.indexOf(F("CityID="))) >= 0) {
        // using CityID for backwards compatibility
@@ -1504,10 +1536,10 @@ void readConfiguration() {
       flashOnSeconds = line.substring(idx + 8).toInt();
     }
     if ((idx = line.indexOf(F("is24hour="))) >= 0) {
-      IS_24HOUR = line.substring(idx + 9).toInt();
+      is24hour = line.substring(idx + 9).toInt();
     }
     if ((idx = line.indexOf(F("isPM="))) >= 0) {
-      IS_PM = line.substring(idx + 5).toInt();
+      isPmIndicator = line.substring(idx + 5).toInt();
     }
     if ((idx = line.indexOf(F("wideclockformat="))) >= 0) {
       /* for backwards compatibility settings migration */
@@ -1527,7 +1559,7 @@ void readConfiguration() {
       }
     }
     if ((idx = line.indexOf(F("isMetric="))) >= 0) {
-      IS_METRIC = line.substring(idx + 9).toInt();
+      isMetric = line.substring(idx + 9).toInt();
     }
     if ((idx = line.indexOf(F("isStatDisp="))) >= 0) {
       isStaticDisplay = line.substring(idx + 11).toInt();
@@ -1581,35 +1613,35 @@ void readConfiguration() {
       temp.toCharArray(www_password, sizeof(www_password));
     }
     if ((idx = line.indexOf(F("IS_BASIC_AUTH="))) >= 0) {
-      IS_BASIC_AUTH = line.substring(idx + 14).toInt();
+      isBasicAuth = line.substring(idx + 14).toInt();
     }
     if ((idx = line.indexOf(F("SHOW_CITY="))) >= 0) {
-      SHOW_CITY = line.substring(idx + 10).toInt();
+      showCity = line.substring(idx + 10).toInt();
     }
     if ((idx = line.indexOf(F("SHOW_CONDITION="))) >= 0) {
-      SHOW_CONDITION = line.substring(idx + 15).toInt();
+      showCondition = line.substring(idx + 15).toInt();
     }
     if ((idx = line.indexOf(F("SHOW_HUMIDITY="))) >= 0) {
-      SHOW_HUMIDITY = line.substring(idx + 14).toInt();
+      showHumidity = line.substring(idx + 14).toInt();
     }
     if ((idx = line.indexOf(F("SHOW_WIND="))) >= 0) {
-      SHOW_WIND = line.substring(idx + 10).toInt();
+      showWind = line.substring(idx + 10).toInt();
     }
     if ((idx = line.indexOf(F("SHOW_PRESSURE="))) >= 0) {
-      SHOW_PRESSURE = line.substring(idx + 14).toInt();
+      showPressure = line.substring(idx + 14).toInt();
     }
     if ((idx = line.indexOf(F("SHOW_HIGHLOW="))) >= 0) {
-      SHOW_HIGHLOW = line.substring(idx + 13).toInt();
+      showHighLow = line.substring(idx + 13).toInt();
     }
     if ((idx = line.indexOf(F("SHOW_DATE="))) >= 0) {
-      SHOW_DATE = line.substring(idx + 10).toInt();
+      showDate = line.substring(idx + 10).toInt();
     }
     if ((idx = line.indexOf(F("SHOW_TEMP="))) >= 0) {
-      SHOW_TEMPERATURE = line.substring(idx + 10).toInt();
+      showTemperature = line.substring(idx + 10).toInt();
     }
     #if COMPILE_MQTT
     if ((idx = line.indexOf(F("USE_MQTT="))) >= 0) {
-      USE_MQTT = line.substring(idx + 9).toInt();
+      isMqttEnabled = line.substring(idx + 9).toInt();
     }
     if ((idx = line.indexOf(F("MqttServer="))) >= 0) {
       MqttServer = line.substring(idx + 11);
@@ -1634,8 +1666,8 @@ void readConfiguration() {
   fr.close();
   Serial.println(F("ReadConfigFile EOF"));
   matrix.setIntensity(displayIntensity);
-  weatherClient.setWeatherApiKey(APIKEY);
-  weatherClient.setMetric(IS_METRIC);
+  weatherClient.setWeatherApiKey(owmApiKey);
+  weatherClient.setMetric(isMetric);
   weatherClient.setGeoLocation(geoLocation);
   #if COMPILE_MQTT
   mqttClient.updateMqttClient(MqttServer, MqttPort, MqttTopic, MqttAuthUser, MqttAuthPass);
@@ -1675,10 +1707,10 @@ boolean scrollMessageNext() {
 
 void scrollMessageWait(const String &msg) {
   for (int i = 0; i < (font_width * (int)msg.length() + (matrix.width() - 1) - font_space); i++) {
-    if (WEBSERVER_ENABLED) {
+    if (isWebserverEnabled) {
       server.handleClient();
     }
-    if (ENABLE_OTA) {
+    if (isOTAenabled) {
       ArduinoOTA.handle();
     }
     matrix.fillScreen(CLEARSCREEN);
@@ -1760,7 +1792,7 @@ void centerPrint(const String &msg, boolean extraStuff) {
 
   // Print the static portions of the display before the main Message
   if (extraStuff) {
-    if (!IS_24HOUR && IS_PM && isPM()) {
+    if (!is24hour && isPmIndicator && isPM()) {
       // Place PM indicator pixel at right edge, bottom line of digits
       matrix.drawPixel(matrix.width() - 1, 6, HIGH);
     }

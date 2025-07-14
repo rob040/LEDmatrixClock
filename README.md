@@ -43,7 +43,7 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 * Webpage now has switchable dark-mode view
 * Webpage now has switchable automatic page update
 * Instead of scrolling text, there is also a static display mode for short messages, date, temperature or humidity only next to the time display.
-*
+* Weather Location lookup has been made simpler; there is no longer the need to lookup the City-ID code; just enter a (valid) city name with optional 2-letter country code. Also GPS coordinates are now allowed as location input.
 
 
 ### known issues

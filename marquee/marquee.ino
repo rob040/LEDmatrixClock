@@ -23,7 +23,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.39"
+#define VERSION "3.1.40"
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -106,7 +106,7 @@ int newsIndex = 0;
 #endif
 
 // Weather Client
-OpenWeatherMapClient weatherClient(APIKEY, CityID, IS_METRIC);
+OpenWeatherMapClient weatherClient(APIKEY, IS_METRIC);
 
 #if COMPILE_OCTOPRINT
 // OctoPrint Client
@@ -300,8 +300,11 @@ static const char CHANGE_FORM1[] PROGMEM =
   "<fieldset><legend>OpenWeatherMap configuration</legend>"
   "<label>OpenWeatherMap API Key (get free access from <a href='https://openweathermap.org/price#freeaccess' target='_BLANK'>openweathermap.org</a>)</label>"
   "<input class='w3-input w3-border' type='text' name='openWeatherMapApiKey' value='%OWMKEY%' maxlength='70'>"
-  "<p><label>%CTYNM% (<a href='http://openweathermap.org/find' target='_BLANK'><i class='fas fa-search'></i> Search for City ID</a>)</label>"
-  "<input class='w3-input w3-border' type='text' name='city' value='%CITY%' onkeypress='return isNumberKey(event)'></p>"
+  "<p><label>Geo Location "
+  "<small>Enter one of `City-name,2-letter-country-code` OR `City-ID` OR GPS `Latitude,Longitude`</small> "
+  "(<a href='http://openweathermap.org/find' target='_BLANK'><i class='fas fa-search'></i> Search for Geo Location</a>) </label>"
+  "<input class='w3-input w3-border' type='text' name='gloc' value='%GLOC%'>"
+  "<label>%CTYNM%</label></p>"
   "</fieldset>\n"
   "<fieldset><legend>LED Display weather data options</legend>"
   "<p><input name='showtemp' class='w3-check' type='checkbox' %TEMP_CB%> Display Temperature</p>"
@@ -622,7 +625,7 @@ void loop() {
   SCHEDULE_INTERVAL(staticDisplayLastTime, staticDisplayTime, staticDisplayNext);
 
   if (loopState != lastState) {
-    Serial.printf_P(PSTR("[%u] loopstate %d -> %d\n"), millis()&0xFFFF, lastState, loopState);
+    //Serial.printf_P(PSTR("[%u] loopstate %d -> %d\n"), millis()&0xFFFF, lastState, loopState);
     lastState = loopState;
   }
   switch (loopState) {
@@ -678,7 +681,7 @@ void loop() {
       break;
   }
   if (loopState != lastState) {
-    Serial.printf_P(PSTR("[%u] loopstate -> %d\n"), millis()&0xFFFF, loopState);
+    //Serial.printf_P(PSTR("[%u] loopstate -> %d\n"), millis()&0xFFFF, loopState);
   }
 
 
@@ -691,13 +694,13 @@ void loop() {
 
 }
 
-void displayScrollMessage(String msg)
+void displayScrollMessage(const String &msg)
 {
   displayScrollMessageStr = msg;
   isDisplayMessageNew = true;
 }
 
-void displayScrollErrorMessage(String msg, boolean showOnce)
+void displayScrollErrorMessage(const String &msg, boolean showOnce)
 {
   Serial.printf_P(PSTR("setDispERRmsg: %s\n"), msg.c_str());
   displayScrollErrorMsgStr = msg;
@@ -1067,7 +1070,7 @@ void handleSaveConfig() {
   boolean configChangedMustRestart = false;
   // test that some important args are present to accept new config
   if (server.hasArg(F("openWeatherMapApiKey")) &&
-      server.hasArg(F("city")) &&
+      server.hasArg(F("gloc")) &&
       server.hasArg(F("marqueeMsg")) &&
       server.hasArg(F("displaywidth")) &&
       server.hasArg(F("startTime")) &&
@@ -1081,7 +1084,7 @@ void handleSaveConfig() {
       return server.requestAuthentication();
     }
     APIKEY = server.arg(F("openWeatherMapApiKey"));
-    CityID = server.arg(F("city")).toInt();
+    geoLocation = server.arg(F("gloc"));
     flashOnSeconds = server.hasArg(F("flashseconds")); // flashOnSeconds means blinking ':' on clock
     IS_24HOUR = server.hasArg(F("is24hour"));
     IS_PM = server.hasArg(F("isPM"));
@@ -1119,6 +1122,7 @@ void handleSaveConfig() {
     temp.trim();
     temp.toCharArray(www_password, sizeof(www_password));
     weatherClient.setMetric(IS_METRIC);
+    weatherClient.setGeoLocation(geoLocation);
     matrix.fillScreen(CLEARSCREEN);
     writeConfiguration();
     Serial.println(F("handleSaveConfig: saved"));
@@ -1272,8 +1276,9 @@ void handleConfigure() {
 
   String form = FPSTR(CHANGE_FORM1);
   form.replace(F("%OWMKEY%"), APIKEY);
-  form.replace(F("%CTYNM%"), (weatherClient.getCity() != "") ? weatherClient.getCity() + ", " + weatherClient.getCountry() : "");
-  form.replace(F("%CITY%"), String(CityID));
+  form.replace(F("%CTYNM%"), (weatherClient.getCity() != "") ?
+      weatherClient.getCity() + ", " + weatherClient.getCountry() + " @ " + String(weatherClient.getLat(),6) + "," + String(weatherClient.getLon(),6)  : "");
+  form.replace(F("%GLOC%"), geoLocation);
   form.replace(F("%MSG%"), EncodeHtmlSpecialChars(marqueeMessage.c_str()));
   form.replace(F("%TEMP_CB%"), (SHOW_TEMPERATURE) ? "checked" : "");
   form.replace(F("%DATE_CB%"), (SHOW_DATE) ? "checked" : "");
@@ -1413,7 +1418,7 @@ void getWeatherData() //client function to send/receive GET request data.
   onBoardLed(LED_OFF);
 }
 
-void webDisplayMessage(String message) {
+void webDisplayMessage(const String &message) {
   onBoardLed(LED_ON);
 
   sendHeader();
@@ -1466,9 +1471,7 @@ void sendHeader(boolean isMainPage) {
 
 void sendFooter() {
   int8_t rssi = getWifiQuality();
-  Serial.print("Signal Strength (RSSI): ");
-  Serial.print(rssi);
-  Serial.println("%");
+  Serial.printf_P(PSTR("Signal Strength (RSSI): %d%%\n"), rssi);
   String html = FPSTR(WEB_FOOTER);
 
   html.replace(F("$UPD$"), getTimeTillUpdate());
@@ -1493,11 +1496,12 @@ void webDisplayWeatherData() {
     dtstr = getDayName(weekday()) + ", " + getMonthName(month()) + " " + day() + ", " + hourFormat12() + ":" + zeroPad(minute()) + ", " + getAmPm(isPM());
   }
 
+  Serial.print(F("Main page update "));
   Serial.println(dtstr);
-  Serial.println(temperature);
+  //Serial.println(temperature);
   //Serial.println(weatherClient.getCity());
-  Serial.println(weatherClient.getWeatherCondition());
-  Serial.println(weatherClient.getWeatherDescription());
+  //Serial.println(weatherClient.getWeatherCondition());
+  //Serial.println(weatherClient.getWeatherDescription());
   Serial.print(F("UpdateTime: "));
   Serial.println(get24HrColonMin(weatherClient.getReportTimestamp() + weatherClient.getTimeZoneSeconds()));
   //Serial.print(F("SunRiseTime: "));
@@ -1788,7 +1792,7 @@ void writeConfiguration() {
   } else {
     Serial.println(F("Saving settings now..."));
     f.println(F("APIKEY=") + APIKEY);
-    f.println(F("CityID=") + String(CityID));
+    f.println(F("CityID=") + geoLocation); // using CityID for backwards compatibility
     f.println(F("marqueeMessage=") + marqueeMessage);
     f.println(F("timeDisplayTurnsOn=") + timeDisplayTurnsOn);
     f.println(F("timeDisplayTurnsOff=") + timeDisplayTurnsOff);
@@ -1848,7 +1852,7 @@ void writeConfiguration() {
   f.close();
 
   readConfiguration();
-  weatherClient.setCityId(CityID);
+  weatherClient.setGeoLocation(geoLocation);
 }
 
 void readConfiguration() {
@@ -1863,8 +1867,9 @@ void readConfiguration() {
   int idx;
   while (fr.available()) {
     line = fr.readStringUntil('\n');
+    line.trim();
     //print each line read
-    {
+    if (1) {
       int idx = line.indexOf("Key");
       if (idx < 0) idx = line.indexOf("KEY");
       if (idx < 0) idx = line.indexOf("Pass");
@@ -1879,22 +1884,20 @@ void readConfiguration() {
     }
     if ((idx = line.indexOf(F("APIKEY="))) >= 0) {
       APIKEY = line.substring(idx + 7);
-      APIKEY.trim();
     }
     if ((idx = line.indexOf(F("CityID="))) >= 0) {
-      CityID = line.substring(idx + 7).toInt();
+       // using CityID for backwards compatibility
+      geoLocation = line.substring(idx + 7);
     }
     #if COMPILE_NEWS
     if ((idx = line.indexOf(F("newsSource="))) >= 0) {
       NEWS_SOURCE = line.substring(idx + 11);
-      NEWS_SOURCE.trim();
     }
     if ((idx = line.indexOf(F("isNews="))) >= 0) {
       NEWS_ENABLED = line.substring(idx + 7).toInt();
     }
     if ((idx = line.indexOf(F("newsApiKey="))) >= 0) {
       NEWS_API_KEY = line.substring(idx + 11);
-      NEWS_API_KEY.trim();
     }
     #endif
     if ((idx = line.indexOf(F("isFlash="))) >= 0) {
@@ -1956,15 +1959,12 @@ void readConfiguration() {
     }
     if ((idx = line.indexOf(F("marqueeMessage="))) >= 0) {
       marqueeMessage = line.substring(idx + 15);
-      marqueeMessage.trim();
     }
     if ((idx = line.indexOf(F("timeDisplayTurnsOn="))) >= 0) {
       timeDisplayTurnsOn = line.substring(idx + 19);
-      timeDisplayTurnsOn.trim();
     }
     if ((idx = line.indexOf(F("timeDisplayTurnsOff="))) >= 0) {
       timeDisplayTurnsOff = line.substring(idx + 20);
-      timeDisplayTurnsOff.trim();
     }
     if ((idx = line.indexOf(F("ledIntensity="))) >= 0) {
       displayIntensity = line.substring(idx + 13).toInt();
@@ -1981,32 +1981,26 @@ void readConfiguration() {
     }
     if ((idx = line.indexOf(F("octoKey="))) >= 0) {
       OctoPrintApiKey = line.substring(idx + 8);
-      OctoPrintApiKey.trim();
     }
     if ((idx = line.indexOf(F("octoServer="))) >= 0) {
       OctoPrintServer = line.substring(idx + 11);
-      OctoPrintServer.trim();
     }
     if ((idx = line.indexOf(F("octoPort="))) >= 0) {
       OctoPrintPort = line.substring(idx + 9).toInt();
     }
     if ((idx = line.indexOf(F("octoUser="))) >= 0) {
       OctoAuthUser = line.substring(idx + 9);
-      OctoAuthUser.trim();
     }
     if ((idx = line.indexOf(F("octoPass="))) >= 0) {
       OctoAuthPass = line.substring(idx + 9);
-      OctoAuthPass.trim();
     }
     #endif
     if ((idx = line.indexOf(F("www_username="))) >= 0) {
       String temp = line.substring(idx + 13);
-      temp.trim();
       temp.toCharArray(www_username, sizeof(www_username));
     }
     if ((idx = line.indexOf(F("www_password="))) >= 0) {
       String temp = line.substring(idx + 13);
-      temp.trim();
       temp.toCharArray(www_password, sizeof(www_password));
     }
     if ((idx = line.indexOf(F("IS_BASIC_AUTH="))) >= 0) {
@@ -2042,14 +2036,12 @@ void readConfiguration() {
     }
     if ((idx = line.indexOf(F("PiHoleServer="))) >= 0) {
       PiHoleServer = line.substring(idx + 13);
-      PiHoleServer.trim();
     }
     if ((idx = line.indexOf(F("PiHolePort="))) >= 0) {
       PiHolePort = line.substring(idx + 11).toInt();
     }
     if ((idx = line.indexOf(F("PiHoleApiKey="))) >= 0) {
       PiHoleApiKey = line.substring(idx + 13);
-      PiHoleApiKey.trim();
     }
     #endif
     #if COMPILE_MQTT
@@ -2058,27 +2050,22 @@ void readConfiguration() {
     }
     if ((idx = line.indexOf(F("MqttServer="))) >= 0) {
       MqttServer = line.substring(idx + 11);
-      MqttServer.trim();
     }
     if ((idx = line.indexOf(F("MqttPort="))) >= 0) {
       MqttPort = line.substring(idx + 9).toInt();
     }
     if ((idx = line.indexOf(F("MqttTopic="))) >= 0) {
       MqttTopic = line.substring(idx + 10);
-      MqttTopic.trim();
     }
     if ((idx = line.indexOf(F("MqttUser="))) >= 0) {
       MqttAuthUser = line.substring(idx + 9);
-      MqttAuthUser.trim();
     }
     if ((idx = line.indexOf(F("MqttPass="))) >= 0) {
       MqttAuthPass = line.substring(idx + 9);
-      MqttAuthPass.trim();
     }
     #endif
     if ((idx = line.indexOf(F("themeColor="))) >= 0) {
       themeColor = line.substring(idx + 11);
-      themeColor.trim();
     }
   }
   fr.close();
@@ -2089,7 +2076,7 @@ void readConfiguration() {
   #endif
   weatherClient.setWeatherApiKey(APIKEY);
   weatherClient.setMetric(IS_METRIC);
-  weatherClient.setCityId(CityID);
+  weatherClient.setGeoLocation(geoLocation);
   #if COMPILE_OCTOPRINT
   printerClient.updateOctoPrintClient(OctoPrintApiKey, OctoPrintServer, OctoPrintPort, OctoAuthUser, OctoAuthPass);
   #endif
@@ -2098,9 +2085,8 @@ void readConfiguration() {
   #endif
 }
 
-void scrollMessageSetup(String msg) {
-  msg += " "; // add one more space at the end
-  scrlMsg = msg;
+void scrollMessageSetup(const String &msg) {
+  scrlMsg = msg + " "; // add one more space at the end
   scrlMsgLen = (int)msg.length();
   scrlPixTotal = (font_width * (int)msg.length() + (matrix.width() - 1) - font_space);
   scrlPixY = (matrix.height() - 8) / 2; // center the text vertically
@@ -2130,8 +2116,7 @@ boolean scrollMessageNext() {
   return scrlBusy;
 }
 
-void scrollMessageWait(String msg) {
-  msg += " "; // add a space at the end
+void scrollMessageWait(const String &msg) {
   for (int i = 0; i < (font_width * (int)msg.length() + (matrix.width() - 1) - font_space); i++) {
     if (WEBSERVER_ENABLED) {
       server.handleClient();
@@ -2312,5 +2297,47 @@ String EncodeHtmlSpecialChars(const char *msg)
     }
   }
   //Serial.printf_P(PSTR("EncodeHTML out: %s\n"), encoded.c_str());
+  return encoded;
+}
+
+
+String EncodeUrlSpecialChars(const char *msg)
+{
+const static char special[] = {'\x20','\x22','\x23','\x24','\x25','\x26','\x2B','\x3B','\x3C','\x3D','\x3E','\x3F','\x40'};
+  String encoded;
+  int inIdx;
+  char ch, hex;
+  boolean convert;
+  const int inLen = strlen(msg);
+  //Serial.printf_P(PSTR("EncodeURL in:  %s\n"), msg);
+  encoded.reserve(inLen+128);
+
+  for (inIdx=0; inIdx < inLen; inIdx++) {
+    ch = msg[inIdx];
+    convert = false;
+    if (ch < ' ') {
+      convert = true; // this includes 0x80-0xFF !
+    }
+    // find ch in table
+    for (int i=0; i < (int)sizeof(special) && !convert; i++) {
+      if (special[i] == ch) convert = true;
+    }
+    if (convert) {
+      // convert character to "%HEX"
+      encoded += '%';
+      hex = (ch >> 4) & 0x0F;
+      hex += '0';
+      if (hex > '9') hex += 7;
+      encoded += hex;
+      hex = ch & 0x0F;
+      hex += '0';
+      if (hex > '9') hex += 7;
+      encoded += hex;
+    }
+    else {
+      encoded += ch;
+    }
+  }
+  //Serial.printf_P(PSTR("EncodeURL out: %s\n"), encoded.c_str());
   return encoded;
 }

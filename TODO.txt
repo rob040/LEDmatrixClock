@@ -46,8 +46,10 @@ TODO items
 13.1 make display functions showing time, scrolling message, static temperature display re-entrant from loop,
     e.g. call scroll message for every pixel shift, call show time for every 1/2 second to blink center colon when enabled, etc
     This allows the webserver and OTA to be serviced within the loop, iso at 3-4 places, and should increase web service responsiveness.
+    ==> done v3.1.36
 14. Change from OWM city-ID to city/[state/]country or lat/lon coordinates or allow them all for maximum flexibility.
-    The OWM geocoding-api will translate to lat/lon coordinates for weather requests.
+    The OWM geocoding-api will translate to lat/lon coordinates for weather requests. ==> not required; std API 2.5 does support them.
+    ==> DONE v3.1.40
 15. Check which font type/file is used.
     -> build-in to Adafruit_GFX_library glcdfont.c, fixed
 16. Add slider checkbox (see w3schools) (instead of oldfashioned checkboxes) to mainpage header for autorefresh and darkmode
@@ -93,8 +95,13 @@ TODO items
     ==> Done in v3.1.30
     Extend this also to MQTT message fitting on display; larger messages will be scrolled.
 27. Scrolling messages are clocked with fluctuating timings (clock jitter), causing irregular and inconsistent spacing and distortion of the text.
-    Using a HW timer interrupt to shift SPI data to display will improve this considerably.
-28.
+    -> partially done in v3.1.36
+    Using a HW timer interrupt to shift SPI data to display will improve this considerably. Is there a SPI data DMA possibility?
+28. The marquee message and MQTT message could contain characters that must be converted to %HEX before included in html
+    ==> DONE in v3.1.39, however, only for ASCII chars. HTML could send UTF8 characters, such as € EURO symbol.
+    There is no conversion from UTF8 to ANSI (Extended ASCII or CP437) available
+29. Restructure the main loop: have an executive like structure, with all process functions return in limited time.
+    ==> DONE in v3.1.36
 
 Future
 - Add REST API for various controls
@@ -105,5 +112,5 @@ Future
 Major overhaul
 + html main page: store whole page as one big array and process it as a stream, search for $marker$. Have a table with markers matching a callable function that returns the replacement text. callback could be anon inline function. This should reduce the number of string operations and memory allocations considerably.
 Alternatively, read base html from FS file, then size is even less important. What is file read performance? serve own css as file?
-+ main loop: have a executive like structure, with all process functions return in limited time.
++
 

@@ -28,22 +28,120 @@ Change History:
 #include "OpenWeatherMapClient.h"
 #include "timeStr.h"
 
-OpenWeatherMapClient::OpenWeatherMapClient(const String &ApiKey, int CityID, boolean isMetric) {
-  myCityID = CityID;
+//OpenWeatherMapClient::OpenWeatherMapClient(const String &ApiKey, int CityID, boolean isMetric) {
+//  myGeoLocation_CityID = CityID;
+//  myGeoLocation = "";
+//  myGeoLocationType = LOC_CITYID;
+//  myApiKey = ApiKey;
+//  this->isMetric = isMetric;
+//  isValid = false;
+//}
+OpenWeatherMapClient::OpenWeatherMapClient(const String &ApiKey, boolean isMetric) {
+  myGeoLocation = "";
+  myGeoLocation_CityID = 0;
+  myGeoLocationType = LOC_UNSET;
   myApiKey = ApiKey;
   this->isMetric = isMetric;
   isValid = false;
 }
 
+// setGeoLocation
+// args  String location
+// return int 0 on success, 1 on failure such as invalid location; no check with weather server has been performed.
+//
+// location string can be: A) CityID number (old backwards compatibility), B) Longitude,lattitude,
+// C) Cityname[,state],Countrycode
+// The location name must be spelled with ASCII-64, no special chars are allowed. This is
+// because the HTML page text encoding is in UTF-8 and internally we use only ASCII with
+// LED matrix font using ANSI CP437 extended ASCII, however there is no conversion from
+// UTF-8 to ANSI and viceversa)
+//
+int OpenWeatherMapClient::setGeoLocation(const String &location) {
+  int comma = location.indexOf(',');
+  int comma2 = location.lastIndexOf(',');
+  int decimal = location.indexOf('.');
+  int len = location.length();
+  int ch_cnt_digits = 0;
+  int ch_cnt_letters = 0;
+  int ch_cnt_notallowed = 0;
+  for (int i=0; i < len; i++){
+    char ch = location[i];
+    if ((ch >= '0' && ch <= '9') || ch == '.') ch_cnt_digits++;
+    else if (ch >= 'A' && ch <= 'Z') ch_cnt_letters++;
+    else if (ch >= 'a' && ch <= 'z') ch_cnt_letters++;
+    else if (ch == ' ' || ch == '-'|| ch == '('|| ch == ')') ch_cnt_letters++;
+    else if (ch != ',') {
+      ch_cnt_notallowed++;
+      //Serial.print("Inval 0x");
+      //Serial.println(ch,HEX);
+    }
+  }
+
+  myGeoLocationType = LOC_UNKNOWN;
+  myGeoLocation = "";
+  myGeoLocation_CityID = 0;
+  myGeoLocation_lat = myGeoLocation_lon = 0;
+  if ((len > 3) && (comma == -1) && (decimal == -1) && (ch_cnt_digits == len) && (ch_cnt_letters == 0)) {
+    myGeoLocation_CityID = location.toInt();
+    myGeoLocationType = LOC_CITYID;
+    // USE http://api.openweathermap.org/data/2.5/weather?id={city-id}&appid={API-key}
+  }
+  if ((len > 5) && (comma > 0) && (comma2 == 0) && (ch_cnt_digits >= len-3)) {
+    myGeoLocationType = LOC_LATLON;
+    myGeoLocation_lat = location.toFloat();
+    myGeoLocation_lon = location.substring(comma+1).toFloat();
+    // USE http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={API-key}
+  }
+  if ((ch_cnt_digits == 0) && (ch_cnt_letters >= len-2)) {
+    myGeoLocationType = LOC_NAME;    // city,state,countrycode OR city,countrycode OR city
+    myGeoLocation = location;
+    // USE http://api.openweathermap.org/geo/1.0/direct?q={city-name},{state-code},{country-code}&limit={limit}&appid={API-key}
+    // to convert location to lat,lon
+    // OR
+    // USE http://api.openweathermap.org/data/2.5/weather?q={city-name}&appid={API-key}
+    // USE http://api.openweathermap.org/data/2.5/weather?q={city-name},{country-code}&appid={API-key}
+    // USE http://api.openweathermap.org/data/2.5/weather?q={city-name},{state-code},{country-code}&appid={API-key}
+    // those will also get the lat,lon
+  }
+  return (myGeoLocationType <= LOC_UNKNOWN);
+}
+
 void OpenWeatherMapClient::updateWeather() {
   WiFiClient weatherClient;
+  String apiGetData;
+  apiGetData.reserve(260);
+  apiGetData += F("GET /data/2.5/weather?");
   if (myApiKey == "") {
     errorMsg = F("Please provide an API key for weather.");
     Serial.println(errorMsg);
     isValid = false;
     return;
   }
-  String apiGetData = F("GET /data/2.5/weather?id=") + String(myCityID) + F("&units=") + ((isMetric) ? F("metric") : F("imperial")) + F("&APPID=") + myApiKey + F(" HTTP/1.1");
+  switch (myGeoLocationType) {
+  default:
+  case LOC_UNSET:
+  case LOC_UNKNOWN:
+    errorMsg = F("Please set location for weather.");
+    Serial.println(errorMsg);
+    isValid = false;
+    return;
+  case LOC_CITYID:
+    apiGetData += F("id=");
+    apiGetData += String(myGeoLocation_CityID);
+    break;
+  case LOC_LATLON:
+    apiGetData += F("lat=");
+    apiGetData += String(myGeoLocation_lat);
+    apiGetData += F("&lon=");
+    apiGetData += String(myGeoLocation_lon);
+    break;
+  case LOC_NAME:
+    apiGetData += F("q=");
+    apiGetData += EncodeUrlSpecialChars(myGeoLocation.c_str());
+    break;
+  }
+
+  apiGetData += F("&units=") + String((isMetric) ? F("metric") : F("imperial")) + F("&APPID=") + myApiKey + F(" HTTP/1.1");
   Serial.println(F("Getting Weather Data"));
   Serial.println(apiGetData);
   errorMsg = "";
@@ -72,7 +170,7 @@ void OpenWeatherMapClient::updateWeather() {
   {
           delay(1); //waits for data
   }
-  if ((millis()-start) > timeout_ms) {
+  if ((millis()-start) >= timeout_ms) {
     errorMsg = F("TIMEOUT on weatherClient data receive");
     Serial.println(errorMsg);
     if (++dataGetRetryCount > dataGetRetryCountError) isValid = false;

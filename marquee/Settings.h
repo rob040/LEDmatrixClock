@@ -117,8 +117,8 @@ const int ledRotation = 3;
 //******************************
 
 String APIKEY = ""; // Your API Key from http://openweathermap.org/
-// Default City Location (use http://openweathermap.org/find to find city ID)
-int CityID = 2759794;
+// Default GEO Location (use http://openweathermap.org/find to find location name being "cityname,countrycode" or "city ID" or GPS "latitude,longitude")
+String geoLocation = "Breda,NL";
 String marqueeMessage = "";
 
 // (some) Default Weather Settings

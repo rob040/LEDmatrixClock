@@ -28,11 +28,21 @@ SOFTWARE.
 class OpenWeatherMapClient {
 
 private:
-  int myCityID;
   String myApiKey;
-  //String units;
 
   const char* servername = "api.openweathermap.org";  // remote server we will connect to
+
+  String myGeoLocation;
+  enum locationtype_e {
+    LOC_UNSET,
+    LOC_UNKNOWN,
+    LOC_CITYID,
+    LOC_LATLON,
+    LOC_NAME
+  } myGeoLocationType;
+  int myGeoLocation_CityID;
+  float myGeoLocation_lat;
+  float myGeoLocation_lon;
 
   String city;
   String country;
@@ -62,10 +72,12 @@ private:
 
 
 public:
-  OpenWeatherMapClient(const String &ApiKey, int CityID, boolean isMetric);
+  //OpenWeatherMapClient(const String &ApiKey, int CityID, boolean isMetric); // depricated
+  OpenWeatherMapClient(const String &ApiKey, boolean isMetric);
+  int setGeoLocation(const String &location);
   void updateWeather();
   inline void setWeatherApiKey(const String &ApiKey) {myApiKey = ApiKey;};
-  inline void setCityId(int CityID) {myCityID = CityID;};
+  //inline void setCityId(int CityID) {myCityID = CityID;}; // depricated; use setGeoLocation() with CityID instead
   inline void setMetric(boolean isMetric) {this->isMetric = isMetric;};
 
   //Rounding no longer needed; when converting float to String, use second argument to set decimal places
@@ -91,7 +103,7 @@ public:
   inline String getWeatherDescription() {return weatherDescription;};
   inline String getIcon() {return icon;};
   inline boolean getWeatherDataValid() {return isValid;};
-  inline int getMyCityID() {return myCityID;};
+  //inline int getMyCityID() {return myCityID;};
   inline String getErrorMessage() {return errorMsg;};
   inline int getTimeZone() {return timeZone/3600;}; // Local TimeZone delta with UTC in Hours
   inline int getTimeZoneSeconds() {return timeZone;};
@@ -101,3 +113,5 @@ public:
   String getWindDirectionText();
   String getWeatherIcon();
 };
+
+extern String EncodeUrlSpecialChars(const char *msg);

@@ -31,6 +31,8 @@ bool lastMqttMessageNew;
 
 void callback(char* topic, uint8_t* message, unsigned int length) {
   (void)topic; // unused argument
+  if (length >= (unsigned int)sizeof(lastMqttMessage))
+    length = (unsigned int)sizeof(lastMqttMessage)-1;
   memcpy(lastMqttMessage, message, length);
   lastMqttMessage[length] = 0;
   lastMqttMessageNew = true;

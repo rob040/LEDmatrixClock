@@ -23,7 +23,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.44"
+#define VERSION "3.1.45"
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -379,7 +379,7 @@ static const char webChangeForm3[] PROGMEM =
 #if COMPILE_MQTT
 static const char webMQTTform[] PROGMEM =
   "<form class='w3-container' action='/savemqtt' method='get'><h2>MQTT Configuration:</h2>"
-  "<p><input name='displaymqtt' class='w3-check' type='checkbox' %MQTT_CB%> Show MQTT Statistics</p>"
+  "<p><input name='displaymqtt' class='w3-check' type='checkbox' %MQTT_CB%> Enable MQTT</p>"
   "<label>MQTT Address (do not include http://)</label><input class='w3-input w3-border' type='text' name='mqttAddress' id='mqttAddress' value='%MQTT_ADR%' maxlength='60'>"
   "<label>MQTT Port</label><input class='w3-input w3-border' type='text' name='mqttPort' id='mqttPort' value='%MQTT_PRT%' maxlength='5'  onkeypress='return isNumberKey(event)'>"
   "<label>MQTT Topic</label><input class='w3-input w3-border' type='text' name='mqttTopic' id='mqttTopic' value='%MQTT_TOP%' maxlength='128'>"
@@ -597,7 +597,7 @@ void loop() {
         }
         loopState = lStateScrollErrMsgPix;
       } else
-      if (newMqttMessage[0] != 0) {
+      if (newMqttMessage != 0 && newMqttMessage[0] != 0) {
         // if static display mode enabled and message length fits screen
         if (staticDisplaySetupSingle(newMqttMessage)) {
           newMqttMessage[0] = 0;

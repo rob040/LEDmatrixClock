@@ -41,6 +41,7 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 * Webpage now has switchable automatic page update
 * Instead of scrolling text, there is also a static display mode for short messages, date, temperature or humidity only next to the time display.
 * Weather Location lookup has been made simpler; there is no longer the need to lookup the City-ID code; just enter a (valid) city name with optional 2-letter country code. Also GPS coordinates are now allowed as location input.
+* Added a display QUIET time config option, where the display can be Off or Dimmed or Dimmed with no Motion (ie. no scrolling, no blinking)
 
 
 ### known issues
@@ -50,10 +51,10 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 
 
 ## Required Parts:
-* Wemos D1 Mini ESP8266: https://amzn.to/3tMl81U
-* LED Dot Matrix Module: https://amzn.to/2HtnQlD
+* Wemos LOLIN D1 Mini ESP8266: https://www.wemos.cc/en/latest/d1/d1_mini.html
+  Other EXP8266 boards based on [ESP12(-E,-F)](https://components101.com/sites/default/files/component_pin/ESP12E-Pinout.png) module, such as the NodeMCU, shall work equally well, only the 3D print models are more or less bound to the D1-mini physical dimensions.
+* MAX7219 LED Dot Matrix Module 4-in-1 Display (FC16) for Arduino. Commonly available from Chinese webshops, or Ebay or Amazon.com.
 
-**Note:** Using the links provided here help to support [Qrome](https://github.com/Qrome) for his efforts. Thank you for the support.
 
 ## Wiring for the Wemos D1 Mini to the LED Dot Matrix Display
 

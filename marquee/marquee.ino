@@ -23,7 +23,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.43"
+#define VERSION "3.1.44"
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -105,6 +105,8 @@ boolean isDisplayTimeNew;
 boolean isDisplayMessageNew;
 boolean isDisplayScrollErrorMsgNew;
 boolean isDisplayScrollErrorMsgOnce;
+boolean isQuietPeriod;
+boolean isQuietPeriodNoBlinkNoscroll;
 String displayTime;
 char * newMqttMessage;
 String displayScrollMessageStr;
@@ -348,9 +350,11 @@ static const char webChangeForm2[] PROGMEM =
   "<p><input name='isPM' class='w3-check' type='checkbox' %PM_CB%> Show PM indicator (only on 12 Hour clock)</p>"
   "<p><input name='flashseconds' class='w3-check' type='checkbox' %FLASH_CB%> Blink \":\" in the time</p>"
   "</fieldset>\n"
-  "<fieldset><legend>LED Display Active times</legend>"
-  "<p><label>Start Time </label><input name='startTime' type='time' value='%STRT_TM%'></p>"
-  "<p><label>End Time </label><input name='endTime' type='time' value='%END_TM%'></p>"
+  "<fieldset><legend>LED Display Quiet Times</legend>"
+  "<p><label>Quiet time mode &nbsp;&nbsp;&nbsp;</label> <select class='w3-option w3-padding' name='qtmode'>%QTM_OPT%</select></p>"
+  "<p><label>Quiet time dimlevel </label><input class='w3-border' name='qtlvl' type='number' min='0' max='15' value='%QTDIM%'></p>"
+  "<p><label>Start quiet Time &nbsp;</label><input name='qtstrt' type='time' value='%QTST%'></p>"
+  "<p><label>End quiet Time &nbsp;&nbsp;</label><input name='qtend' type='time' value='%QTEND%'></p>"
   "</fieldset>\n"
   "<fieldset><legend>LED Display settings</legend>"
   "<p>Display Brightness <input class='w3-border' name='ledintensity' type='number' min='0' max='15' value='%INTY_OPT%'></p>"
@@ -774,7 +778,7 @@ void processEveryMinute() {
         }
 
       }
-      if (msg.length() > 3) {
+      if ((msg.length() > 3) && !isQuietPeriodNoBlinkNoscroll) {
         displayScrollMessage(msg);
       }
     }
@@ -859,7 +863,7 @@ String hourMinutes(boolean isRefresh) {
 
 char secondsIndicator(boolean isRefresh) {
   char rtnValue = ':';
-  if (isRefresh == false && (flashOnSeconds && (second() % 2) == 0)) {
+  if (!isRefresh && !isQuietPeriodNoBlinkNoscroll && flashOnSeconds && ((second() % 2) == 0)) {
     rtnValue = ' ';
   }
   return rtnValue;
@@ -908,7 +912,7 @@ void handleSaveConfig() {
       server.hasArg(F("gloc")) &&
       server.hasArg(F("marqueeMsg")) &&
       server.hasArg(F("displaywidth")) &&
-      server.hasArg(F("startTime")) &&
+      //server.hasArg(F("startTime")) &&
       server.hasArg(F("userid")) &&
       server.hasArg(F("stationpassword")) &&
       server.hasArg(F("theme")) &&
@@ -935,8 +939,12 @@ void handleSaveConfig() {
     isSysLed = server.hasArg(F("sysled"));
     isMetric = server.hasArg(F("metric"));
     marqueeMessage = server.arg(F("marqueeMsg"));
-    timeDisplayTurnsOn = server.arg(F("startTime"));
-    timeDisplayTurnsOff = server.arg(F("endTime"));
+    quietTimeMode = server.arg(F("qtmode")).toInt();
+    quietTimeDimlevel = server.arg(F("qtlvl")).toInt();
+    String s = server.arg(F("qtstrt"));
+    quietTimeStart = (s.length() > 0) ? TIME_HHMM(s.toInt(),s.substring(s.indexOf(':')+1).toInt()) : -1;
+    s = server.arg(F("qtend"));
+    quietTimeEnd   = (s.length() > 0) ? TIME_HHMM(s.toInt(),s.substring(s.indexOf(':')+1).toInt()) : -1;
     displayIntensity = server.arg(F("ledintensity")).toInt();
     int n = server.arg(F("displaywidth")).toInt();
     if ((displayWidth != n) && (n >= 4) && (n <= 32)) {
@@ -1053,8 +1061,14 @@ void handleConfigure() {
   form.replace(F("%PM_CB%"), (isPmIndicator) ? "checked" : "");
   form.replace(F("%FLASH_CB%"), (flashOnSeconds) ? "checked" : "");
   form.replace(F("%STATDISP_CB%"), (isStaticDisplay) ? "checked" : "");
-  form.replace(F("%STRT_TM%"), timeDisplayTurnsOn);
-  form.replace(F("%END_TM%"), timeDisplayTurnsOff);
+  form.replace(F("%END_TM%"), String(quietTimeStart));
+  String qtmode = String(quietTimeMode);
+  String qtmOptions = F("<option value='0'>Disabled</option><option value='1'>Display Off</option><option value='2'>Dimmed</option><option value='3'>Dimmed and No Motion</option>");
+  qtmOptions.replace(qtmode + "'", qtmode + "' selected");
+  form.replace(F("%QTM_OPT%"), String(qtmOptions));
+  form.replace(F("%QTDIM%"), String(quietTimeDimlevel));
+  form.replace(F("%QTST%"), (quietTimeStart<0)? "--:--" : String(zeroPad(quietTimeStart/3600)+':'+zeroPad((quietTimeStart/60)%60)));
+  form.replace(F("%QTEND%"), (quietTimeEnd<0)? "--:--" : String(zeroPad(quietTimeEnd/3600)+':'+zeroPad((quietTimeEnd/60)%60)));
   form.replace(F("%INTY_OPT%"), String(displayIntensity));
   form.replace(F("%DTW_OPT%"), String(displayWidth));
   String dSpeed = String(displayScrollSpeed);
@@ -1435,26 +1449,43 @@ void enableDisplay(boolean enable) {
 }
 
 // Toggle on and off the display if user defined times
-void checkDisplay() {
-  //TODO: change from ON/OFF to quiet time operation with several options
-  //TODO: save timeDisplay as int HH*3600+MM*60+00 or -1 if not set, same goes for currentTime
-
-  if (timeDisplayTurnsOn.length() == 0 || timeDisplayTurnsOff.length() == 0) {
+void checkDisplay()
+{
+  if ((quietTimeMode == QTM_DISABLED) || (quietTimeStart <= 0) || (quietTimeEnd <= 0)) {
     return; // nothing to do
   }
-  String currentTime = zeroPad(hour()) + ":" + zeroPad(minute());
+  int currentTime = TIME_HHMM(hour(), minute());
+  if (quietTimeMode == QTM_DISPLAYOFF) {
+    if (currentTime == quietTimeEnd && !displayOn) {
+      Serial.print(F("Time to turn display on: ")); Serial.println(currentTime);
+      flashLED(1, 500);
+      enableDisplay(true);
+    }
 
-  if (currentTime == timeDisplayTurnsOn && !displayOn) {
-    Serial.print(F("Time to turn display on: ")); Serial.println(currentTime);
-    flashLED(1, 500);
-    enableDisplay(true);
+    if (currentTime == quietTimeStart && displayOn) {
+      Serial.print(F("Time to turn display off: ")); Serial.println(currentTime);
+      flashLED(2, 500);
+      enableDisplay(false);
+    }
+  }
+  else { //if (quietTimeMode == QTM_DIMMED || quietTimeMode == QTM_DIMMED_NOSCROLL)
+    if (((quietTimeStart > quietTimeEnd) && ((currentTime>=quietTimeStart)||(currentTime<=quietTimeEnd))) ||
+        ((quietTimeEnd > quietTimeStart) && ((currentTime>=quietTimeStart)&&(currentTime<=quietTimeEnd))) )
+    {
+      // We are in the quiet period
+      matrix.setIntensity(quietTimeDimlevel);
+      isQuietPeriod = true;
+      if (quietTimeMode == QTM_DIMMED_NOSCROLL) {
+        isQuietPeriodNoBlinkNoscroll = true;
+      }
+    } else {
+      // We are outside the quiet period
+      matrix.setIntensity(displayIntensity);
+      isQuietPeriod = false;
+      isQuietPeriodNoBlinkNoscroll = false;
+    }
   }
 
-  if (currentTime == timeDisplayTurnsOff && displayOn) {
-    Serial.print(F("Time to turn display off: ")); Serial.println(currentTime);
-    flashLED(2, 500);
-    enableDisplay(false);
-  }
 }
 
 void writeConfiguration() {
@@ -1467,8 +1498,10 @@ void writeConfiguration() {
     f.println(F("APIKEY=") + owmApiKey);
     f.println(F("CityID=") + geoLocation); // using CityID for backwards compatibility
     f.println(F("marqueeMessage=") + marqueeMessage);
-    f.println(F("timeDisplayTurnsOn=") + timeDisplayTurnsOn);
-    f.println(F("timeDisplayTurnsOff=") + timeDisplayTurnsOff);
+    f.println(F("quietTimeStart=") + String(quietTimeStart));
+    f.println(F("quietTimeEnd=") + String(quietTimeEnd));
+    f.println(F("quietTimeMode=") + String(quietTimeMode));
+    f.println(F("quietTimeDimlevel=") + String(quietTimeDimlevel));
     f.println(F("ledIntensity=") + String(displayIntensity));
     f.println(F("scrollSpeed=") + String(displayScrollSpeed));
     f.println(F("isFlash=") + String(flashOnSeconds));
@@ -1602,11 +1635,17 @@ void readConfiguration() {
     if ((idx = line.indexOf(F("marqueeMessage="))) >= 0) {
       marqueeMessage = line.substring(idx + 15);
     }
-    if ((idx = line.indexOf(F("timeDisplayTurnsOn="))) >= 0) {
-      timeDisplayTurnsOn = line.substring(idx + 19);
+    if ((idx = line.indexOf(F("quietTimeMode="))) >= 0) {
+      quietTimeMode = line.substring(idx + 14).toInt();
     }
-    if ((idx = line.indexOf(F("timeDisplayTurnsOff="))) >= 0) {
-      timeDisplayTurnsOff = line.substring(idx + 20);
+    if ((idx = line.indexOf(F("quietTimeDimlevel="))) >= 0) {
+      quietTimeDimlevel = line.substring(idx + 18).toInt();
+    }
+    if ((idx = line.indexOf(F("quietTimeStart="))) >= 0) {
+      quietTimeStart = line.substring(idx + 15).toInt();
+    }
+    if ((idx = line.indexOf(F("quietTimeEnd="))) >= 0) {
+      quietTimeEnd = line.substring(idx + 13).toInt();
     }
     if ((idx = line.indexOf(F("ledIntensity="))) >= 0) {
       displayIntensity = line.substring(idx + 13).toInt();

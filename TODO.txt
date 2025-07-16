@@ -54,7 +54,8 @@ TODO items
     -> build-in to Adafruit_GFX_library glcdfont.c, fixed
 16. Add slider checkbox (see w3schools) (instead of oldfashioned checkboxes) to mainpage header for autorefresh and darkmode
     ==> DONE v3.1.24 #9364fb50 20250701: Adds autorefresh and darkmode.
-17. Enhance display off quiet period with options like {display off, dimmed, dimmed time + temp, dimmed only time}. Should we configure dimmed level as well?
+17. Enhance display off quiet period with options like {display off, dimmed, dimmed and no motion}.
+    ==> DONE v3.1.44
 18. Add local temperature sensor and show inside temperature. Support only a few I2C sensors. Caveat: here we might get requests like can you support this or that sensor....
 19. Add Config option: "Flash System LED on WiFi activity"; the blue onboard LED is quite bright, shining through the case and can be annoying.
       ==> DONE v3.1.31
@@ -85,6 +86,7 @@ TODO items
 22. Change to use latest Arduino json V7 library. this makes the JsonStreamingParser and json buffer size (mis)calculation unnecessary.
     ==> Done v3.1.27  (thanks to bit4man)
 23. Update to new PiHole by bit4man
+    -> will not do that; Pi-hole doesn't bring enough for this scrolling message display.
 24. Fix potential wait forever loop in OWMClient; add timeout of 2s to wait for data from OWM server after connect.
     ==> Done in v3.1.28
 25. Make Display Temperature also configurable, to allow for time only display. (weather APIkey is still needed for automatic DST timezone).

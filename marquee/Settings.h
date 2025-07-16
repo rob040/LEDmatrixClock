@@ -22,10 +22,10 @@ SOFTWARE.
 */
 
 /******************************************************************************
- * This is designed for the Wemos D1 ESP8266
- * Wemos D1 Mini:  https://amzn.to/2qLyKJd
- * MAX7219 Dot Matrix Module 4-in-1 Display For Arduino
- * Matrix Display:  https://amzn.to/2HtnQlD
+ * This is designed for the Wemos D1 ESP8266, but other ESP8266 boards work as well.
+ * Wemos D1 Mini:   https://www.wemos.cc/en/latest/d1/d1_mini.html
+ * MAX7219 LED Dot Matrix Module 4-in-1 Display (FC16) For Arduino
+ * Matrix Display:  https://www.electroduino.com/max7219-4-in-1-led-dot-matrix-display-module-functions/
  ******************************************************************************/
 /******************************************************************************
  * NOTE: The settings here are the default settings for the first loading.
@@ -144,8 +144,17 @@ int wideClockStyle = 1; // 1=HH:MM, 2=HH:MM:SS, 3=HH:MM *CF, 4=HH:MM %RH, 5=mm d
 #define  WIDE_CLOCK_STYLE_LAST      WIDE_CLOCK_STYLE_HHMM_WWWDD
 #define  WIDE_CLOCK_STYLE_FIRST     WIDE_CLOCK_STYLE_HHMM
 
-String timeDisplayTurnsOn = "06:30";  // 24 Hour Format HH:MM -- Leave blank for always on. (ie 05:30)
-String timeDisplayTurnsOff = "23:00"; // 24 Hour Format HH:MM -- Leave blank for always on. Both must be set to work.
+/* Quiet period setting*/
+#define TIME_HHMM(hh,mm) ((hh)*3600+(mm)*60)
+#define QTM_DISABLED        0
+#define QTM_DISPLAYOFF      1
+#define QTM_DIMMED          2
+#define QTM_DIMMED_NOSCROLL 3
+
+int quietTimeStart = TIME_HHMM(23,00); // 24 Hour Format HH:MM -- make negative for always on. Both must be set to work.
+int quietTimeEnd = TIME_HHMM(06,30);   // 24 Hour Format HH:MM -- make negative for always on.
+int quietTimeMode = QTM_DIMMED_NOSCROLL;
+int quietTimeDimlevel = 0;
 
 #if COMPILE_MQTT
 // Mqtt add scrolling messages with Mqtt

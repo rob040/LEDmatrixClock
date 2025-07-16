@@ -3,6 +3,8 @@
  *
  * By rob040, Copyleft
  * Based on example code from TimeLib
+ * *
+ * * Note that on ESP8266 the time_t type is 64 bits! passing it back and forth, and doing operations on it wil cost extra performance.
  */
 
 #include <TimeLib.h>
@@ -17,7 +19,8 @@ static const char ntpServerName[] = "1.pool.ntp.org";
 //static const char ntpServerName[] = "time-b.timefreq.bldrdoc.gov";
 //static const char ntpServerName[] = "time-c.timefreq.bldrdoc.gov";
 
-int timeZoneSec = 1*SECS_PER_HOUR;     // Central European Time
+int timeZoneSec = 0;     // UTC
+//int timeZoneSec = 1*SECS_PER_HOUR;     // Central European Time
 //const int timeZoneSec = -5*SECS_PER_HOUR;  // Eastern Standard Time (USA)
 //const int timeZoneSec = -4*SECS_PER_HOUR;  // Eastern Daylight Time (USA)
 //const int timeZoneSec = -8*SECS_PER_HOUR;  // Pacific Standard Time (USA)
@@ -88,10 +91,9 @@ time_t getNtpTime()
       secsSince1900 |= (unsigned long)packetBuffer[43];
       secsSince1900 -= 2208988800UL;
       secsSince1900 += timeZoneSec;
-      //extern uint32_t sysTime;
-      //Serial.print(F("NTP delta system ")); Serial.println((long)(sysTime-secsSince1900));
       Serial.print(F("NTP timezone ")); Serial.println(timeZoneSec);
       Serial.flush();
+      // NOTE: implicit conversion from 32-bit to 64-bit return value
       return secsSince1900;
     }
   }

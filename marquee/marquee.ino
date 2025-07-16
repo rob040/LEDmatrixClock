@@ -23,7 +23,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.42"
+#define VERSION "3.1.43"
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -97,9 +97,9 @@ Max72xxPanel matrix = Max72xxPanel(pinCS, 0, 0); // will be re-instantiated late
 int lastMinute;
 int lastSecond;
 int displayRefreshCount = 1;
-long lastRefreshDataTimestamp;
-long firstTimeSync;
-long displayOffTimestamp;
+uint32_t lastRefreshDataTimestamp;
+uint32_t firstTimeSync;
+uint32_t displayOffTimestamp;
 boolean displayOn = true;
 boolean isDisplayTimeNew;
 boolean isDisplayMessageNew;
@@ -667,7 +667,7 @@ void processEveryMinute() {
   if (1) {
     if (weatherClient.getErrorMessage() != "") {
       displayScrollErrorMessage(weatherClient.getErrorMessage(), true);
-      return;
+      //return;
     }
 
     if (displayOn) {
@@ -676,11 +676,10 @@ void processEveryMinute() {
     matrix.fillScreen(CLEARSCREEN);
 
     displayRefreshCount--;
-    // Check to see if we need to Scroll some Data
-    if (displayRefreshCount <= 0) {
+    // Check to see if we need to Scroll some weather Data
+    if ((displayRefreshCount <= 0) && weatherClient.getWeatherDataValid() && (weatherClient.getErrorMessage().length() == 0)) {
       displayRefreshCount = displayScrollingInterval;
       String msg = " ";
-     if (weatherClient.getWeatherDataValid()) {
       String temperature = String(weatherClient.getTemperature(),0);
       String weatherDescription = weatherClient.getWeatherDescription();
       weatherDescription.toUpperCase();
@@ -746,7 +745,6 @@ void processEveryMinute() {
           staticDisplayIdx++;
         }
       }
-     }
       if (marqueeMessage.length() > 0) {
         msg += marqueeMessage + "  ";
       }
@@ -1110,7 +1108,6 @@ void handleDisplay() {
 //***********************************************************************
 void getWeatherData() //client function to send/receive GET request data.
 {
-  bool updateTime = false;
   onBoardLed(LED_ON);
   matrix.fillScreen(CLEARSCREEN);
   Serial.println();
@@ -1132,21 +1129,21 @@ void getWeatherData() //client function to send/receive GET request data.
       displayScrollErrorMessage(weatherClient.getErrorMessage(), true);
     } else {
       // Set current timezone (adapts to DST when region supports that)
-      // when time was potentially changed, do reset the sync interval
+      // when time was potentially changed, stop quick auto sync
       if (set_timeZoneSec(weatherClient.getTimeZoneSeconds())) {
-        updateTime = true;
-        setSyncInterval(refreshDataInterval*SECS_PER_MIN);
+        // Stop automatic NTP sync and do it explicitly below
+        setSyncProvider(NULL);
       }
     }
   }
   lastRefreshDataTimestamp = now();
 
-// FIXME: potential bug: with time sync provider (timeNTP) set, the call to TimeStatus will sync the
-// time before returning, so that status timeNeedsSync is never set, unless the sync has failed...
-// hence Updating time is never shown, although it has happened.
-// Solution: do not setup sync provider, but call getNtpTime() here explicitly
-
-  if (timeStatus() != timeSet  || updateTime) { // when timeNotSet OR timeNeedsSync
+// With time sync provider (timeNTP) set, the time sync may happen at inconvenient moments, like
+// when scrolling the display causing that to stall.
+// Solution: cancel setup sync provider, and call getNtpTime() here explicitly,
+// then the time update is visualized on the LED display.
+Serial.printf("Timestatus=%d\n", timeStatus());  // status timeNeedsSync(1) is NEVER set
+  if (1) { //ALWAYS;   (timeStatus() != timeSet || updateTime) { // when timeNotSet OR timeNeedsSync
     Serial.println(F("Updating Time..."));
     //Update the Time
     matrix.drawPixel(0, 4, HIGH);
@@ -1154,10 +1151,23 @@ void getWeatherData() //client function to send/receive GET request data.
     matrix.drawPixel(0, 2, HIGH);
     matrix.write();
 
+    // Explicitly get the NTP time
+    time_t t = getNtpTime();
+    if (t > TIME_VALID_MIN) {
+      // warning: adding ctime() causes 5kB extra codesize!
+      //Serial.printf_P(PSTR("setTime %u=%s"), uint32_t(t), ctime(&t));
+      Serial.printf_P(PSTR("setTime %u\n"), uint32_t(t));
+      setTime(t);
+    }
     if (firstTimeSync == 0) {
       firstTimeSync = now();
-      setSyncInterval(refreshDataInterval * SECS_PER_MIN);
-      Serial.printf_P(PSTR("firstTimeSync is: %d\n"), firstTimeSync);
+      if (firstTimeSync > TIME_VALID_MIN) {
+        setSyncInterval(222); // used for testing, value doesn't really matter
+        Serial.printf_P(PSTR("firstTimeSync is: %d\n"), firstTimeSync);
+      } else {
+        // on a failed ntp sync we have seen that firstTimeSync was set to a low value: reset firstTimeSync
+        firstTimeSync = 0;
+      }
     }
   }
 

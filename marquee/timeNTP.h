@@ -3,6 +3,8 @@
  */
 #include <TimeLib.h> // https://github.com/PaulStoffregen/Time
 
+#define TIME_VALID_MIN  1735686000  // 2025-01-01
+
 void timeNTPsetup();
 boolean set_timeZoneSec(int timeZoneSeconds);
-//void set_timeZone(int timeZoneHours);
+time_t getNtpTime();

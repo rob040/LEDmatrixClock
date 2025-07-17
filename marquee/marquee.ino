@@ -551,13 +551,13 @@ void setup() {
     char webAddress[32];
     sprintf_P(webAddress, PSTR("v" VERSION "  IP: %s  "), WiFi.localIP().toString().c_str());
     Serial.println(webAddress);
-    displayScrollErrorMessage(webAddress, true);
+    scrollMessageWait(webAddress);
     //displayScrollErrorMessage(" v" + String(VERSION) + "  IP: " + WiFi.localIP().toString() + "  ", true);
     timeNTPsetup();
   } else {
     String msg = F("Web Interface is Disabled");
     Serial.println(msg);
-    displayScrollErrorMessage(msg, true);
+    scrollMessageWait(msg);
   }
   SCHEDULE_INTERVAL_START(scrlPixelLastTime, 2000);
   flashLED(1, 500);

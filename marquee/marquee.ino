@@ -23,7 +23,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.46"
+#define VERSION "3.1.47"
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30

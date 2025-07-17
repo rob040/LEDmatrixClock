@@ -213,9 +213,9 @@ void OpenWeatherMapClient::updateWeather() {
 
   weatherClient.stop(); //stop client
 
-  //TODO: check: does this fit the "unautorized access" reply?
+  // prudancy check: incomplete message ?
   if (int len = measureJson(jdoc) <= 150) {
-    Serial.println(F("Error Does not look like we got the data.  Size: ") + String(len));
+    Serial.println(F("Error incomplete message, size ") + String(len));
     errorMsg = F("Error: ") + jdoc[F("message")].as<String>();
     Serial.println(errorMsg);
     if (++dataGetRetryCount > dataGetRetryCountError) isValid = false;

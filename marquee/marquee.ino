@@ -23,7 +23,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.45"
+#define VERSION "3.1.46"
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -600,11 +600,11 @@ void loop() {
       if (newMqttMessage != 0 && newMqttMessage[0] != 0) {
         // if static display mode enabled and message length fits screen
         if (staticDisplaySetupSingle(newMqttMessage)) {
-          newMqttMessage[0] = 0;
+          newMqttMessage = NULL;
           loopState = lStateDispStaticMsg;
         } else {
           scrollMessageSetup(newMqttMessage);
-          newMqttMessage[0] = 0;
+          newMqttMessage = NULL;
           loopState = lStateScrollNewMqttMsgPix;
         }
       } else

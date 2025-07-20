@@ -116,3 +116,18 @@ Major overhaul
 Alternatively, read base html from FS file, then size is even less important. What is file read performance? serve own css as file?
 +
 
+ESP_WiFiManager_Lite issues
+- NUM_WIFI_CREDENTIALS is fixed to 2 in ESP_WiFiManager_Lite.h,
+  however the remaining code appears to be suited for a flexible number.
+  What is the decision behind the fixed number?
+  => the webpage markup isn't suited for != 2
+  ==> don this myself, since the library is now unmaintained.
+- When either using DOUBLERESETDETECTOR or MULTIRESETDETECTOR there is for ESP8266 no possibility to
+  configure to use RTC memory to store reset state, although the config options suggest this posibility.
+  What is the reason behind this?
+  --> The RTC memory variant appears to be un-implemented
+  ==>
+-
+Always output warning:
+.pio\libdeps\default\ESP_WiFiManager_Lite\src/ESP_WiFiManager_Lite.h:95:6: warning: #warning Using EEPROM in ESP_WiFiManager_Lite.h [-Wcpp]
+   95 |     #warning Using EEPROM in ESP_WiFiManager_Lite.h

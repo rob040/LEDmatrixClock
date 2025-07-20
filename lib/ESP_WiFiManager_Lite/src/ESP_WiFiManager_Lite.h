@@ -79,11 +79,11 @@
     #if USE_LITTLEFS
       #define FileFS        LittleFS
       #define FS_Name       "LittleFS"
-      #warning Using LittleFS in ESP_WiFiManager_Lite.h
+      //#warning Using LittleFS in ESP_WiFiManager_Lite.h
     #else
       #define FileFS        SPIFFS
       #define FS_Name       "SPIFFS"
-      #warning Using SPIFFS in ESP_WiFiManager_Lite.h
+      //#warning Using SPIFFS in ESP_WiFiManager_Lite.h
     #endif
 
     #include <FS.h>
@@ -92,7 +92,7 @@
     #include <EEPROM.h>
     #define FS_Name         "EEPROM"
     #define EEPROM_SIZE     2048
-    #warning Using EEPROM in ESP_WiFiManager_Lite.h
+    //#warning Using EEPROM in ESP_WiFiManager_Lite.h
   #endif
 
 #else   //ESP32
@@ -302,8 +302,10 @@ uint32_t getChipOUI();
   // For ESP32, You must select one to be true (EEPROM or SPIFFS/LittleFS)
   // For ESP8266, You must select one to be true (RTC, EEPROM or SPIFFS/LittleFS)
   // Otherwise, library will use default EEPROM storage
-  #define ESP8266_DRD_USE_RTC     false   //true
-
+  #ifndef ESP8266_DRD_USE_RTC
+  #define ESP8266_DRD_USE_RTC       false // (this is not implemented: must be false)
+  #endif
+  #if !ESP8266_DRD_USE_RTC
   #if USE_LITTLEFS
     #define ESP_DRD_USE_LITTLEFS    true
     #define ESP_DRD_USE_SPIFFS      false
@@ -316,6 +318,7 @@ uint32_t getChipOUI();
     #define ESP_DRD_USE_LITTLEFS    false
     #define ESP_DRD_USE_SPIFFS      false
     #define ESP_DRD_USE_EEPROM      true
+  #endif
   #endif
 
   #ifndef DOUBLERESETDETECTOR_DEBUG
@@ -383,7 +386,9 @@ typedef struct
   char wifi_pw  [PASS_MAX_LEN];
 }  WiFi_Credentials;
 
+#ifndef NUM_WIFI_CREDENTIALS  // (allow 2..4)
 #define NUM_WIFI_CREDENTIALS      2
+#endif
 
 #if USING_BOARD_NAME
   // Configurable items besides fixed Header, just add board_name
@@ -423,25 +428,34 @@ const char ESP_WM_LITE_HTML_HEAD_START[] PROGMEM = "<!DOCTYPE html><html><head><
 const char ESP_WM_LITE_HTML_HEAD_STYLE[] PROGMEM =
   "<style>div,input{padding:5px;font-size:1em;}input{width:95%;}body{text-align: center;}button{background-color:#16A1E7;color:#fff;line-height:2.4rem;font-size:1.2rem;width:100%;}fieldset{border-radius:0.3rem;margin:0px;}</style>";
 
-#if USING_BOARD_NAME
-  const char ESP_WM_LITE_HTML_HEAD_END[]   PROGMEM =
-  "</head><div style='text-align:left;display:inline-block;min-width:260px;'>\
-  <fieldset><div><label>*WiFi SSID</label><div>[[input_id]]</div></div>\
-  <div><label>*PWD (8+ chars)</label><input value='[[pw]]' id='pw'><div></div></div>\
-  <div><label>*WiFi SSID1</label><div>[[input_id1]]</div></div>\
-  <div><label>*PWD1 (8+ chars)</label><input value='[[pw1]]' id='pw1'><div></div></div></fieldset>\
-  <fieldset><div><label>Board Name</label><input value='[[nm]]' id='nm'><div></div></div></fieldset>";  // DO NOT CHANGE THIS STRING EVER!!!!
-#else
-  const char ESP_WM_LITE_HTML_HEAD_END[]   PROGMEM =
-  "</head><div style='text-align:left;display:inline-block;min-width:260px;'>\
-  <fieldset><div><label>*WiFi SSID</label><div>[[input_id]]</div></div>\
-  <div><label>*PWD (8+ chars)</label><input value='[[pw]]' id='pw'><div></div></div>\
-  <div><label>*WiFi SSID1</label><div>[[input_id1]]</div></div>\
-  <div><label>*PWD1 (8+ chars)</label><input value='[[pw1]]' id='pw1'><div></div></div></fieldset>";  // DO NOT CHANGE THIS STRING EVER!!!!
+const char ESP_WM_LITE_HTML_HEAD_END[]   PROGMEM =
+  "</head><div style='text-align:left;display:inline-block;min-width:260px;'>"
+  "<fieldset><div><label>*WiFi SSID</label><div>[[inid]]</div></div>"
+  "<div><label>*PWD (8+ chars)</label><input value='[[pw]]' id='pw'><div></div></div>"
+  "<div><label>*WiFi SSID1</label><div>[[inid1]]</div></div>"
+  "<div><label>*PWD1 (8+ chars)</label><input value='[[pw1]]' id='pw1'><div></div></div>"
+#if (NUM_WIFI_CREDENTIALS>=2)
+  "<div><label>*WiFi SSID2</label><div>[[inid2]]</div></div>"
+  "<div><label>*PWD2 (8+ chars)</label><input value='[[pw2]]' id='pw2'></div>"
 #endif
+#if (NUM_WIFI_CREDENTIALS>=3)
+  "<div><label>*WiFi SSID3</label><div>[[inid3]]</div></div>"
+  "<div><label>*PWD3 (8+ chars)</label><input value='[[pw3]]' id='pw3'><div></div></div>"
+#endif
+#if USING_BOARD_NAME
+  "<fieldset><div><label>Board Name</label><input value='[[nm]]' id='nm'><div></div></div>"
+#endif
+  "</fieldset>";
+
 
 const char ESP_WM_LITE_HTML_INPUT_ID[]   PROGMEM = "<input value='[[id]]' id='id'>";
 const char ESP_WM_LITE_HTML_INPUT_ID1[]  PROGMEM = "<input value='[[id1]]' id='id1'>";
+#if (NUM_WIFI_CREDENTIALS>=2)
+const char ESP_WM_LITE_HTML_INPUT_ID2[]  PROGMEM = "<input value='[[id2]]' id='id2'>";
+#endif
+#if (NUM_WIFI_CREDENTIALS>=3)
+const char ESP_WM_LITE_HTML_INPUT_ID3[]  PROGMEM = "<input value='[[id3]]' id='id3'>";
+#endif
 
 const char ESP_WM_LITE_FLDSET_START[]  PROGMEM = "<fieldset>";
 const char ESP_WM_LITE_FLDSET_END[]    PROGMEM = "</fieldset>";
@@ -449,20 +463,21 @@ const char ESP_WM_LITE_HTML_PARAM[]    PROGMEM =
   "<div><label>{b}</label><input value='[[{v}]]'id='{i}'><div></div></div>";
 const char ESP_WM_LITE_HTML_BUTTON[]   PROGMEM = "<button onclick=\"sv()\">Save</button></div>";
 
-#if USING_BOARD_NAME
-  const char ESP_WM_LITE_HTML_SCRIPT[]   PROGMEM = "<script id=\"jsbin-javascript\">\
-  function udVal(key,val){var request=new XMLHttpRequest();var url='/?key='+key+'&value='+encodeURIComponent(val);\
-  request.open('GET',url,false);request.send(null);}\
-  function sv(){udVal('id',document.getElementById('id').value);udVal('pw',document.getElementById('pw').value);\
-  udVal('id1',document.getElementById('id1').value);udVal('pw1',document.getElementById('pw1').value);\
-  udVal('nm',document.getElementById('nm').value);";
-#else
-  const char ESP_WM_LITE_HTML_SCRIPT[]   PROGMEM = "<script id=\"jsbin-javascript\">\
-  function udVal(key,val){var request=new XMLHttpRequest();var url='/?key='+key+'&value='+encodeURIComponent(val);\
-  request.open('GET',url,false);request.send(null);}\
-  function sv(){udVal('id',document.getElementById('id').value);udVal('pw',document.getElementById('pw').value);\
-  udVal('id1',document.getElementById('id1').value);udVal('pw1',document.getElementById('pw1').value);";
-#endif
+const char ESP_WM_LITE_HTML_SCRIPT[]   PROGMEM = "<script id=\"jsbin-javascript\">"
+  "function udVal(key,val){var request=new XMLHttpRequest();var url='/?key='+key+'&value='+encodeURIComponent(val);"
+  "request.open('GET',url,false);request.send(null);}"
+  "function sv(){udVal('id',document.getElementById('id').value);udVal('pw',document.getElementById('pw').value);"
+  "udVal('id1',document.getElementById('id1').value);udVal('pw1',document.getElementById('pw1').value);"
+  #if (NUM_WIFI_CREDENTIALS>=2)
+  "udVal('id2',document.getElementById('id2').value);udVal('pw2',document.getElementById('pw2').value);"
+  #endif
+  #if (NUM_WIFI_CREDENTIALS>=3)
+  "udVal('id3',document.getElementById('id3').value);udVal('pw3',document.getElementById('pw3').value);"
+  #endif
+  #if USING_BOARD_NAME
+  "udVal('nm',document.getElementById('nm').value);"
+  #endif
+  ;
 
 const char ESP_WM_LITE_HTML_SCRIPT_ITEM[]  PROGMEM = "udVal('{d}',document.getElementById('{d}').value);";
 const char ESP_WM_LITE_HTML_SCRIPT_END[]   PROGMEM = "alert('Updated');}</script>";
@@ -1732,31 +1747,31 @@ class ESP_WiFiManager_Lite
         for (uint16_t i = 0; i < NUM_MENU_ITEMS; i++)
         {
           char* _pointer = readBuffer;
-  
+
           // Actual size of pdata is [maxlen + 1]
           memset(readBuffer, 0, myMenuItems[i].maxlen + 1);
-  
+
           file.readBytes(_pointer, myMenuItems[i].maxlen);
-  
+
           ESP_WML_LOGDEBUG3(F("ChkCrR:pdata="), readBuffer, F(",len="), myMenuItems[i].maxlen);
-  
+
           for (uint16_t j = 0; j < myMenuItems[i].maxlen; j++, _pointer++)
           {
             checkSum += *_pointer;
           }
         }
-  
+
         file.readBytes((char *) &readCheckSum, sizeof(readCheckSum));
-  
+
         ESP_WML_LOGINFO(F("OK"));
         file.close();
-  
+
         ESP_WML_LOGINFO3(F("CrCCsum=0x"), String(checkSum, HEX), F(",CrRCsum=0x"), String(readCheckSum, HEX));
-  
+
         // Free buffer
         delete [] readBuffer;
         ESP_WML_LOGDEBUG(F("Buffer freed"));
-  
+
         if ( checkSum == readCheckSum)
         {
           return true;
@@ -2709,15 +2724,31 @@ class ESP_WiFiManager_Lite
       pitem = String(FPSTR(ESP_WM_LITE_HTML_HEAD_END));
 
 #if MANUAL_SSID_INPUT_ALLOWED
-      pitem.replace("[[input_id]]",  "<input id='id' list='SSIDs'>"  + String(FPSTR(ESP_WM_LITE_DATALIST_START)) + "'SSIDs'>" +
+      pitem.replace("[[inid]]",  "<input id='id' list='SSIDs'>"  + String(FPSTR(ESP_WM_LITE_DATALIST_START)) + "'SSIDs'>" +
                     ListOfSSIDs + FPSTR(ESP_WM_LITE_DATALIST_END));
       ESP_WML_LOGDEBUG1(F("pitem:"), pitem);
-      pitem.replace("[[input_id1]]", "<input id='id1' list='SSIDs'>" + String(FPSTR(ESP_WM_LITE_DATALIST_START)) + "'SSIDs'>" +
+      pitem.replace("[[inid1]]", "<input id='id1' list='SSIDs'>" + String(FPSTR(ESP_WM_LITE_DATALIST_START)) + "'SSIDs'>" +
                     ListOfSSIDs + FPSTR(ESP_WM_LITE_DATALIST_END));
       ESP_WML_LOGDEBUG1(F("pitem:"), pitem);
+      #if (NUM_WIFI_CREDENTIALS>=2)
+      pitem.replace("[[inid2]]", "<input id='id2' list='SSIDs'>" + String(FPSTR(ESP_WM_LITE_DATALIST_START)) + "'SSIDs'>" +
+                    ListOfSSIDs + FPSTR(ESP_WM_LITE_DATALIST_END));
+      ESP_WML_LOGDEBUG1(F("pitem:"), pitem);
+      #endif
+      #if (NUM_WIFI_CREDENTIALS>=3)
+      pitem.replace("[[inid3]]", "<input id='id3' list='SSIDs'>" + String(FPSTR(ESP_WM_LITE_DATALIST_START)) + "'SSIDs'>" +
+                    ListOfSSIDs + FPSTR(ESP_WM_LITE_DATALIST_END));
+      ESP_WML_LOGDEBUG1(F("pitem:"), pitem);
+      #endif
 #else
-      pitem.replace("[[input_id]]",  "<select id='id'>"  + ListOfSSIDs + FPSTR(ESP_WM_LITE_SELECT_END));
-      pitem.replace("[[input_id1]]", "<select id='id1'>" + ListOfSSIDs + FPSTR(ESP_WM_LITE_SELECT_END));
+      pitem.replace("[[inid]]",  "<select id='id'>"  + ListOfSSIDs + FPSTR(ESP_WM_LITE_SELECT_END));
+      pitem.replace("[[inid1]]", "<select id='id1'>" + ListOfSSIDs + FPSTR(ESP_WM_LITE_SELECT_END));
+      #if (NUM_WIFI_CREDENTIALS>=2)
+      pitem.replace("[[inid2]]", "<select id='id2'>" + ListOfSSIDs + FPSTR(ESP_WM_LITE_SELECT_END));
+      #endif
+      #if (NUM_WIFI_CREDENTIALS>=3)
+      pitem.replace("[[inid3]]", "<select id='id3'>" + ListOfSSIDs + FPSTR(ESP_WM_LITE_SELECT_END));
+      #endif
 #endif
 
       root_html_template += pitem + FPSTR(ESP_WM_LITE_FLDSET_START);
@@ -2725,8 +2756,14 @@ class ESP_WiFiManager_Lite
 #else
 
       pitem = String(FPSTR(ESP_WM_LITE_HTML_HEAD_END));
-      pitem.replace("[[input_id]]",  FPSTR(ESP_WM_LITE_HTML_INPUT_ID));
-      pitem.replace("[[input_id1]]", FPSTR(ESP_WM_LITE_HTML_INPUT_ID1));
+      pitem.replace("[[inid]]",  FPSTR(ESP_WM_LITE_HTML_INPUT_ID));
+      pitem.replace("[[inid1]]", FPSTR(ESP_WM_LITE_HTML_INPUT_ID1));
+      #if (NUM_WIFI_CREDENTIALS>=2)
+      pitem.replace("[[inid2]]", FPSTR(ESP_WM_LITE_HTML_INPUT_ID2));
+      #endif
+      #if (NUM_WIFI_CREDENTIALS>=3)
+      pitem.replace("[[inid3]]", FPSTR(ESP_WM_LITE_HTML_INPUT_ID3));
+      #endif
       root_html_template += pitem + FPSTR(ESP_WM_LITE_FLDSET_START);
 
 #endif    // SCAN_WIFI_NETWORKS
@@ -2828,6 +2865,14 @@ class ESP_WiFiManager_Lite
             result.replace("[[pw]]",     ESP_WM_LITE_config.WiFi_Creds[0].wifi_pw);
             result.replace("[[id1]]",    ESP_WM_LITE_config.WiFi_Creds[1].wifi_ssid);
             result.replace("[[pw1]]",    ESP_WM_LITE_config.WiFi_Creds[1].wifi_pw);
+            #if (NUM_WIFI_CREDENTIALS>=2)
+            result.replace("[[id2]]",    ESP_WM_LITE_config.WiFi_Creds[2].wifi_ssid);
+            result.replace("[[pw2]]",    ESP_WM_LITE_config.WiFi_Creds[2].wifi_pw);
+            #endif
+            #if (NUM_WIFI_CREDENTIALS>=3)
+            result.replace("[[id3]]",    ESP_WM_LITE_config.WiFi_Creds[3].wifi_ssid);
+            result.replace("[[pw3]]",    ESP_WM_LITE_config.WiFi_Creds[3].wifi_pw);
+            #endif
 
 #if USING_BOARD_NAME
             result.replace("[[nm]]",     ESP_WM_LITE_config.board_name);
@@ -2839,6 +2884,14 @@ class ESP_WiFiManager_Lite
             result.replace("[[pw]]",  "");
             result.replace("[[id1]]", "");
             result.replace("[[pw1]]", "");
+            #if (NUM_WIFI_CREDENTIALS>=2)
+            result.replace("[[id2]]", "");
+            result.replace("[[pw2]]", "");
+            #endif
+            #if (NUM_WIFI_CREDENTIALS>=3)
+            result.replace("[[id3]]", "");
+            result.replace("[[pw3]]", "");
+            #endif
 
 #if USING_BOARD_NAME
             result.replace("[[nm]]",  "");
@@ -2898,6 +2951,14 @@ class ESP_WiFiManager_Lite
         static bool pw_Updated  = false;
         static bool id1_Updated = false;
         static bool pw1_Updated = false;
+        #if (NUM_WIFI_CREDENTIALS>=2)
+        static bool id2_Updated = false;
+        static bool pw2_Updated = false;
+        #endif
+        #if (NUM_WIFI_CREDENTIALS>=3)
+        static bool id3_Updated = false;
+        static bool pw3_Updated = false;
+        #endif
 
 #if USING_BOARD_NAME
         static bool nm_Updated  = false;
@@ -2953,6 +3014,60 @@ class ESP_WiFiManager_Lite
           else
             strncpy(ESP_WM_LITE_config.WiFi_Creds[1].wifi_pw, value.c_str(), sizeof(ESP_WM_LITE_config.WiFi_Creds[1].wifi_pw) - 1);
         }
+        #if (NUM_WIFI_CREDENTIALS>=2)
+        else if (!id2_Updated && (key == String("id2")))
+        {
+          ESP_WML_LOGDEBUG(F("h:repl id2"));
+          id2_Updated = true;
+
+          number_items_Updated++;
+
+          if (strlen(value.c_str()) < sizeof(ESP_WM_LITE_config.WiFi_Creds[2].wifi_ssid) - 1)
+            strcpy(ESP_WM_LITE_config.WiFi_Creds[2].wifi_ssid, value.c_str());
+          else
+            strncpy(ESP_WM_LITE_config.WiFi_Creds[2].wifi_ssid, value.c_str(),
+                    sizeof(ESP_WM_LITE_config.WiFi_Creds[2].wifi_ssid) - 1);
+        }
+        else if (!pw2_Updated && (key == String("pw2")))
+        {
+          ESP_WML_LOGDEBUG(F("h:repl pw2"));
+          pw2_Updated = true;
+
+          number_items_Updated++;
+
+          if (strlen(value.c_str()) < sizeof(ESP_WM_LITE_config.WiFi_Creds[2].wifi_pw) - 1)
+            strcpy(ESP_WM_LITE_config.WiFi_Creds[2].wifi_pw, value.c_str());
+          else
+            strncpy(ESP_WM_LITE_config.WiFi_Creds[2].wifi_pw, value.c_str(), sizeof(ESP_WM_LITE_config.WiFi_Creds[2].wifi_pw) - 1);
+        }
+        #endif
+        #if (NUM_WIFI_CREDENTIALS>=3)
+        else if (!id3_Updated && (key == String("id3")))
+        {
+          ESP_WML_LOGDEBUG(F("h:repl id3"));
+          id3_Updated = true;
+
+          number_items_Updated++;
+
+          if (strlen(value.c_str()) < sizeof(ESP_WM_LITE_config.WiFi_Creds[3].wifi_ssid) - 1)
+            strcpy(ESP_WM_LITE_config.WiFi_Creds[3].wifi_ssid, value.c_str());
+          else
+            strncpy(ESP_WM_LITE_config.WiFi_Creds[3].wifi_ssid, value.c_str(),
+                    sizeof(ESP_WM_LITE_config.WiFi_Creds[3].wifi_ssid) - 1);
+        }
+        else if (!pw3_Updated && (key == String("pw3")))
+        {
+          ESP_WML_LOGDEBUG(F("h:repl pw3"));
+          pw3_Updated = true;
+
+          number_items_Updated++;
+
+          if (strlen(value.c_str()) < sizeof(ESP_WM_LITE_config.WiFi_Creds[3].wifi_pw) - 1)
+            strcpy(ESP_WM_LITE_config.WiFi_Creds[3].wifi_pw, value.c_str());
+          else
+            strncpy(ESP_WM_LITE_config.WiFi_Creds[3].wifi_pw, value.c_str(), sizeof(ESP_WM_LITE_config.WiFi_Creds[3].wifi_pw) - 1);
+        }
+        #endif
 
 #if USING_BOARD_NAME
         else if (!nm_Updated && (key == String("nm")))
@@ -3110,7 +3225,7 @@ class ESP_WiFiManager_Lite
         // CaptivePortal
         // if DNSServer is started with "*" for domain name, it will reply with provided IP to all DNS requests
         dnsServer->start(DNS_PORT, "*", portal_apIP);
-        
+
         // reply to all requests with same HTML
         server->onNotFound([this]()
         {

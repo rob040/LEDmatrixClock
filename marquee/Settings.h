@@ -43,7 +43,8 @@ SOFTWARE.
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPUpdateServer.h>
-#include <WiFiManager.h> // --> https://github.com/tzapu/WiFiManager
+//#include <WiFiManager.h> // --> https://github.com/tzapu/WiFiManager
+//later  #include <ESP_WiFiManager_Lite.h> // --> https://github.com/khoih-prog/ESP_WiFiManager_Lite
 #include <ESP8266mDNS.h>
 #include <ArduinoOTA.h>
 #include "LittleFS.h"
@@ -86,8 +87,52 @@ const int ledRotation = 3;
 // uncomment define BUZZER pin when BUZZER is installed
 // #define BUZZER_PIN  D2
 
-// ESP Accesspoint hostname by WifiManager; The device MAC address will be added
+// Wifi Manager Lite
+// ESP Accesspoint hostname by ESP_WifiManager_Lite; The device MAC address will be added
 #define AP_HOSTNAME_BASE "CLOCK-"
+#define ESP_WM_LITE_DEBUG_OUTPUT      Serial
+#define _ESP_WM_LITE_LOGLEVEL_        3
+#define USE_LED_BUILTIN               true
+#define USE_DYNAMIC_PARAMETERS        false
+#define USING_CUSTOMS_STYLE           false
+#define USING_CUSTOMS_HEAD_ELEMENT    false
+#define USING_CORS_FEATURE            false
+#define NUM_WIFI_CREDENTIALS          4
+#define TIMEOUT_RECONNECT_WIFI                    10000L
+// Permit running CONFIG_TIMEOUT_RETRYTIMES_BEFORE_RESET times before reset hardware
+// to permit user another chance to config. Only if Config Data is valid.
+// If Config Data is invalid, this has no effect as Config Portal will persist
+#define RESET_IF_CONFIG_TIMEOUT                   true
+// Permitted range of user-defined CONFIG_TIMEOUT_RETRYTIMES_BEFORE_RESET between 2-100
+#define CONFIG_TIMEOUT_RETRYTIMES_BEFORE_RESET    5
+// Config Timeout 120s (default 60s). Applicable only if Config Data is Valid
+#define CONFIG_TIMEOUT                            120000L
+// Permit input only one set of WiFi SSID/PWD. The other can be "NULL or "blank"
+// Default is false (if not defined) => must input 2 sets of SSID/PWD
+#define REQUIRE_ONE_SET_SSID_PW               false
+// Max times to try WiFi per loop() iteration. To avoid blocking issue in loop()
+// Default 1 if not defined, and minimum 1.
+#define MAX_NUM_WIFI_RECON_TRIES_PER_LOOP     2
+// Default no interval between recon WiFi if lost
+// Max permitted interval will be 10mins
+// Uncomment to use. Be careful, WiFi reconnect will be delayed if using this method
+// Only use whenever urgent tasks in loop() can't be delayed. But if so, it's better you have to rewrite your code, e.g. using higher priority tasks.
+//#define WIFI_RECON_INTERVAL                   30000
+// Permit reset hardware if no WiFi to permit user another chance to access Config Portal.
+#define RESET_IF_NO_WIFI                    false
+#define SCAN_WIFI_NETWORKS                  true
+// To be able to manually input SSID, not from scanned SSID lists
+#define MANUAL_SSID_INPUT_ALLOWED           true
+// List nearby SSID's found, From 2-15
+#define MAX_SSID_IN_LIST                    8
+#define ESP8266_DRD_USE_RTC                 false  // for Double Reset Detector (this is not implemented: must be false)
+#define ESP_DRD_USE_LITTLEFS                false
+#define ESP_DRD_USE_EEPROM                  true    // A mix of DRD using EEPROM and WM using Spiffs in not allowed!
+#define ESP_DRD_USE_SPIFFS                  false
+#define USE_LITTLEFS                        false  // for wifi config
+#define USE_SPIFFS                          false
+#include <ESP_WiFiManager_Lite.h> // --> https://github.com/khoih-prog/ESP_WiFiManager_Lite (Archived)
+
 // Configuration.ini file is stored in local filesystem
 #define CONFIG "/conf.txt"
 

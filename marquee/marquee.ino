@@ -23,7 +23,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.1.47"
+#define VERSION "3.2.0"
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -61,7 +61,7 @@ void redirectHome();
 void sendHeader(boolean isMainPage = false);
 void sendFooter();
 void webDisplayWeatherData();
-void configModeCallback(WiFiManager* myWiFiManager);
+//void configModeCallback(WiFiManager* myWiFiManager);
 void onBoardLed(boolean on);
 void flashLED(int number, int delayTime);
 String getTempSymbol(bool forWeb = false);
@@ -158,6 +158,9 @@ MqttClient mqttClient(MqttServer, MqttPort, MqttTopic, MqttAuthUser, MqttAuthPas
 ESP8266WebServer server(WEBSERVER_PORT);
 ESP8266HTTPUpdateServer serverUpdater;
 
+ESP_WiFiManager_Lite* ESP_WiFiManager;
+bool LOAD_DEFAULT_CONFIG_DATA = false; // set to true for debug-test: FORCES default values to be loaded each run.
+ESP_WM_LITE_Configuration defaultConfig = {0};
 
 static const char webHeaderHtml[] PROGMEM = "<!DOCTYPE HTML>"
   "<html><head>"
@@ -478,14 +481,14 @@ void setup() {
 #endif
 
   // WiFiManager
-
+/*
   //Local initialization. Once its business is done, there is no need to keep it around
-  WiFiManager wifiManager;
+  //WiFiManager wifiManager;
 
   // Uncomment for testing wifi manager
   //wifiManager.resetSettings();
 
-  wifiManager.setAPCallback(configModeCallback);
+  //wifiManager.setAPCallback(configModeCallback);
   // ADD device MAC address to AP_HOSTNAME_BASE
   // note that last 6 hex digits of ESP.chipid(), WiFi.macAddress() and WiFi.softAPmacAddress() are identical.
   String hostname(AP_HOSTNAME_BASE);
@@ -498,6 +501,18 @@ void setup() {
     ESP.reset();
     delay(5000);
   }
+*/
+  // khoih-prog/ESP_WiFiManager_Lite :
+
+  ESP_WiFiManager = new ESP_WiFiManager_Lite();
+  // Setup Config Portal hostname, without access password
+  String hostname(AP_HOSTNAME_BASE);
+  hostname += String(ESP.getChipId(), HEX);
+  hostname.toUpperCase();
+  ESP_WiFiManager->setConfigPortal(hostname);
+  // Set customized DHCP HostName
+  ESP_WiFiManager->begin(hostname.c_str());
+
 
   // print the received signal strength:
   Serial.printf_P(PSTR("Signal Strength (RSSI): %d%%\n"), getWifiQuality());
@@ -650,6 +665,7 @@ void loop() {
     ArduinoOTA.handle();
   }
 
+  ESP_WiFiManager->run();
 }
 
 void displayScrollMessage(const String &msg)
@@ -998,9 +1014,10 @@ void handleForgetWifi() {
   //WiFiManager
   //Local initialization. Once its business is done, there is no need to keep it around
   redirectHome();
-  WiFiManager wifiManager;
-  wifiManager.resetSettings();
-  ESP.restart();
+  //WiFiManager wifiManager;
+  //wifiManager.resetSettings();
+  //ESP.restart();
+  ESP_WiFiManager->resetAndEnterConfigPortal();
 }
 
 #if COMPILE_MQTT
@@ -1349,7 +1366,7 @@ void webDisplayWeatherData() {
   onBoardLed(LED_OFF);
 }
 
-void configModeCallback(WiFiManager* myWiFiManager) {
+/*void configModeCallback(WiFiManager* myWiFiManager) {
   Serial.println(F("Entered config mode"));
   Serial.println(WiFi.softAPIP());
   Serial.println(F("Wifi Manager"));
@@ -1358,7 +1375,9 @@ void configModeCallback(WiFiManager* myWiFiManager) {
   Serial.println(F("To setup Wifi Configuration"));
   scrollMessageWait(F("Please Connect to AP: ") + String(myWiFiManager->getConfigPortalSSID()));
   centerPrint("wifi");
-}
+
+  //TODO find alternative for this
+}*/
 
 void onBoardLed(boolean on) {
   if (isSysLed) {

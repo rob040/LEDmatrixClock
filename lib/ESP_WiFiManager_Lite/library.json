@@ -1,0 +1,45 @@
+{
+  "name": "ESP_WiFiManager_Lite",
+  "version": "1.10.5",
+  "keywords": "wifi, wi-fi, MultiWiFi, multi-wifi, WiFiManager, esp8266, esp32, esp32-s2, esp32-s3, esp32-c3, Communication, iot, credentials, persistent, config-portal, DoubleReset, MultiReset, DoubleResetDetector, littlefs, spiffs, eeprom, light-weight",
+  "description": "Library to configure MultiWiFi/Credentials at runtime for ESP32 (including ESP32-S2, ESP32-S3 and ESP32-C3) and ESP8266 boards. You can also specify DHCP HostName, static AP and STA IP. Use much less memory compared to full-fledge WiFiManager. Config Portal will be auto-adjusted to match the number of dynamic custom parameters. Optional default Credentials to be autoloaded into Config Portal to use or change instead of manually input. Credentials are saved in LittleFS, SPIFFS or EEPROM. New powerful-yet-simple-to-use feature to enable adding dynamic custom parameters from sketch and input using the same Config Portal. Double or MultiDetectDetector as well as Virtual Switches feature permits entering Config Portal as requested. Configurable Customs HTML Headers, including Customs Style, Customs Head Elements, CORS Header. Now using correct ESP32 chipIP",
+  "authors":
+  {
+    "name":  "Khoi Hoang",
+    "url":   "https://github.com/khoih-prog",
+    "maintainer": true
+  },
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/khoih-prog/ESP_WiFiManager_Lite"
+  },
+  "homepage": "https://github.com/khoih-prog/ESP_WiFiManager_Lite",
+  "export": {
+    "exclude": [
+      "linux",
+      "extras",
+      "tests"
+    ]
+  },
+  "dependencies": 
+  [
+    {
+      "owner": "khoih-prog",
+      "name": "ESP_DoubleResetDetector",
+      "version": "^1.3.2",
+      "platforms": ["espressif8266", "espressif32"]
+    },
+    {
+      "owner": "khoih-prog",
+      "name": "ESP_MultiResetDetector",
+      "version": "^1.3.2",
+      "platforms": ["espressif8266", "espressif32"]
+    }
+  ],
+  "license": "MIT",
+  "frameworks": "*",
+  "platforms": ["espressif8266", "espressif32"],
+  "examples": "examples/*/*/*.ino",
+  "headers": "ESP_WiFiManager_Lite.h"
+}

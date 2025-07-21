@@ -2628,7 +2628,6 @@ class ESP_WiFiManager_Lite
 
       setHostname();
 
-      int i = 0;
       status = wifiMulti.run();
       delay(WIFI_MULTI_1ST_CONNECT_WAITING_MS);
 
@@ -2646,7 +2645,7 @@ class ESP_WiFiManager_Lite
 
       if ( status == WL_CONNECTED )
       {
-        ESP_WML_LOGWARN1(F("WiFi connected after time: "), i);
+        ESP_WML_LOGWARN1(F("WiFi connected after retries: "), numWiFiReconTries);
         ESP_WML_LOGWARN3(F("SSID="), WiFi.SSID(), F(",RSSI="), WiFi.RSSI());
         ESP_WML_LOGWARN3(F("Channel="), WiFi.channel(), F(",IP="), WiFi.localIP() );
       }

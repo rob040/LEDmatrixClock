@@ -45,9 +45,9 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 
 
 ### known issues
-* Webpage update does halt the scrolling display for a moment. See issue #8 for more details.
-* Scrolling text appears to have some 'flex' in it. See issue #9 for meore details.
-* When using the LED display at lowest intensity, some pixel flicker might be visible. See issue #10 for more details.
+* Webpage update does halt the scrolling display for a moment. See [issue #8](https://github.com/rob040/LEDmatrixClock/issues/8) for more details.
+* Scrolling text appears to have some 'flex' in it. See [issue #9](https://github.com/rob040/LEDmatrixClock/issues/9) for meore details.
+* When using the LED display at lowest intensity, some pixel flicker might be visible. See [issue #10](https://github.com/rob040/LEDmatrixClock/issues/10) for more details.
 
 
 ## Required Parts:

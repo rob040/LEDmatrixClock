@@ -45,12 +45,9 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 
 
 ### known issues
-* Webpage update does halt the scrolling display for a moment. This cannot be prevented, only shortened with optimizations, such as reduction of 'String' usage.
-* Scrolling text appears to have some 'flex' in it, due to variations in display data update. This is being worked on.
-  --> This has been investigated further; it is believed the majority of the visible effect is due to inconsistent dot distance and soldering of the display parts.
-  Some may be placed skewed and can be aligned with a bit of force. Some boards have some extra space between each display tile.
-  This makes the dot distance inconsistent, which causes ugly visible artifacts.
-* When using the LED display at lowest intensity, some pixel flicker might be visible. It varies with display module HW. This is being worked on.
+* Webpage update does halt the scrolling display for a moment. See issue #8 for more details.
+* Scrolling text appears to have some 'flex' in it. See issue #9 for meore details.
+* When using the LED display at lowest intensity, some pixel flicker might be visible. See issue #10 for more details.
 
 
 ## Required Parts:

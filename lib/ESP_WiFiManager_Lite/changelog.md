@@ -15,6 +15,7 @@
 ## Table of Contents
 
 * [Changelog](#changelog)
+  * [Release v1.11.0](#release-v1110-beta)
   * [Release v1.10.5](#release-v1105)
   * [Release v1.10.4](#release-v1104)
   * [Release v1.10.3](#release-v1103)
@@ -39,6 +40,11 @@
 ---
 
 ## Changelog
+
+### Release v1.11.0 (beta)
+
+1. Massive simplification to reset detector configuration
+2. Using the simplified MultiResetDetector v2.0, makes the DoubleResetDetector library superfluous
 
 ### Release v1.10.5
 
@@ -90,14 +96,14 @@
 
 ### Release v1.7.0
 
-1. Fix ESP8266 bug not easy to connect to Config Portal for ESP8266 core v3.0.0+ 
+1. Fix ESP8266 bug not easy to connect to Config Portal for ESP8266 core v3.0.0+
 2. Fix the blocking issue in loop(). Check [retries block the main loop #18](https://github.com/khoih-prog/WiFiManager_NINA_Lite/issues/18)
 3. Configurable `WIFI_RECON_INTERVAL`. Check [retries block the main loop #18](https://github.com/khoih-prog/WiFiManager_NINA_Lite/issues/18#issuecomment-1006197561)
 4. Clean up
 
 ### Release v1.6.0
 
-1. Auto detect ESP32 core and use either built-in LittleFS or [LITTLEFS](https://github.com/lorol/LITTLEFS) library. 
+1. Auto detect ESP32 core and use either built-in LittleFS or [LITTLEFS](https://github.com/lorol/LITTLEFS) library.
 2. Fix bug returning IP `255.255.255.255` in core v2.0.0+ when using `hostname`
 
 
@@ -127,7 +133,7 @@
 ### Release v1.2.0
 
 1. Configurable **Customs HTML Headers**, including Customs Style, Customs Head Elements, CORS Header.
-2. Fix Config Portal Bug. 
+2. Fix Config Portal Bug.
 3. Update examples
 
 ### Release v1.1.0

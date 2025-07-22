@@ -7,27 +7,13 @@
   
   Based on and modified from
   1) DataCute    https://github.com/datacute/MultiResetDetector
-  2) Khoi Hoang  https://github.com/khoih-prog/ESP_MultiResetDetector
+  2) Khoi Hoang  https://github.com/khoih-prog/ESP_MultiResetDetector (archived)
+  3) rob040      https://github.com/rob040/LEDmatrixClock/lib/ESP_MultiResetDetector (version 2.0+)
   
   Built by Khoi Hoang https://github.com/khoih-prog/ESP_MultiResetDetector
   Licensed under MIT license
  *****************************************************************************************************************************/
 
-// These defines must be put before #include <ESP_MultiResetDetector.h>
-// to select where to store MultiResetDetector's variable.
-// For ESP32, You must select one to be true (EEPROM or SPIFFS)
-// For ESP8266, You must select one to be true (RTC, EEPROM, LITTLEFS or SPIFFS)
-// Otherwise, library will use default EEPROM storage
-
-#ifdef ESP8266
-  #define ESP8266_MRD_USE_RTC     false   //true
-#endif
-
-#define ESP_MRD_USE_LITTLEFS    true
-#define ESP_MRD_USE_SPIFFS      false
-#define ESP_MRD_USE_EEPROM      false
-
-#define MULTIRESETDETECTOR_DEBUG       true  //false
 
 // These definitions must be placed before #include <ESP_MultiResetDetector.h> to be used
 // Otherwise, default values (MRD_TIMES = 3, MRD_TIMEOUT = 10 seconds and MRD_ADDRESS = 0) will be used
@@ -38,10 +24,13 @@
 // subsequent reset will be considered a multi reset.
 #define MRD_TIMEOUT             10
 
-// RTC/EEPROM Memory Address for the MultiResetDetector to use
+// RTC Memory Address for the MultiResetDetector to use (onlt appliccable to ESP8266)
 #define MRD_ADDRESS             0
 
-#include <ESP_MultiResetDetector.h>      //https://github.com/khoih-prog/ESP_MultiResetDetector
+// Generate some debug output
+#define MULTIRESETDETECTOR_DEBUG       true  //false
+
+#include <ESP_MultiResetDetector.h>            // https://github.com/rob040/LEDmatrixClock/lib/ESP_MultiResetDetector
 
 MultiResetDetector* mrd;
 
@@ -52,8 +41,8 @@ MultiResetDetector* mrd;
     #define LED_BUILTIN       2         // Pin D2 mapped to pin GPIO2/ADC12 of ESP32, control on-board LED
   #endif
 
-  #define LED_OFF     LOW
   #define LED_ON      HIGH
+  #define LED_OFF     LOW
 
 #else
 
@@ -71,16 +60,9 @@ void setup()
   while (!Serial); 
   delay(200);
   
-  Serial.print(F("\nStarting ESP_MultiResetDetector minimal on ")); Serial.print(ARDUINO_BOARD);
+  Serial.print(F("\nStarting ESP_MultiResetDetector minimal on ")); 
+  Serial.print(ARDUINO_BOARD);
 
-#if ESP_MRD_USE_LITTLEFS
-  Serial.println(F(" using LittleFS"));
-#elif ESP_MRD_USE_SPIFFS
-  Serial.println(F(" using SPIFFS"));
-#else
-  Serial.println(F(" using EEPROM"));
-#endif
-  
   Serial.println(ESP_MULTI_RESET_DETECTOR_VERSION);
   
   mrd = new MultiResetDetector(MRD_TIMEOUT, MRD_ADDRESS);

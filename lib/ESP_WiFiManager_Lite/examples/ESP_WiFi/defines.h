@@ -2,12 +2,12 @@
   defines.h
   For ESP8266 / ESP32 boards
 
-  ESP_WiFiManager_Lite (https://github.com/khoih-prog/ESP_WiFiManager_Lite) is a library 
-  for the ESP32/ESP8266 boards to enable store Credentials in EEPROM/SPIFFS/LittleFS for easy 
+  ESP_WiFiManager_Lite (https://github.com/khoih-prog/ESP_WiFiManager_Lite) is a library
+  for the ESP32/ESP8266 boards to enable store Credentials in EEPROM/SPIFFS/LittleFS for easy
   configuration/reconfiguration and autoconnect/autoreconnect of WiFi and other services without Hardcoding.
 
   Built by Khoi Hoang https://github.com/khoih-prog/ESP_WiFiManager_Lite
-  Licensed under MIT license      
+  Licensed under MIT license
  *****************************************************************************************************************************/
 
 #ifndef defines_h
@@ -25,35 +25,15 @@
 // use builtin LED to show configuration mode
 #define USE_LED_BUILTIN               true
 
-#define USING_MRD                     true
+#define MULTIRESETDETECTOR_DEBUG      true
 
-#if USING_MRD
-  #define MULTIRESETDETECTOR_DEBUG      true
-  
-  // Number of seconds after reset during which a
-  // subseqent reset will be considered a double reset.
-  #define MRD_TIMEOUT                   10
-  
-  // RTC Memory Address for the DoubleResetDetector to use
-  #define MRD_ADDRESS                   0
+// Number of seconds after reset during which a
+// subseqent reset will be considered a double reset.
+#define MRD_TIMEOUT                   10
 
-  #if (_ESP_WM_LITE_LOGLEVEL_ > 3)
-    #warning Using MULTI_RESETDETECTOR
-  #endif
-#else
-  #define DOUBLERESETDETECTOR_DEBUG     true
-  
-  // Number of seconds after reset during which a
-  // subseqent reset will be considered a double reset.
-  #define DRD_TIMEOUT                   10
-  
-  // RTC Memory Address for the DoubleResetDetector to use
-  #define DRD_ADDRESS                   0
+// RTC Memory Address for the DoubleResetDetector to use
+#define MRD_ADDRESS                   0
 
-  #if (_ESP_WM_LITE_LOGLEVEL_ > 3)
-    #warning Using DOUBLE_RESETDETECTOR
-  #endif
-#endif
 
 /////////////////////////////////////////////
 
@@ -68,7 +48,7 @@
 #else
   // For ESP8266, and other boards
   #define USE_LITTLEFS    true
-  #define USE_SPIFFS      false  
+  #define USE_SPIFFS      false
 #endif
 
 /////////////////////////////////////////////
@@ -128,7 +108,7 @@
 
 // From 2-15
   #define MAX_SSID_IN_LIST                  8
-  
+
 /////////////////////////////////////////////
 
 // Optional, to use Board Name in Menu
@@ -138,7 +118,7 @@
 
 #include <ESP_WiFiManager_Lite.h>
 
-#if ESP8266 
+#if ESP8266
   #define HOST_NAME   "ESP8266-Controller"
 #else
   #define HOST_NAME   "ESP32-Controller"

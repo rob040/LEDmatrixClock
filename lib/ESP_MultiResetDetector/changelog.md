@@ -13,6 +13,7 @@
 
 
 * [Changelog](#changelog)
+  * [Releases v2.0.0](#releases-v200) (beta)
   * [Releases v1.3.2](#releases-v132)
   * [Releases v1.3.1](#releases-v131)
   * [Releases v1.3.0](#releases-v130)
@@ -20,11 +21,18 @@
   * [Releases v1.2.0](#releases-v120)
   * [Releases v1.1.2](#releases-v112)
   * [Releases v1.1.1](#releases-v111)
- 
+
 ---
 ---
 
 ## Changelog
+
+### Releases v2.0.0
+
+1. A major update but still compatible
+2. Simplified configuration (just 2 optional parameters), more robustness (no filesystem corruption anymore, no reformatted empty filesystem),
+3. no filesystem usage at all
+4. not yet available as installable library
 
 ### Releases v1.3.2
 

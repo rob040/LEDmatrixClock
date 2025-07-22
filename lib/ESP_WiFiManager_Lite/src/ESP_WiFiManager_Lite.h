@@ -24,6 +24,7 @@
   1.10.3  K Hoang      19/01/2023  Fix compiler error if EEPROM is used
   1.10.4  K Hoang      27/01/2023  Using PROGMEM for HTML strings
   1.10.5  K Hoang      28/01/2023  Using PROGMEM for strings in examples
+  1.11.0  rob040        20250722   Massive simplification to reset detector configuration
  *****************************************************************************************************************************/
 
 #pragma once
@@ -61,13 +62,13 @@
 ///////////////////////////////////////////
 
 #ifndef ESP_WIFI_MANAGER_LITE_VERSION
-  #define ESP_WIFI_MANAGER_LITE_VERSION             "ESP_WiFiManager_Lite v1.10.5"
+  #define ESP_WIFI_MANAGER_LITE_VERSION             "ESP_WiFiManager_Lite v1.11.0"
 
   #define ESP_WIFI_MANAGER_LITE_VERSION_MAJOR       1
-  #define ESP_WIFI_MANAGER_LITE_VERSION_MINOR       10
-  #define ESP_WIFI_MANAGER_LITE_VERSION_PATCH       5
+  #define ESP_WIFI_MANAGER_LITE_VERSION_MINOR       11
+  #define ESP_WIFI_MANAGER_LITE_VERSION_PATCH       0
 
-  #define ESP_WIFI_MANAGER_LITE_VERSION_INT         1010005
+  #define ESP_WIFI_MANAGER_LITE_VERSION_INT         1011000
 #endif
 
 ///////////////////////////////////////////
@@ -255,39 +256,12 @@ uint32_t getChipOUI();
   #endif
 #endif
 
-///////// NEW for DRD /////////////
 
-#if !defined(USING_MRD)
-  #define USING_MRD       false
-#endif
-
-#if USING_MRD
-
-  ///////// NEW for MRD /////////////
   // These defines must be put before #include <ESP_DoubleResetDetector.h>
   // to select where to store DoubleResetDetector's variable.
   // For ESP32, You must select one to be true (EEPROM or SPIFFS/LittleFS)
   // For ESP8266, You must select one to be true (RTC, EEPROM or SPIFFS/LittleFS)
   // Otherwise, library will use default EEPROM storage
-  #ifndef ESP8266_MRD_USE_RTC
-  #define ESP8266_MRD_USE_RTC     true
-  #endif
-
-  #ifndef ESP8266_MRD_USE_RTC
-  #if USE_LITTLEFS
-    #define ESP_MRD_USE_LITTLEFS    true
-    #define ESP_MRD_USE_SPIFFS      false
-    #define ESP_MRD_USE_EEPROM      false
-  #elif USE_SPIFFS
-    #define ESP_MRD_USE_LITTLEFS    false
-    #define ESP_MRD_USE_SPIFFS      true
-    #define ESP_MRD_USE_EEPROM      false
-  #else
-    #define ESP_MRD_USE_LITTLEFS    false
-    #define ESP_MRD_USE_SPIFFS      false
-    #define ESP_MRD_USE_EEPROM      true
-  #endif
-  #endif
 
   #ifndef MULTIRESETDETECTOR_DEBUG
     #define MULTIRESETDETECTOR_DEBUG     false
@@ -306,68 +280,19 @@ uint32_t getChipOUI();
     #define MRD_TIMEOUT 10
   #endif
 
-  // EEPROM Memory Address for the MultiResetDetector to use
-  #ifndef MRD_TIMEOUT
+  // RTC Memory Address for the MultiResetDetector to use
+  #ifndef MRD_ADDRESS
     #define MRD_ADDRESS 0
   #endif
 
-  #include <ESP_MultiResetDetector.h>      //https://github.com/khoih-prog/ESP_MultiResetDetector
+  #include <ESP_MultiResetDetector.h>      // https://github.com/rob040/LEDmatrixClock/lib/ESP_MultiResetDetector
 
   //MultiResetDetector mrd(MRD_TIMEOUT, MRD_ADDRESS);
   MultiResetDetector* mrd;
 
-  ///////// NEW for MRD /////////////
-
-#else
-
-  ///////// NEW for DRD /////////////
-  // These defines must be put before #include <ESP_DoubleResetDetector.h>
-  // to select where to store DoubleResetDetector's variable.
-  // For ESP32, You must select one to be true (EEPROM or SPIFFS/LittleFS)
-  // For ESP8266, You must select one to be true (RTC, EEPROM or SPIFFS/LittleFS)
-  // Otherwise, library will use default EEPROM storage
-  #ifndef ESP8266_DRD_USE_RTC
-  #define ESP8266_DRD_USE_RTC       false // (this is not implemented: must be false)
-  #endif
-  #if !ESP8266_DRD_USE_RTC
-  #if USE_LITTLEFS
-    #define ESP_DRD_USE_LITTLEFS    true
-    #define ESP_DRD_USE_SPIFFS      false
-    #define ESP_DRD_USE_EEPROM      false
-  #elif USE_SPIFFS
-    #define ESP_DRD_USE_LITTLEFS    false
-    #define ESP_DRD_USE_SPIFFS      true
-    #define ESP_DRD_USE_EEPROM      false
-  #else
-    #define ESP_DRD_USE_LITTLEFS    false
-    #define ESP_DRD_USE_SPIFFS      false
-    #define ESP_DRD_USE_EEPROM      true
-  #endif
-  #endif
-
-  #ifndef DOUBLERESETDETECTOR_DEBUG
-    #define DOUBLERESETDETECTOR_DEBUG     false
-  #endif
-
-  // Number of seconds after reset during which a
-  // subsequent reset will be considered a double reset.
-  #define DRD_TIMEOUT 10
-
-  // RTC Memory Address for the DoubleResetDetector to use
-  #define DRD_ADDRESS 0
-
-  #include <ESP_DoubleResetDetector.h>      //https://github.com/khoih-prog/ESP_DoubleResetDetector
-
-  //DoubleResetDetector drd(DRD_TIMEOUT, DRD_ADDRESS);
-  DoubleResetDetector* drd;
-
-  ///////// NEW for DRD /////////////
-
-#endif
 
 ///////////////////////////////////////////
 
-//NEW
 #define MAX_ID_LEN                5
 #define MAX_DISPLAY_NAME_LEN      16
 
@@ -707,26 +632,14 @@ class ESP_WiFiManager_Lite
       digitalWrite(LED_BUILTIN, LED_OFF);
 #endif
 
-#if USING_MRD
-      //// New MRD ////
-      mrd = new MultiResetDetector(MRD_TIMEOUT, MRD_ADDRESS);
+      mrd = new MultiResetDetector();
       bool noConfigPortal = true;
 
       if (mrd->detectMultiReset())
-#else
-      //// New DRD ////
-      drd = new DoubleResetDetector(DRD_TIMEOUT, DRD_ADDRESS);
-
-      bool noConfigPortal = true;
-
-      if (drd->detectDoubleReset())
-#endif
       {
-        ESP_WML_LOGINFO(F("Multi or Double Reset Detected"));
+        ESP_WML_LOGINFO(F("Multi Reset Detected"));
         noConfigPortal = false;
       }
-
-      //// New DRD/MRD ////
 
       if (LOAD_DEFAULT_CONFIG_DATA)
       {
@@ -755,8 +668,7 @@ class ESP_WiFiManager_Lite
 
       isForcedConfigPortal = isForcedCP();
 
-      //// New DRD/MRD ////
-      //  noConfigPortal when getConfigData() OK and no MRD/DRD'ed
+      //  noConfigPortal when getConfigData() OK and no MRD'ed
       if (hadConfigData && noConfigPortal && (!isForcedConfigPortal) )
       {
         hadConfigData = true;
@@ -796,12 +708,12 @@ class ESP_WiFiManager_Lite
         if (persForcedConfigPortal)
         {
           ESP_WML_LOGINFO1(F("bg:Stay forever in CP:"),
-                           isForcedConfigPortal ? F("Forced-Persistent") : (noConfigPortal ? F("No ConfigDat") : F("DRD/MRD")));
+                           isForcedConfigPortal ? F("Forced-Persistent") : (noConfigPortal ? F("No ConfigDat") : F("MRD")));
         }
         else
         {
           ESP_WML_LOGINFO1(F("bg:Stay forever in CP:"),
-                           isForcedConfigPortal ? F("Forced-non-Persistent") : (noConfigPortal ? F("No ConfigDat") : F("DRD/MRD")));
+                           isForcedConfigPortal ? F("Forced-non-Persistent") : (noConfigPortal ? F("No ConfigDat") : F("MRD")));
           clearForcedCP();
 
         }
@@ -894,23 +806,11 @@ class ESP_WiFiManager_Lite
 
       curMillis = millis();
 
-#if USING_MRD
-      //// New MRD ////
       // Call the multi reset detector loop method every so often,
       // so that it can recognise when the timeout expires.
       // You can also call mrd.stop() when you wish to no longer
       // consider the next reset as a multi reset.
       mrd->loop();
-      //// New MRD ////
-#else
-      //// New DRD ////
-      // Call the double reset detector loop method every so often,
-      // so that it can recognise when the timeout expires.
-      // You can also call drd.stop() when you wish to no longer
-      // consider the next reset as a double reset.
-      drd->loop();
-      //// New DRD ////
-#endif
 
       if (configuration_mode && dnsServer)
       {
@@ -1235,7 +1135,7 @@ class ESP_WiFiManager_Lite
     //////////////////////////////////////////////
 
     // Forced CP => Flag = 0xBEEFBEEF. Else => No forced CP
-    // Flag to be stored at (EEPROM_START + DRD_FLAG_DATA_SIZE + CONFIG_DATA_SIZE)
+    // Flag to be stored at (EEPROM_START + CONFIG_DATA_SIZE)
     // to avoid corruption to current data
     const uint32_t FORCED_CONFIG_PORTAL_FLAG_DATA       = 0xDEADBEEF;
     const uint32_t FORCED_PERS_CONFIG_PORTAL_FLAG_DATA  = 0xBEEFDEAD;
@@ -1589,7 +1489,7 @@ class ESP_WiFiManager_Lite
 
 #if ( USE_LITTLEFS || USE_SPIFFS )
 
-    // Use LittleFS/InternalFS for nRF52
+    // Use LittleFS/InternalFS for ESP
 #define  CONFIG_FILENAME                  ("/wm_config.dat")
 #define  CONFIG_FILENAME_BACKUP           ("/wm_config.bak")
 
@@ -1689,7 +1589,7 @@ class ESP_WiFiManager_Lite
       ESP_WML_LOGINFO(F("OK"));
       file.close();
 
-      // Return true if forced CP (0xDEADBEEF read at offset EPROM_START + DRD_FLAG_DATA_SIZE + CONFIG_DATA_SIZE)
+      // Return true if forced CP (0xDEADBEEF read at offset EPROM_START + CONFIG_DATA_SIZE)
       // => set flag noForcedConfigPortal = false
       if (readForcedConfigPortalFlag == FORCED_CONFIG_PORTAL_FLAG_DATA)
       {
@@ -2231,8 +2131,7 @@ class ESP_WiFiManager_Lite
 #undef EEPROM_SIZE
 #define EEPROM_SIZE     2048
 #endif
-    // FLAG_DATA_SIZE is 4, to store DRD/MRD flag
-#if (EEPROM_SIZE < FLAG_DATA_SIZE + CONFIG_DATA_SIZE)
+#if (EEPROM_SIZE < CONFIG_DATA_SIZE)
 #warning EEPROM_SIZE must be > CONFIG_DATA_SIZE. Reset to 512
 #undef EEPROM_SIZE
 #define EEPROM_SIZE     2048
@@ -2240,15 +2139,15 @@ class ESP_WiFiManager_Lite
 #endif
 
 #ifndef EEPROM_START
-#define EEPROM_START     0      //define 256 in DRD/MRD
+#define EEPROM_START     0      //define 256 in MRD
 #else
 #if (EEPROM_START + FLAG_DATA_SIZE + CONFIG_DATA_SIZE + FORCED_CONFIG_PORTAL_FLAG_DATA_SIZE > EEPROM_SIZE)
 #error EPROM_START + FLAG_DATA_SIZE + CONFIG_DATA_SIZE + FORCED_CONFIG_PORTAL_FLAG_DATA_SIZE > EEPROM_SIZE. Please adjust.
 #endif
 #endif
 
-    // Stating positon to store ESP_WM_LITE_config
-#define CONFIG_EEPROM_START    (EEPROM_START + FLAG_DATA_SIZE)
+// Stating positon to store ESP_WM_LITE_config
+#define CONFIG_EEPROM_START    (EEPROM_START)
 
     //////////////////////////////////////////////
 
@@ -2281,11 +2180,11 @@ class ESP_WiFiManager_Lite
 
       ESP_WML_LOGINFO(F("Check if isForcedCP"));
 
-      // Return true if forced CP (0xDEADBEEF read at offset EPROM_START + DRD_FLAG_DATA_SIZE + CONFIG_DATA_SIZE)
+      // Return true if forced CP (0xDEADBEEF read at offset EPROM_START + CONFIG_DATA_SIZE)
       // => set flag noForcedConfigPortal = false
       EEPROM.get(CONFIG_EEPROM_START + CONFIG_DATA_SIZE, readForcedConfigPortalFlag);
 
-      // Return true if forced CP (0xDEADBEEF read at offset EPROM_START + DRD_FLAG_DATA_SIZE + CONFIG_DATA_SIZE)
+      // Return true if forced CP (0xDEADBEEF read at offset EPROM_START + CONFIG_DATA_SIZE)
       // => set flag noForcedConfigPortal = false
       if (readForcedConfigPortalFlag == FORCED_CONFIG_PORTAL_FLAG_DATA)
       {
@@ -2672,17 +2571,10 @@ class ESP_WiFiManager_Lite
         ESP_WML_LOGERROR(F("WiFi not connected"));
 
 #if RESET_IF_NO_WIFI
-
-#if USING_MRD
         // To avoid unnecessary MRD
         mrd->loop();
-#else
-        // To avoid unnecessary DRD
-        drd->loop();
-#endif
 
         resetFunc();
-
 #endif
       }
 

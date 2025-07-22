@@ -1,64 +1,108 @@
 /****************************************************************************************************************************
   ConfigOnMRD_ES8266_minimal.ino
-  For ESP8266 / ESP32 boards
-  
+  For ESP8266 boards
+
   ESP_MultiResetDetector is a library for the ESP8266/Arduino platform
   to enable trigger configure mode by resetting ESP32 / ESP8266 multiple times.
-  
+
   Based on and modified from
   1) DataCute    https://github.com/datacute/MultiResetDetector
-  2) Khoi Hoang  https://github.com/khoih-prog/ESP_MultiResetDetector
-  
+  2) Khoi Hoang  https://github.com/khoih-prog/ESP_MultiResetDetector (archived)
+  3) rob040      https://github.com/rob040/LEDmatrixClock/lib/ESP_MultiResetDetector (version 2.0+)
+
   Built by Khoi Hoang https://github.com/khoih-prog/ESP_MultiResetDetector
   Licensed under MIT license
  *****************************************************************************************************************************/
- 
-#if defined(ESP8266)
-  #define USE_LITTLEFS            true
-  #define ESP_MRD_USE_LITTLEFS    true
-  #define ESP_MRD_USE_SPIFFS      false
-  #define ESP_MRD_USE_EEPROM      false
-#else  
-  #error This code is intended to run on the ESP8266 or ESP32 platform! Please check your Tools->Board setting.  
-#endif
-#include <ESP_WiFiManager.h>                    //https://github.com/khoih-prog/ESP_WiFiManager
+
+#include <ESP_WiFiManager.h>                    // https://github.com/khoih-prog/ESP_WiFiManager
+
+// These definitions must be placed before #include <ESP_MultiResetDetector.h> to be used
+// Otherwise, default values (MRD_TIMES = 3, MRD_TIMEOUT = 10 seconds and MRD_ADDRESS = 0) will be used
+// Number of subsequent resets during MRD_TIMEOUT to activate
 #define MRD_TIMES                     3
+
+// Number of seconds after reset during which a 
+// subsequent reset will be considered a multi reset.
 #define MRD_TIMEOUT                   10
+
+// RTC Memory Address for the MultiResetDetector to use (onlt appliccable to ESP8266)
 #define MRD_ADDRESS                   0
-#define MULTIRESETDETECTOR_DEBUG      true 
-#include <ESP_MultiResetDetector.h>            //https://github.com/khoih-prog/ESP_MultiResetDetector
+
+// Generate some debug output
+#define MULTIRESETDETECTOR_DEBUG       true  //false
+
+#include <ESP_MultiResetDetector.h>            // https://github.com/rob040/LEDmatrixClock/lib/ESP_MultiResetDetector
+
 MultiResetDetector* mrd;
-const int PIN_LED       = 2;
+const int PIN_LED = 2;
+#define LED_ON      LOW
+#define LED_OFF     HIGH
+
 bool      initialConfig = false;
 
-void setup() {
+void setup()
+{
   pinMode(PIN_LED, OUTPUT);
-  Serial.begin(115200); while (!Serial); delay(200);
-  Serial.print(F("\nStarting ConfigOnMRD_ES8266_minimal on ")); Serial.print(ARDUINO_BOARD);
-#if ESP_MRD_USE_LITTLEFS
-  Serial.println(F(" using LittleFS"));
-#elif ESP_MRD_USE_SPIFFS
-  Serial.println(F(" using SPIFFS"));
-#else
-  Serial.println(F(" using EEPROM"));
-#endif    
-  Serial.println(ESP_WIFIMANAGER_VERSION); Serial.println(ESP_MULTI_RESET_DETECTOR_VERSION);
-  if (WiFi.SSID() == "") { Serial.println(F("No AP credentials")); initialConfig = true; }
+  Serial.begin(115200);
+  while (!Serial);
+  delay(200);
+
+  Serial.print(F("\nStarting ConfigOnMRD_ES8266_minimal on "));
+  Serial.print(ARDUINO_BOARD);
+  Serial.println(ESP_WIFIMANAGER_VERSION);
+  Serial.println(ESP_MULTI_RESET_DETECTOR_VERSION);
+
   mrd = new MultiResetDetector(MRD_TIMEOUT, MRD_ADDRESS);
-  if (mrd->detectMultiReset()) { Serial.println(F("MRD")); initialConfig = true; }
-  if (initialConfig) {
-    Serial.println(F("Starting Config Portal")); digitalWrite(PIN_LED, LOW);
-    ESP_WiFiManager ESP_wifiManager("ConfigOnMRD_ES8266_minimal");
-    ESP_wifiManager.setConfigPortalTimeout(0);
-    if (!ESP_wifiManager.startConfigPortal()) { Serial.println(F("Not connected to WiFi")); }
-    else { Serial.println(F("connected")); }
+  
+  if (mrd->detectMultiReset()) {
+    Serial.println(F("MRD"));
+    initialConfig = true;
   }
-  digitalWrite(PIN_LED, HIGH); Serial.print(F("After waiting ")); //WiFi.mode(WIFI_STA);
+
+  ESP_WiFiManager ESP_wifiManager("ConfigOnMRD_ES8266_minimal");
+  ESP_wifiManager.setConfigPortalTimeout(0);
+
+  if (ESP_wifiManager.WiFi_SSID() == "") {
+    Serial.println(F("No AP credentials"));
+    initialConfig = true;
+  }
+
+  if (initialConfig) {
+    Serial.println(F("Starting Config Portal"));
+    digitalWrite(PIN_LED, LED_ON);
+    if (!ESP_wifiManager.startConfigPortal()) {
+      Serial.println(F("Not connected to WiFi"));
+    }
+    else {
+      Serial.println(F("connected"));
+    }
+  }
+  else {
+    WiFi.mode(WIFI_STA);
+    WiFi.begin();
+  }
+  digitalWrite(PIN_LED, LED_OFF);
+
+  Serial.print(F("After waiting "));
+
   unsigned long startedAt = millis();
   int connRes = WiFi.waitForConnectResult();
-  float waited = (millis() - startedAt);
-  Serial.print(waited / 1000); Serial.print(F(" secs , Connection result is ")); Serial.println(connRes);
-  if (WiFi.status() != WL_CONNECTED) { Serial.println(F("Failed to connect")); }
-  else { Serial.print(F("Local IP: ")); Serial.println(WiFi.localIP()); }
+  int waited = (millis() - startedAt);
+
+  Serial.print(waited / 1000.0);
+  Serial.print(F(" secs , Connection result is "));
+  Serial.println(connRes);
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println(F("Failed to connect"));
+  }
+  else {
+    Serial.print(F("Local IP: "));
+    Serial.println(WiFi.localIP());
+  }
 }
-void loop() { mrd->loop(); }
+
+void loop()
+{
+  mrd->loop();
+}

@@ -44,25 +44,15 @@
 // List nearby SSID's found, From 2-15
 #define MAX_SSID_IN_LIST                          8
 
-//FOR DRD (Double Reset Detector), RTC save is not possible, but for MRD, it is
-// not using DRD, due to limitations
-//#define ESP8266_DRD_USE_RTC                       false  // for Double Reset Detector (this is not implemented: must be false)
-//#define ESP_DRD_USE_LITTLEFS                      false
-//#define ESP_DRD_USE_EEPROM                        true    // A mix of DRD using EEPROM and WM using Spiffs in not allowed!
-//#define ESP_DRD_USE_SPIFFS                        false
 
 // We are using MRD (Multi reset detector): after 3 resets within 10 seconds after startup, we enter Wifi Manager AP mode
-#define USING_MRD                                 true
 #define MULTIRESETDETECTOR_DEBUG                  true
-#define ESP8266_MRD_USE_RTC                       true
-#define FLAG_DATA_SIZE                            4     // when WML uses EEPROM store and MRD using RTC store, this must be defined but space is unused
 #define MRD_TIMES                                 3
 #define MRD_TIMEOUT                               10
 
 //WM configuration storage
-// Note this also influences MRD/DRD storage
-// IMO [rob040] it is never a good idea to write to (any) filesystem while expecting chip reset; it can damage data but also
-#define USE_LITTLEFS                              false  // for wifi config, use EEPROM
+// for wifi config, use EEPROM (default)
+#define USE_LITTLEFS                              false
 #define USE_SPIFFS                                false
 
 

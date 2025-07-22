@@ -36,20 +36,25 @@
 #elif ( ARDUINO_ESP32S2_DEV || ARDUINO_FEATHERS2 || ARDUINO_ESP32S2_THING_PLUS || ARDUINO_MICROS2 || \
         ARDUINO_METRO_ESP32S2 || ARDUINO_MAGTAG29_ESP32S2 || ARDUINO_FUNHOUSE_ESP32S2 || \
         ARDUINO_ADAFRUIT_FEATHER_ESP32S2_NOPSRAM )
-  #warning Using ESP32_S2. To follow library instructions to install esp32-s2 core and WebServer Patch
+  #if (_ESP_WM_LITE_LOGLEVEL_ > 3)
+    #warning Using ESP32_S2. To follow library instructions to install esp32-s2 core and WebServer Patch
+  #endif
   #define USING_ESP32_S2        true
 #elif ( ARDUINO_ESP32C3_DEV )
-  #if ( defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 2) )
-    #warning Using ESP32_C3 using core v2.0.0+. Either LittleFS, SPIFFS or EEPROM OK.
-  #else
-    #warning Using ESP32_C3 using core v1.0.6-. To follow library instructions to install esp32-c3 core. Only SPIFFS and EEPROM OK.
+  #if (_ESP_WM_LITE_LOGLEVEL_ > 3)
+    #if ( defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 2) )
+      #warning Using ESP32_C3 using core v2.0.0+. Either LittleFS, SPIFFS or EEPROM OK.
+    #else
+      #warning Using ESP32_C3 using core v1.0.6-. To follow library instructions to install esp32-c3 core. Only SPIFFS and EEPROM OK.
+    #endif
+    #warning You have to select Flash size 2MB and Minimal APP (1.3MB + 700KB) for some boards
   #endif
-
-  #warning You have to select Flash size 2MB and Minimal APP (1.3MB + 700KB) for some boards
   #define USING_ESP32_C3        true
 #elif ( defined(ARDUINO_ESP32S3_DEV) || defined(ARDUINO_ESP32_S3_BOX) || defined(ARDUINO_TINYS3) || \
         defined(ARDUINO_PROS3) || defined(ARDUINO_FEATHERS3) )
-  #warning Using ESP32_S3. To install esp32-s3-support branch if using core v2.0.2-.
+  #if (_ESP_WM_LITE_LOGLEVEL_ > 3)
+    #warning Using ESP32_S3. To install esp32-s3-support branch if using core v2.0.2-.
+  #endif
   #define USING_ESP32_S3        true
 #endif
 
@@ -79,20 +84,27 @@
     #if USE_LITTLEFS
       #define FileFS        LittleFS
       #define FS_Name       "LittleFS"
-      //#warning Using LittleFS in ESP_WiFiManager_Lite.h
+      #include <LittleFS.h>
+      #if (_ESP_WM_LITE_LOGLEVEL_ > 3)
+        #warning Using LittleFS in ESP_WiFiManager_Lite.h
+      #endif
     #else
       #define FileFS        SPIFFS
       #define FS_Name       "SPIFFS"
-      //#warning Using SPIFFS in ESP_WiFiManager_Lite.h
+      #include <SPIFFS.h>
+      #if (_ESP_WM_LITE_LOGLEVEL_ > 3)
+        #warning Using SPIFFS in ESP_WiFiManager_Lite.h
+      #endif
     #endif
 
     #include <FS.h>
-    #include <LittleFS.h>
   #else
     #include <EEPROM.h>
     #define FS_Name         "EEPROM"
     #define EEPROM_SIZE     2048
-    //#warning Using EEPROM in ESP_WiFiManager_Lite.h
+    #if (_ESP_WM_LITE_LOGLEVEL_ > 3)
+      #warning Using EEPROM in ESP_WiFiManager_Lite.h
+    #endif
   #endif
 
 #else   //ESP32
@@ -132,7 +144,9 @@
     // Check cores/esp32/esp_arduino_version.h and cores/esp32/core_version.h
     //#if ( ESP_ARDUINO_VERSION >= ESP_ARDUINO_VERSION_VAL(2, 0, 0) )  //(ESP_ARDUINO_VERSION_MAJOR >= 2)
     #if ( defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 2) )
-      #warning Using ESP32 Core 1.0.6 or 2.0.0+
+      #if (_ESP_WM_LITE_LOGLEVEL_ > 3)
+        #warning Using ESP32 Core 1.0.6 or 2.0.0+
+      #endif
       // The library has been merged into esp32 core from release 1.0.6
       #include <LittleFS.h>       // https://github.com/espressif/arduino-esp32/tree/master/libraries/LittleFS
 
@@ -140,7 +154,9 @@
       #define FileFS        LittleFS
       #define FS_Name       "LittleFS"
     #else
-      #warning Using ESP32 Core 1.0.5-. You must install LITTLEFS library
+      #if (_ESP_WM_LITE_LOGLEVEL_ > 3)
+        #warning Using ESP32 Core 1.0.5-. You must install LITTLEFS library
+      #endif
       // The library has been merged into esp32 core from release 1.0.6
       #include <LITTLEFS.h>       // https://github.com/lorol/LITTLEFS
 
@@ -155,12 +171,16 @@
     FS* filesystem =        &SPIFFS;
     #define FileFS          SPIFFS
     #define FS_Name         "SPIFFS"
-    #warning Using SPIFFS in ESP_WiFiManager_Lite.h
+    #if (_ESP_WM_LITE_LOGLEVEL_ > 3)
+      #warning Using SPIFFS in ESP_WiFiManager_Lite.h
+    #endif
   #else
     #include <EEPROM.h>
     #define FS_Name         "EEPROM"
     #define EEPROM_SIZE     2048
-    #warning Using EEPROM in ESP_WiFiManager_Lite.h
+    #if (_ESP_WM_LITE_LOGLEVEL_ > 3)
+      #warning Using EEPROM in ESP_WiFiManager_Lite.h
+    #endif
   #endif
 
 #endif
@@ -249,8 +269,11 @@ uint32_t getChipOUI();
   // For ESP32, You must select one to be true (EEPROM or SPIFFS/LittleFS)
   // For ESP8266, You must select one to be true (RTC, EEPROM or SPIFFS/LittleFS)
   // Otherwise, library will use default EEPROM storage
-  #define ESP8266_MRD_USE_RTC     false   //true
+  #ifndef ESP8266_MRD_USE_RTC
+  #define ESP8266_MRD_USE_RTC     true
+  #endif
 
+  #ifndef ESP8266_MRD_USE_RTC
   #if USE_LITTLEFS
     #define ESP_MRD_USE_LITTLEFS    true
     #define ESP_MRD_USE_SPIFFS      false
@@ -263,6 +286,7 @@ uint32_t getChipOUI();
     #define ESP_MRD_USE_LITTLEFS    false
     #define ESP_MRD_USE_SPIFFS      false
     #define ESP_MRD_USE_EEPROM      true
+  #endif
   #endif
 
   #ifndef MULTIRESETDETECTOR_DEBUG
@@ -928,14 +952,8 @@ class ESP_WiFiManager_Lite
           if (server)
           {
             server->handleClient();
-
-            // Fix ESP32-S2 issue with WebServer (https://github.com/espressif/arduino-esp32/issues/4348)
-            if ( String(ARDUINO_BOARD) == "ESP32S2_DEV" )
-            {
-              delay(1);
-            }
+            delay(1); // yield() to other processes, if any
           }
-
           return;
         }
         else

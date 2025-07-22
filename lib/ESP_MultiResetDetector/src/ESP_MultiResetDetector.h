@@ -13,6 +13,21 @@
   Licensed under MIT license
   Version: 1.3.2
 
+  [rob040] TODO suggestion to remove all Flash FS or EEPROM R/W and only use RAM / RTCRAM
+  for ESP32 there is the
+  `__NOINIT_ATTR uint32_t noinit_multiResetDetectorFlag;`
+  or the
+  `RTC_NOINIT_ATTR uint32_t noinit_multiResetDetectorFlag;`
+  Either will work, but have to check availability on Arduino IDE and PlatformIO / PioArduino  version/release
+  Likely it wasn't available when this library was created
+
+  For Arduino ESP8266 there is at leaste the longer used
+  `ESP.rtcUserMemoryRead(address, &multiResetDetectorFlag, sizeof(multiResetDetectorFlag));`
+  and `ESP.rtcUserMemoryWrite()`
+
+  With these, complexity will be reduced greatly!
+
+
   Version Modified By   Date      Comments
   ------- -----------  ---------- -----------
   1.1.1   K Hoang      30/12/2020 Initial coding to support Multiple Reset Detection. Sync with ESP_DoubleResetDetector v1.1.1
@@ -22,6 +37,7 @@
   1.3.0   K Hoang      10/02/2022 Add support to new ESP32-S3
   1.3.1   K Hoang      04/03/2022 Add waitingForMRD() function to signal in MRD wating period
   1.3.2   K Hoang      09/09/2022 Fix ESP32 chipID for example ConfigOnMultiReset
+  2.0.0   rob040@users.github.com 2025-07-22 Massive reduction in (configuration) complexity: use RAM storage only (TODO FIXME)
 *****************************************************************************************************************************/
 
 #pragma once
@@ -33,6 +49,7 @@
   #define MULTIRESETDETECTOR_DEBUG       false
 #endif
 
+// todo: its safe to assume to support only Arduino 1.8 (2017) and later is to be used
 #if defined(ARDUINO) && (ARDUINO >= 100)
   #include <Arduino.h>
 #else
@@ -41,7 +58,7 @@
 
 #ifndef ESP_MULTI_RESET_DETECTOR_VERSION
   #define ESP_MULTI_RESET_DETECTOR_VERSION             "ESP_MultiResetDetector v1.3.2"
-  
+
   #define ESP_MULTI_RESET_DETECTOR_VERSION_MAJOR       1
   #define ESP_MULTI_RESET_DETECTOR_VERSION_MINOR       3
   #define ESP_MULTI_RESET_DETECTOR_VERSION_PATCH       2
@@ -74,7 +91,7 @@
     #if (MULTIRESETDETECTOR_DEBUG)
       #warning Neither RTC, EEPROM, LITTLEFS nor SPIFFS selected. Default to EEPROM
     #endif
-    
+
     #ifdef ESP_MRD_USE_EEPROM
       #undef ESP_MRD_USE_EEPROM
       #define ESP_MRD_USE_EEPROM      true
@@ -109,20 +126,20 @@
       #if (MULTIRESETDETECTOR_DEBUG)
         #warning Using ESP32 Core 1.0.6 or 2.0.0+
       #endif
-      
+
       // The library has been merged into esp32 core from release 1.0.6
       #include <LittleFS.h>
-      
+
       #define FileFS        LittleFS
       #define FS_Name       "LittleFS"
     #else
       #if (MULTIRESETDETECTOR_DEBUG)
         #warning Using ESP32 Core 1.0.5-. You must install LITTLEFS library
       #endif
-      
+
       // The library has been merged into esp32 core from release 1.0.6
       #include <LITTLEFS.h>             // https://github.com/lorol/LITTLEFS
-      
+
       #define FileFS        LITTLEFS
       #define FS_Name       "LittleFS"
     #endif
@@ -152,7 +169,7 @@
 // Default values if not specified in sketch
 
 #ifndef MRD_TIMES
-  #define MRD_TIMES         3
+  #define MRD_TIMES         3  // 3 means 2 resets within <MRD_TIMEOUT> seconds after restart, because it starts as 1 and is set to 2 after power-on before timeout
 #endif
 
 #ifndef MRD_TIMEOUT
@@ -160,23 +177,23 @@
 #endif
 
 #ifndef MRD_ADDRESS
-  #define MRD_ADDRESS       0
+  #define MRD_ADDRESS       0  // only appliccable to EEPROM stotrage
 #endif
 
 ///////////////////
 
 // Flag clear to 0xFFFE0001 if no MRD within MRD_TIMEOUT. Flag will increase 1 for each reset within MRD_TIMEOUT
-// So MULTIRESETDETECTOR_FLAG_SET is not necessary.
-// Will use upper 2 bytes to verify if corrupted data. 
+// So multiResetDetectorFlag_SET is not necessary.
+// Will use upper 2 bytes to verify if corrupted data.
 
 #define USING_INVERTED    true
 
 #if USING_INVERTED
-  #define MULTIRESETDETECTOR_FLAG_BEGIN  0xFFFE0001     // Used when beginning a new cycle
-  #define MULTIRESETDETECTOR_FLAG_CLEAR  0x00000000     // Used when data corrupted, such as reformat LittleFS/SPIFFS
+  #define multiResetDetectorFlag_BEGIN  0xFFFE0001     // Used when beginning a new cycle
+  #define multiResetDetectorFlag_CLEAR  0xFFFF0000     // Used when data corrupted, such as reformat LittleFS/SPIFFS
 #else
-  #define MULTIRESETDETECTOR_FLAG_BEGIN  0x00010001     // Used when beginning a new cycle
-  #define MULTIRESETDETECTOR_FLAG_CLEAR  0x00000000     // Used when data corrupted, such as reformat LittleFS/SPIFFS
+  #define multiResetDetectorFlag_BEGIN  0x00010001     // Used when beginning a new cycle
+  #define multiResetDetectorFlag_CLEAR  0x00000000     // Used when data corrupted, such as reformat LittleFS/SPIFFS
 #endif
 
 class MultiResetDetector
@@ -185,7 +202,7 @@ class MultiResetDetector
     MultiResetDetector(int timeout, int address)
     {
       mrd_times = MRD_TIMES;
-      
+
 #if ESP_MRD_USE_EEPROM
 #if (MULTIRESETDETECTOR_DEBUG)
       Serial.printf("EEPROM size = %d, start = %d\n", EEPROM_SIZE, EEPROM_START);
@@ -198,7 +215,7 @@ class MultiResetDetector
       if (!FileFS.begin(true))
   #else
       if (!FileFS.begin())
-  #endif        
+  #endif
       {
 #if (MULTIRESETDETECTOR_DEBUG)
 
@@ -209,12 +226,15 @@ class MultiResetDetector
 #endif
 
 #endif
-        multiResetDetectorFlag = MULTIRESETDETECTOR_FLAG = 0;
+        multiResetDetectorFlag = multiResetDetectorFlag = 0;
       }
 #else
-#ifdef ESP8266
+  #ifdef ESP8266
       //RTC only for ESP8266
-#endif
+  #else
+      // RAM storage for ESP32
+      __NOINIT_ATTR uint32_t noinit_multiResetDetectorFlag;
+  #endif
 #endif
 
       this->timeout = timeout * 1000;
@@ -230,7 +250,7 @@ class MultiResetDetector
       if (multiResetDetected)
       {
 #if (MULTIRESETDETECTOR_DEBUG)
-        Serial.printf("multiResetDetected, number of times = %d\n", MRD_TIMES);
+        Serial.printf("multiResetDetected, count = %d (>%d)\n", (uint16_t) (multiResetDetectorFlag), MRD_TIMES);
 #endif
 
         clearRecentlyResetFlag();
@@ -238,7 +258,7 @@ class MultiResetDetector
       else
       {
 #if (MULTIRESETDETECTOR_DEBUG)
-        Serial.printf("No multiResetDetected, number of times = %d\n", (uint16_t) (multiResetDetectorFlag & 0x0000FFFF) );
+        Serial.printf("No multiResetDetected, count = %d\n", (uint16_t) (multiResetDetectorFlag) );
 #endif
 
         setRecentlyResetFlag();
@@ -248,7 +268,7 @@ class MultiResetDetector
       return multiResetDetected;
 
     };
-    
+
     bool waitingForMRD()
     {
       return waitingForMultiReset;
@@ -256,7 +276,7 @@ class MultiResetDetector
 
     void loop()
     {
-      if (waitingForMultiReset && millis() > timeout)
+      if (waitingForMultiReset && (millis() > timeout))
       {
 #if (MULTIRESETDETECTOR_DEBUG)
         Serial.println(F("Stop multiResetDetecting"));
@@ -276,26 +296,23 @@ class MultiResetDetector
 
 
   private:
-  
-    uint32_t MULTIRESETDETECTOR_FLAG;
-    
+
     unsigned long mrd_times;
-    
+
     unsigned long timeout;
-    
+
     int address;
     bool waitingForMultiReset;
-    
+
     uint32_t multiResetDetectorFlag;
-    
+
     bool readRecentlyResetFlag()
     {
 #if (ESP_MRD_USE_EEPROM)
-      EEPROM.get(EEPROM_START, MULTIRESETDETECTOR_FLAG);
-      multiResetDetectorFlag = MULTIRESETDETECTOR_FLAG;
+      EEPROM.get(EEPROM_START, multiResetDetectorFlag);
 
   #if (MULTIRESETDETECTOR_DEBUG)
-      Serial.printf("EEPROM Flag read = 0x%08X\n", MULTIRESETDETECTOR_FLAG);
+      Serial.printf("EEPROM Flag read = 0x%08X\n", multiResetDetectorFlag);
   #endif
 #elif ( ESP_MRD_USE_LITTLEFS || ESP_MRD_USE_SPIFFS )
       // LittleFS / SPIFFS code
@@ -312,15 +329,14 @@ class MultiResetDetector
           return false;
         }
 
-        file.readBytes((char *) &MULTIRESETDETECTOR_FLAG, sizeof(MULTIRESETDETECTOR_FLAG));
-        multiResetDetectorFlag = MULTIRESETDETECTOR_FLAG;
+        file.readBytes((char *) &multiResetDetectorFlag, sizeof(multiResetDetectorFlag));
 
   #if (MULTIRESETDETECTOR_DEBUG)
 
     #if ESP_MRD_USE_LITTLEFS
-        Serial.printf("LittleFS Flag read = 0x%08X\n", MULTIRESETDETECTOR_FLAG);
+        Serial.printf("LittleFS Flag read = 0x%08X\n", multiResetDetectorFlag);
     #else
-        Serial.printf("SPIFFS Flag read = 0x%08X\n", MULTIRESETDETECTOR_FLAG);
+        Serial.printf("SPIFFS Flag read = 0x%08X\n", multiResetDetectorFlag);
     #endif
 
   #endif
@@ -331,6 +347,12 @@ class MultiResetDetector
   #ifdef ESP8266
       //RTC only for ESP8266
       ESP.rtcUserMemoryRead(address, &multiResetDetectorFlag, sizeof(multiResetDetectorFlag));
+  #else
+      // ESP32 RAM storage
+      multiResetDetectorFlag = noinit_multiResetDetectorFlag;
+  #endif
+  #if (MULTIRESETDETECTOR_DEBUG)
+      Serial.printf("MRD ReadFlag 0x%08X\n", multiResetDetectorFlag);
   #endif
 #endif
 
@@ -342,41 +364,43 @@ class MultiResetDetector
       if (!readRecentlyResetFlag())
         return false;
 
-      //multiResetDetected = (multiResetDetectorFlag == MULTIRESETDETECTOR_FLAG_SET);
+      //multiResetDetected = (multiResetDetectorFlag == multiResetDetectorFlag_SET);
       // Check lower 2 bytes is > 0 and upper 2 bytes agrees
-           
-#if USING_INVERTED      
-      uint16_t upperBytes = ~(multiResetDetectorFlag >> 16);
+
+#if USING_INVERTED
+      uint16_t upperBytes = (uint16_t) ~(multiResetDetectorFlag >> 16);
 #else
       uint16_t upperBytes = multiResetDetectorFlag >> 16;
 #endif
-     
-      uint16_t lowerBytes = multiResetDetectorFlag & 0x0000FFFF;
-      
+
+      uint16_t lowerBytes = (uint16_t) multiResetDetectorFlag;
+
 #if (MULTIRESETDETECTOR_DEBUG)
       Serial.printf("multiResetDetectorFlag = 0x%08X\n", multiResetDetectorFlag);
       Serial.printf("lowerBytes = 0x%04X, upperBytes = 0x%04X\n", lowerBytes, upperBytes);
-#endif      
-   
-      if ( ( lowerBytes >= MRD_TIMES ) && ( lowerBytes == upperBytes )  )   
+#endif
+
+      if ( ( lowerBytes >= MRD_TIMES ) && ( lowerBytes == upperBytes )  )
       {
         multiResetDetected = true;
       }
       else
       {
         multiResetDetected = false;
-        
-        if (lowerBytes != upperBytes)     
+
+        if (lowerBytes != upperBytes)
         {
           // To reset if data corrupted
-          multiResetDetectorFlag = MULTIRESETDETECTOR_FLAG_CLEAR;
+          //[rob040] FIXME note that this clear flag will not pass detection criteria above! -> done
+          multiResetDetectorFlag = multiResetDetectorFlag_CLEAR;
 #if (MULTIRESETDETECTOR_DEBUG)
-          Serial.printf("lowerBytes = 0x%04X, upperBytes = 0x%04X\n", lowerBytes, upperBytes);
+          ///Serial.printf("lowerBytes = 0x%04X, upperBytes = 0x%04X\n", lowerBytes, upperBytes);
           Serial.println(F("detectRecentlyResetFlag: Data corrupted. Reset to 0"));
+          Serial.printf("multiResetDetectorFlag = 0x%08X\n", multiResetDetectorFlag);
 #endif
         }
       }
-      
+
       return multiResetDetected;
     };
 
@@ -385,33 +409,37 @@ class MultiResetDetector
       // Add 1 every time detecting a reset
       // To read first, increase and update 2 checking bytes
       readRecentlyResetFlag();
-      
+
 #if USING_INVERTED
       // 2 lower bytes
-      MULTIRESETDETECTOR_FLAG = (MULTIRESETDETECTOR_FLAG & 0x0000FFFF) + 1;
-      
+      //multiResetDetectorFlag = (multiResetDetectorFlag & 0x0000FFFF) + 1;
+
       // 2 upper bytes
-      uint16_t upperBytes = ~MULTIRESETDETECTOR_FLAG;
-      MULTIRESETDETECTOR_FLAG = (upperBytes << 16) | MULTIRESETDETECTOR_FLAG;
-#else   
+      //uint16_t upperBytes = ~multiResetDetectorFlag;
+      //multiResetDetectorFlag = (upperBytes << 16) | multiResetDetectorFlag;
+
+      // Simpler?
+      multiResetDetectorFlag += 1;
+      multiResetDetectorFlag = (~multiResetDetectorFlag << 16) | (multiResetDetectorFlag & 0xFFFF);
+#else
       // 2 lower bytes
-      MULTIRESETDETECTOR_FLAG = (MULTIRESETDETECTOR_FLAG & 0x0000FFFF) + 1;
-      
+      multiResetDetectorFlag = (multiResetDetectorFlag & 0x0000FFFF) + 1;
+
       // 2 upper bytes
-      MULTIRESETDETECTOR_FLAG = (MULTIRESETDETECTOR_FLAG << 16) | MULTIRESETDETECTOR_FLAG;
+      multiResetDetectorFlag = (multiResetDetectorFlag << 16) | multiResetDetectorFlag;
 #endif
 
-      multiResetDetectorFlag  = MULTIRESETDETECTOR_FLAG;
-      
+      multiResetDetectorFlag  = multiResetDetectorFlag;
+
 #if (ESP_MRD_USE_EEPROM)
-      EEPROM.put(EEPROM_START, MULTIRESETDETECTOR_FLAG);
+      EEPROM.put(EEPROM_START, multiResetDetectorFlag);
       EEPROM.commit();
 
 #if (MULTIRESETDETECTOR_DEBUG)
       delay(1000);
-      EEPROM.get(EEPROM_START, MULTIRESETDETECTOR_FLAG);
+      EEPROM.get(EEPROM_START, multiResetDetectorFlag);
 
-      Serial.printf("SetFlag write = 0x%08X\n", MULTIRESETDETECTOR_FLAG);
+      Serial.printf("SetFlag write = 0x%08X\n", multiResetDetectorFlag);
 #endif
 #elif ( ESP_MRD_USE_LITTLEFS || ESP_MRD_USE_SPIFFS )
       // LittleFS / SPIFFS code
@@ -422,7 +450,7 @@ class MultiResetDetector
 
       if (file)
       {
-        file.write((uint8_t *) &MULTIRESETDETECTOR_FLAG, sizeof(MULTIRESETDETECTOR_FLAG));
+        file.write((uint8_t *) &multiResetDetectorFlag, sizeof(multiResetDetectorFlag));
         file.close();
 #if (MULTIRESETDETECTOR_DEBUG)
         Serial.println(F("Saving config file OK"));
@@ -435,29 +463,34 @@ class MultiResetDetector
 #endif
       }
 #else
-#ifdef ESP8266
+  #if (MULTIRESETDETECTOR_DEBUG)
+      Serial.printf_P(PSTR("MRD SetFlag write 0x%08X\n"), multiResetDetectorFlag);
+  #endif
+  #ifdef ESP8266
       //RTC only for ESP8266
       ESP.rtcUserMemoryWrite(address, &multiResetDetectorFlag, sizeof(multiResetDetectorFlag));
-#endif
+  #else
+      // ESP32 RAM storage
+      noinit_multiResetDetectorFlag = multiResetDetectorFlag;
+  #endif
 #endif
     };
 
 
     void clearRecentlyResetFlag()
     {
-      multiResetDetectorFlag = MULTIRESETDETECTOR_FLAG_BEGIN;
-      MULTIRESETDETECTOR_FLAG = MULTIRESETDETECTOR_FLAG_BEGIN;
+      multiResetDetectorFlag = multiResetDetectorFlag_BEGIN;
 
 #if (ESP_MRD_USE_EEPROM)
-      //MULTIRESETDETECTOR_FLAG = MULTIRESETDETECTOR_FLAG_BEGIN;
-      EEPROM.put(EEPROM_START, MULTIRESETDETECTOR_FLAG);
+      //multiResetDetectorFlag = multiResetDetectorFlag_BEGIN;
+      EEPROM.put(EEPROM_START, multiResetDetectorFlag);
       EEPROM.commit();
 
 #if (MULTIRESETDETECTOR_DEBUG)
       delay(1000);
-      EEPROM.get(EEPROM_START, MULTIRESETDETECTOR_FLAG);
+      EEPROM.get(EEPROM_START, multiResetDetectorFlag);
 
-      Serial.printf("ClearFlag write = 0x%08X\n", MULTIRESETDETECTOR_FLAG);
+      Serial.printf("ClearFlag write = 0x%08X\n", multiResetDetectorFlag);
 #endif
 #elif ( ESP_MRD_USE_LITTLEFS || ESP_MRD_USE_SPIFFS )
       // LittleFS / SPIFFS code
@@ -468,7 +501,7 @@ class MultiResetDetector
 
       if (file)
       {
-        file.write((uint8_t *) &MULTIRESETDETECTOR_FLAG, sizeof(MULTIRESETDETECTOR_FLAG));
+        file.write((uint8_t *) &multiResetDetectorFlag, sizeof(multiResetDetectorFlag));
         file.close();
 #if (MULTIRESETDETECTOR_DEBUG)
         Serial.println(F("Saving config file OK"));
@@ -482,10 +515,13 @@ class MultiResetDetector
       }
 
 #else
-#ifdef ESP8266
+  #ifdef ESP8266
       //RTC only for ESP8266
       ESP.rtcUserMemoryWrite(address, &multiResetDetectorFlag, sizeof(multiResetDetectorFlag));
-#endif
+  #else
+      // ESP32 RAM storage
+      noinit_multiResetDetectorFlag = multiResetDetectorFlag;
+  #endif
 #endif
     };
 };

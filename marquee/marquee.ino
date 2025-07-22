@@ -449,6 +449,7 @@ void setup() {
   Serial.println(F("matrix created"));
   matrix.fillScreen(CLEARSCREEN);
   centerPrint(F("hello"));
+  // welcome continued later
 
 #ifdef BUZZER_PIN
   tone(BUZZER_PIN, 415, 500);
@@ -460,49 +461,8 @@ void setup() {
   noTone(BUZZER_PIN);
 #endif
 
-  for (int inx = 0; inx <= 15; inx++) {
-    matrix.setIntensity(inx);
-    delay(100);
-  }
-  delay(200);
-  for (int inx = 15; inx >= 0; inx--) {
-    matrix.setIntensity(inx);
-    delay(90);
-  }
-  delay(400);
-  for (int inx = 0; inx <= displayIntensity; inx++) {
-    matrix.setIntensity(inx);
-    delay(100);
-  }
-  delay(800);
-  matrix.setIntensity(displayIntensity);
-#ifdef BUZZER_PIN
-  //noTone(BUZZER_PIN);
-#endif
-
   // WiFiManager
-/*
-  //Local initialization. Once its business is done, there is no need to keep it around
-  //WiFiManager wifiManager;
-
-  // Uncomment for testing wifi manager
-  //wifiManager.resetSettings();
-
-  //wifiManager.setAPCallback(configModeCallback);
-  // ADD device MAC address to AP_HOSTNAME_BASE
-  // note that last 6 hex digits of ESP.chipid(), WiFi.macAddress() and WiFi.softAPmacAddress() are identical.
-  String hostname(AP_HOSTNAME_BASE);
-  hostname += String(ESP.getChipId(), HEX);
-  hostname.toUpperCase();
-
-  if (!wifiManager.autoConnect((const char *)hostname.c_str())) {
-    delay(3000);
-    WiFi.disconnect(true);
-    ESP.reset();
-    delay(5000);
-  }
-*/
-  // khoih-prog/ESP_WiFiManager_Lite :
+  // ESP_WiFiManager_Lite (multiWifi, Activation on multi reset detect):
 
   ESP_WiFiManager = new ESP_WiFiManager_Lite();
   // Setup Config Portal hostname, without access password
@@ -512,7 +472,6 @@ void setup() {
   ESP_WiFiManager->setConfigPortal(hostname);
   // Set customized DHCP HostName
   ESP_WiFiManager->begin(hostname.c_str());
-
 
   // print the received signal strength:
   Serial.printf_P(PSTR("Signal Strength (RSSI): %d%%\n"), getWifiQuality());
@@ -542,6 +501,27 @@ void setup() {
     ArduinoOTA.begin();
   }
 
+  if (!ESP_WiFiManager->isConfigMode()) {
+    // Continue welcome 'hello' for 4.5 to 6 seconds
+    centerPrint(F("hello"));
+    for (int inx = 0; inx <= 15; inx++) {
+      matrix.setIntensity(inx);
+      delay(100);
+    }
+    delay(200);
+    for (int inx = 15; inx >= 0; inx--) {
+      matrix.setIntensity(inx);
+      delay(90);
+    }
+    delay(400);
+    for (int inx = 0; inx <= displayIntensity; inx++) {
+      matrix.setIntensity(inx);
+      delay(100);
+    }
+    delay(800);
+  }
+  matrix.setIntensity(displayIntensity);
+
   if (isWebserverEnabled) {
     server.on("/", webDisplayWeatherData);
     server.on("/pull", handlePull);
@@ -561,14 +541,28 @@ void setup() {
     serverUpdater.setup(&server, "/update", www_username, www_password);
     // Start the server
     server.begin();
-    Serial.print(F("Server started "));
+    if (ESP_WiFiManager->isConfigMode()) {
+      Serial.print(F("Config portal started "));
+    } else if (WiFi.status() == WL_CONNECTED) {
+      Serial.print(F("Server started "));
+    } else {
+      Serial.print(F("Server started but NO WIFI "));
+    }
     // Print the IP address
     char webAddress[32];
-    sprintf_P(webAddress, PSTR("v" VERSION "  IP: %s  "), WiFi.localIP().toString().c_str());
+    sprintf_P(webAddress, PSTR("v" VERSION "  IP: %s  "),
+      (ESP_WiFiManager->isConfigMode()) ? WiFi.softAPIP().toString().c_str() : WiFi.localIP().toString().c_str());
     Serial.println(webAddress);
     scrollMessageWait(webAddress);
-    //displayScrollErrorMessage(" v" + String(VERSION) + "  IP: " + WiFi.localIP().toString() + "  ", true);
+    if (ESP_WiFiManager->isConfigMode()) {
+      String msg = F("Wifi Manager Started... Please Connect to AP: ") + WiFi.softAPSSID() + F(" password: My") + WiFi.softAPSSID();
+      Serial.println(msg);
+      scrollMessageWait(msg);
+      centerPrint(F("wifi"));
+    }
+    // Start NTP , although it can't do anything while in config mode or when no WiFi AP connected
     timeNTPsetup();
+
   } else {
     String msg = F("Web Interface is Disabled");
     Serial.println(msg);
@@ -684,6 +678,11 @@ void displayScrollErrorMessage(const String &msg, boolean showOnce)
 
 
 void processEveryMinute() {
+  // we can't do anything without being connected to WIFI (TODO: is that true? a (temporary) loss of wifi doesn't render the clock useless...)
+  //if ((WiFi.status() != WL_CONNECTED) && (timeStatus() == timeNotSet)) {
+  if (ESP_WiFiManager->isConfigMode()){
+    return;
+  }
   if (1) {
     if (weatherClient.getErrorMessage() != "") {
       displayScrollErrorMessage(weatherClient.getErrorMessage(), true);
@@ -802,6 +801,11 @@ void processEveryMinute() {
 }
 
 void processEverySecond() {
+
+  // we can't do anything without being connected to WIFI (TODO: is that true? a (temporary) loss of wifi doesn't render the clock useless...)
+  //if ((WiFi.status() != WL_CONNECTED) && (timeStatus() == timeNotSet))
+  if (ESP_WiFiManager->isConfigMode())
+    return;
 
   #if COMPILE_MQTT
   // allow the mqtt client to do its thing
@@ -1774,7 +1778,7 @@ boolean scrollMessageNext() {
 }
 
 void scrollMessageWait(const String &msg) {
-  for (int i = 0; i < (font_width * (int)msg.length() + (matrix.width() - 1) - font_space); i++) {
+  for (int i = 0; i < (font_width * (int)msg.length() + (matrix.width())); i++) {
     if (isWebserverEnabled) {
       server.handleClient();
     }

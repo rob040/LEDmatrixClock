@@ -421,19 +421,19 @@ ESP_WiFiManager->begin();
 #### 8. To use custom HTML Style
 
 ```cpp
-const char NewCustomsStyle[] /*PROGMEM*/ = "<style>div,input{padding:5px;font-size:1em;}input{width:95%;}body{text-align: center;}\
+const char NewCustomStyle[] /*PROGMEM*/ = "<style>div,input{padding:5px;font-size:1em;}input{width:95%;}body{text-align: center;}\
 button{background-color:blue;color:white;line-height:2.4rem;font-size:1.2rem;width:100%;}fieldset{border-radius:0.3rem;margin:0px;}</style>";
 
 ...
 
-ESP_WiFiManager->setCustomsStyle(NewCustomsStyle);
+ESP_WiFiManager->setCustomStyle(NewCustomStyle);
 ```
 
 #### 9. To use custom Head Elements
 
 
 ```cpp
-ESP_WiFiManager->setCustomsHeadElement("<style>html{filter: invert(10%);}</style>");
+ESP_WiFiManager->setCustomHeadElement("<style>html{filter: invert(10%);}</style>");
 ```
 
 #### 10. To use CORS Header
@@ -1637,13 +1637,7 @@ Debug is enabled by default on Serial. To disable, add at the beginning of sketc
 
 #define _ESP_WM_LITE_LOGLEVEL_        3
 
-#define USING_MRD                     true
-
-#if USING_MRD
-  #define MULTIRESETDETECTOR_DEBUG      true
-#else
-  #define DOUBLERESETDETECTOR_DEBUG     true
-#endif
+#define MULTIRESETDETECTOR_DEBUG      true
 ```
 
 ---
@@ -1689,11 +1683,11 @@ Submit issues to: [ESP_WiFiManager_Lite issues](https://github.com/khoih-prog/ES
 15. Configurable Config Portal Title
 16. Re-structure all examples to separate Credentials / Defines / Dynamic Params / Code so that you can change Credentials / Dynamic Params quickly for each device.
 17. Add Table of Contents and Version String
-18. Configurable **Customs HTML Headers**, including Customs Style, Customs Head Elements, CORS Header
+18. Configurable **Custom HTML Headers**, including Custom Style, Custom Head Elements, CORS Header
 19. Permit optionally inputting one set of WiFi SSID/PWD by using `REQUIRE_ONE_SET_SSID_PW == true`
 20. Enforce WiFi PWD minimum length of 8 chars
 21. Add support to **ESP32-S2 (ESP32-S2 Saola, AI-Thinker ESP-12K, etc.) using EEPROM, LittleFS and SPIFFS**
-22. Configurable **Customs HTML Headers**, including Customs Style, Customs Head Elements, CORS Header
+22. Configurable **Custom HTML Headers**, including Custom Style, Custom Head Elements, CORS Header
 23. Add support to **ESP32-C3 using EEPROM and SPIFFS**
 24. Enable **scan of WiFi networks** for selection in Configuration Portal
 25. Ready for ESP32 core v2.0.0+

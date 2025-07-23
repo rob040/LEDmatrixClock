@@ -11,9 +11,9 @@
 #define ESP_WM_LITE_DEBUG_OUTPUT                  Serial
 #define _ESP_WM_LITE_LOGLEVEL_                    3
 #define USE_LED_BUILTIN                           true
-#define USE_DYNAMIC_PARAMETERS                    false
-#define USING_CUSTOMS_STYLE                       false
-#define USING_CUSTOMS_HEAD_ELEMENT                false
+#define USE_DYNAMIC_PARAMETERS                    true
+#define USING_CUSTOM_STYLE                        false  // Spelling error in library, should be _CUSTOM_
+#define USING_CUSTOM_HEAD_ELEMENT                 false  // Spelling error in library, should be _CUSTOM_
 #define USING_CORS_FEATURE                        false
 #define NUM_WIFI_CREDENTIALS                      4
 #define TIMEOUT_RECONNECT_WIFI                    10000L
@@ -43,6 +43,8 @@
 #define MANUAL_SSID_INPUT_ALLOWED                 true
 // List nearby SSID's found, From 2-15
 #define MAX_SSID_IN_LIST                          8
+// Optional, to use Board Name in Menu
+#define USING_BOARD_NAME                          true
 
 
 // We are using MRD (Multi reset detector): after 3 resets within 10 seconds after startup, we enter Wifi Manager AP mode
@@ -55,6 +57,27 @@
 #define USE_LITTLEFS                              false
 #define USE_SPIFFS                                false
 
+// USE_DYNAMIC_PARAMETERS defined above, used just for testing
+
+/////////////// Start dynamic Credentials ///////////////
+
+//Defined in <ESP_WiFiManager_Lite.h>
+/**************************************
+  #define MAX_ID_LEN                5
+  #define MAX_DISPLAY_NAME_LEN      16
+
+  typedef struct
+  {
+  char id             [MAX_ID_LEN + 1];
+  char displayName    [MAX_DISPLAY_NAME_LEN + 1];
+  char *pdata;
+  uint8_t maxlen;
+  } MenuItem;
+**************************************/
+
+#if USE_DYNAMIC_PARAMETERS
+
+#endif
 
 //#include <ESP_WiFiManager_Lite.h> // --> https://github.com/khoih-prog/ESP_WiFiManager_Lite (Archived) --> ../lib/ESP_WiFiManager_Lite.h
 

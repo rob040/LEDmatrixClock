@@ -52,9 +52,9 @@
 
 /////////////////////////////////////////////
 
-// Add customs headers from v1.2.0
-#define USING_CUSTOMS_STYLE           true
-#define USING_CUSTOMS_HEAD_ELEMENT    true
+// Add custom headers from v1.2.0
+#define USING_CUSTOM_STYLE           true
+#define USING_CUSTOM_HEAD_ELEMENT    true
 #define USING_CORS_FEATURE            true
 
 /////////////////////////////////////////////

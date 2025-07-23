@@ -9,7 +9,7 @@
   Built by Khoi Hoang https://github.com/khoih-prog/ESP_WiFiManager_Lite
   Licensed under MIT license
 
-  Version: 1.10.5
+  Version: 1.11.0
 
   Version Modified By   Date        Comments
   ------- -----------  ----------   -----------
@@ -24,7 +24,8 @@
   1.10.3  K Hoang      19/01/2023  Fix compiler error if EEPROM is used
   1.10.4  K Hoang      27/01/2023  Using PROGMEM for HTML strings
   1.10.5  K Hoang      28/01/2023  Using PROGMEM for strings in examples
-  1.11.0  rob040        20250722   Massive simplification to reset detector configuration
+  1.11.0  rob040        20250722   Massive simplification to reset detector configuration, html corrections,
+                                   BREAKING CHANGE: replaced "Customs" with "Custom" everywhere
  *****************************************************************************************************************************/
 
 #pragma once
@@ -1180,47 +1181,53 @@ class ESP_WiFiManager_Lite
 
     //////////////////////////////////////
 
-    // Add customs headers from v1.2.0
+    // Add custom headers from v1.2.0
 
     // New from v1.2.0, for configure CORS Header, default to WM_HTTP_CORS_ALLOW_ALL = "*"
-
+    // New from v1.11.0: all "Customs" are renamed "Custom". This spelling error should have been fixed sooner
 #if USING_CUSTOMS_STYLE
+    #error "Please rename all your 'Customs' style macros and functions to 'Custom' "
+#endif
+#if USING_CUSTOMS_HEAD_ELEMENT
+    #error "Please rename all your 'Customs' element macros and functions to 'Custom' "
+#endif
+#if USING_CUSTOM_STYLE
     //sets a custom style, such as color
     // "<style>div,input{padding:5px;font-size:1em;}
     // input{width:95%;}body{text-align: center;}
     // button{background-color:#16A1E7;color:#fff;line-height:2.4rem;font-size:1.2rem;width:100%;}
     // fieldset{border-radius:0.3rem;margin:0px;}</style>";
-    void setCustomsStyle(PGM_P CustomsStyle = ESP_WM_LITE_HTML_HEAD_STYLE)
+    void setCustomStyle(PGM_P CustomStyle = ESP_WM_LITE_HTML_HEAD_STYLE)
     {
-      _CustomsHeadStyle = CustomsStyle;
-      ESP_WML_LOGDEBUG1(F("Set CustomsStyle to : "), FPSTR(_CustomsHeadStyle));
+      _CustomHeadStyle = CustomStyle;
+      ESP_WML_LOGDEBUG1(F("Set CustomStyle to : "), FPSTR(_CustomHeadStyle));
     }
 
     //////////////////////////////////////
 
-    PGM_P getCustomsStyle()
+    PGM_P getCustomStyle()
     {
-      ESP_WML_LOGDEBUG1(F("Get CustomsStyle = "), FPSTR(_CustomsHeadStyle));
-      return _CustomsHeadStyle;
+      ESP_WML_LOGDEBUG1(F("Get CustomStyle = "), FPSTR(_CustomHeadStyle));
+      return _CustomHeadStyle;
     }
 #endif
 
     //////////////////////////////////////
 
-#if USING_CUSTOMS_HEAD_ELEMENT
+#if USING_CUSTOM_HEAD_ELEMENT
     //sets a custom element to add to head, like a new style tag
-    void setCustomsHeadElement(PGM_P CustomsHeadElement = NULL)
+    void setCustomHeadElement(PGM_P CustomHeadElement = NULL)
     {
-      _CustomsHeadElement = CustomsHeadElement;
-      ESP_WML_LOGDEBUG1(F("Set CustomsHeadElement to : "), _CustomsHeadElement);
+      _CustomHeadElement = CustomHeadElement;
+      ESP_WML_LOGDEBUG1(F("Set CustomHeadElement to : "), _CustomHeadElement);
     }
 
     //////////////////////////////////////
 
-    PGM_P getCustomsHeadElement()
+    PGM_P getCustomHeadElement()
     {
-      ESP_WML_LOGDEBUG1(F("Get CustomsHeadElement = "), _CustomsHeadElement);
-      return _CustomsHeadElement;
+      ESP_WML_LOGDEBUG1(F("Get CustomHeadElement = "), _CustomHeadElement);
+      return _CustomHeadElement;
     }
 #endif
 
@@ -1346,14 +1353,14 @@ class ESP_WiFiManager_Lite
 
     /////////////////////////////////////
 
-    // Add customs headers from v1.2.0
+    // Add custom headers from v1.2.0
 
-#if USING_CUSTOMS_STYLE
-    PGM_P _CustomsHeadStyle = nullptr;
+#if USING_CUSTOM_STYLE
+    PGM_P _CustomHeadStyle = nullptr;
 #endif
 
-#if USING_CUSTOMS_HEAD_ELEMENT
-    PGM_P _CustomsHeadElement = nullptr;
+#if USING_CUSTOM_HEAD_ELEMENT
+    PGM_P _CustomHeadElement = nullptr;
 #endif
 
 #if USING_CORS_FEATURE
@@ -2583,18 +2590,17 @@ class ESP_WiFiManager_Lite
 
     //////////////////////////////////////////////
 
-    // NEW
     void createHTML(String& root_html_template)
     {
       String pitem;
 
       root_html_template = FPSTR(ESP_WM_LITE_HTML_HEAD_START);
 
-#if USING_CUSTOMS_STYLE
+#if USING_CUSTOM_STYLE
 
-      // Using Customs style when not NULL
-      if (_CustomsHeadStyle)
-        root_html_template += FPSTR(_CustomsHeadStyle);
+      // Using Custom style when not NULL
+      if (_CustomHeadStyle)
+        root_html_template += FPSTR(_CustomHeadStyle);
       else
         root_html_template += FPSTR(ESP_WM_LITE_HTML_HEAD_STYLE);
 
@@ -2602,10 +2608,10 @@ class ESP_WiFiManager_Lite
       root_html_template += FPSTR(ESP_WM_LITE_HTML_HEAD_STYLE);
 #endif
 
-#if USING_CUSTOMS_HEAD_ELEMENT
+#if USING_CUSTOM_HEAD_ELEMENT
 
-      if (_CustomsHeadElement)
-        root_html_template += _CustomsHeadElement;
+      if (_CustomHeadElement)
+        root_html_template += _CustomHeadElement;
 
 #endif
 

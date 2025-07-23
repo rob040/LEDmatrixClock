@@ -36,10 +36,10 @@ resetFunc KEYWORD2
 resetAndEnterConfigPortal KEYWORD2
 resetAndEnterConfigPortalPersistent KEYWORD2
 IPAddressToString KEYWORD2
-setCustomsStyle   KEYWORD2
-getCustomsStyle   KEYWORD2
-setCustomsHeadElement   KEYWORD2
-getCustomsHeadElement   KEYWORD2
+setCustomStyle   KEYWORD2
+getCustomStyle   KEYWORD2
+setCustomHeadElement   KEYWORD2
+getCustomHeadElement   KEYWORD2
 setCORSHeader   KEYWORD2
 getCORSHeader   KEYWORD2
 extLoadDynamicData  KEYWORD2

@@ -45,7 +45,7 @@ MqttClient::MqttClient(const String &passedServer, int port, const String &passe
 
 void MqttClient::updateMqttClient(const String &passedServer, int port, const String &passedTopic, const String &passedAuthUser, const String &passedAuthPass) {
   this->port = port;
-  passedServer.toCharArray(server, MAX_SERVER_LEN);
+  passedServer.toCharArray(server, MAX_SERVERNAME_LEN);
   passedTopic.toCharArray(topic, MAX_TOPIC_LEN);
   passedAuthUser.toCharArray(authUser, sizeof(authUser));
   passedAuthPass.toCharArray(authPass, sizeof(authPass));

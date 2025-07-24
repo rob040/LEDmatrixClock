@@ -28,7 +28,7 @@ SOFTWARE.
 #include <PubSubClient.h>
 
 #define MAX_TOPIC_LEN 128
-#define MAX_SERVER_LEN 128
+#define MAX_SERVERNAME_LEN 34
 #define MAX_USRPW_LEN  32
 
 class MqttClient {
@@ -38,7 +38,7 @@ class MqttClient {
     //n.u. String lastMessage;
     PubSubClient client;
     char topic[MAX_TOPIC_LEN];
-    char server[MAX_SERVER_LEN];
+    char server[MAX_SERVERNAME_LEN];
     char authUser[MAX_USRPW_LEN];
     char authPass[MAX_USRPW_LEN];
     char failMessage[MAX_TOPIC_LEN + 100];

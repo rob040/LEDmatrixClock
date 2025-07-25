@@ -607,7 +607,6 @@ class ESP_WiFiManager_Lite
 #define PASSWORD_MIN_LEN        8
 
     //////////////////////////////////////////
-
     void begin(const char *iHostname = "")
     {
 #define TIMEOUT_CONNECT_WIFI      30000
@@ -640,15 +639,15 @@ class ESP_WiFiManager_Lite
         String _hostname = "ESP_" + String(ESP_getChipId(), HEX);
         _hostname.toUpperCase();
 
-        getRFC952_hostname(_hostname.c_str());
+        setWmlHostname(_hostname.c_str());
       }
       else
       {
         // Prepare and store the hostname only not NULL
-        getRFC952_hostname(iHostname);
+        setWmlHostname(iHostname);
       }
 
-      ESP_WML_LOGINFO1(F("Hostname="), RFC952_hostname);
+      ESP_WML_LOGINFO1(F("Hostname="), wmlHostname);
 
       hadConfigData = getConfigData();
 
@@ -937,16 +936,16 @@ class ESP_WiFiManager_Lite
 
     void setHostname()
     {
-      if (RFC952_hostname[0] != 0)
+      if (wmlHostname[0] != 0)
       {
 #if ESP8266
-        WiFi.hostname(RFC952_hostname);
+        WiFi.hostname(wmlHostname);
 #else
 
 
         // Check cores/esp32/esp_arduino_version.h and cores/esp32/core_version.h
 #if ( defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 2) )
-        WiFi.setHostname(RFC952_hostname);
+        WiFi.setHostname(wmlHostname);
 #else
 
         // Still have bug in ESP32_S2 for old core. If using WiFi.setHostname() => WiFi.localIP() always = 255.255.255.255
@@ -954,7 +953,7 @@ class ESP_WiFiManager_Lite
         {
           // See https://github.com/espressif/arduino-esp32/issues/2537
           WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
-          WiFi.setHostname(RFC952_hostname);
+          WiFi.setHostname(wmlHostname);
         }
 
 #endif
@@ -1380,39 +1379,34 @@ class ESP_WiFiManager_Lite
 
     //////////////////////////////////////
 
-#define RFC952_HOSTNAME_MAXLEN      24
+#define WML_HOSTNAME_MAXLEN      24
 
-    char RFC952_hostname[RFC952_HOSTNAME_MAXLEN + 1];
+    char wmlHostname[WML_HOSTNAME_MAXLEN + 1];
 
-    // [rob040] Why this reference to RFC925? it is old (1985), no longer valid and surpassed by other RFC's,
-    // FIXME:
-    //  1. To be enforced:  no '.' or '-' as first or last char, Do allow '.' inside name
-    //  2. While the '_' is not allowed by RFC925, it is used in function begin() "ESP_" to set hostname
-    //  3. In this size restricted piece of code, pulling in the ctype table costs extra flash
-    //  4. The question why is there the need to 'correct' a hostname?
-    //  5. This function is named get, but behaves like a set function; confusing!
-    //
-    char* getRFC952_hostname(const char* iHostname)
+    //[rob040] fixed all remarks
+    char* setWmlHostname(const char* iHostname)
     {
-      memset(RFC952_hostname, 0, sizeof(RFC952_hostname));
+      memset(wmlHostname, 0, sizeof(wmlHostname));
 
-      size_t len = ( RFC952_HOSTNAME_MAXLEN < strlen(iHostname) ) ? RFC952_HOSTNAME_MAXLEN : strlen(iHostname);
+      int len = strlen(iHostname);
+      if (len > WML_HOSTNAME_MAXLEN) len = WML_HOSTNAME_MAXLEN;
 
-      size_t j = 0;
+      int j = 0;
 
-      for (size_t i = 0; i < len - 1; i++)
+      for (int i = 0; i < len; i++)
       {
-        if ( isalnum(iHostname[i]) || iHostname[i] == '-' )
+        char ch = iHostname[i];
+        if ((ch >= 'A' && ch <= 'Z') ||
+            (ch >= 'a' && ch <= 'z') ||
+            (ch >= '0' && ch <= '9') ||
+            ((ch == '-' || ch == '.' || ch == '_') && (i > 0 && i < len - 1)))
         {
-          RFC952_hostname[j] = iHostname[i];
+          wmlHostname[j] = ch;
           j++;
         }
       }
-      // no '-' as last char
-      if ( isalnum(iHostname[len - 1]) || (iHostname[len - 1] != '-') )
-        RFC952_hostname[j] = iHostname[len - 1];
 
-      return RFC952_hostname;
+      return wmlHostname;
     }
 
     //////////////////////////////////////
@@ -2072,7 +2066,7 @@ class ESP_WiFiManager_Lite
         return false;
       }
 
-      if ( (strncmp(ESP_WM_LITE_config.header, ESP_WM_LITE_BOARD_TYPE, strlen(ESP_WM_LITE_BOARD_TYPE)) != 0) ||
+      if ( (strcmp(ESP_WM_LITE_config.header, ESP_WM_LITE_BOARD_TYPE) != 0) ||
            (calChecksum != ESP_WM_LITE_config.checkSum) || !dynamicDataValid )
 
       {
@@ -2223,6 +2217,7 @@ class ESP_WiFiManager_Lite
       uint16_t offset = CONFIG_EEPROM_START + sizeof(ESP_WM_LITE_config) + FORCED_CONFIG_PORTAL_FLAG_DATA_SIZE;
 
       // Find the longest pdata, then dynamically allocate buffer. Remember to free when done
+      //    ?? That is not what is coded here [rob040]
       // This is used to store tempo data to calculate checksum to see of data is valid
       // We dont like to destroy myMenuItems[i].pdata with invalid data
 
@@ -2466,7 +2461,7 @@ class ESP_WiFiManager_Lite
 #endif
       }
 
-      if ( (strncmp(ESP_WM_LITE_config.header, ESP_WM_LITE_BOARD_TYPE, strlen(ESP_WM_LITE_BOARD_TYPE)) != 0) ||
+      if ( (strcmp(ESP_WM_LITE_config.header, ESP_WM_LITE_BOARD_TYPE) != 0) ||
            (calChecksum != ESP_WM_LITE_config.checkSum) || !dynamicDataValid )
       {
         // Including Credentials CSum
@@ -2793,10 +2788,10 @@ class ESP_WiFiManager_Lite
             result.replace("ESP_WM_LITE", ESP_WM_LITE_config.board_name);
           } else
 #endif
-          if ( RFC952_hostname[0] != 0 )
+          if ( wmlHostname[0] != 0 )
           {
             // Replace only if Hostname is valid
-            result.replace("ESP_WM_LITE", RFC952_hostname);
+            result.replace("ESP_WM_LITE", wmlHostname);
           }
 
           ESP_WML_LOGDEBUG1(F("h:HTML page size:"), result.length());
@@ -2894,11 +2889,7 @@ class ESP_WiFiManager_Lite
 
               // Actual size of pdata is [maxlen + 1]
               memset(myMenuItems[i].pdata, 0, myMenuItems[i].maxlen + 1);
-
-              if ((int) strlen(value.c_str()) < myMenuItems[i].maxlen)
-                strcpy(myMenuItems[i].pdata, value.c_str());
-              else
-                strncpy(myMenuItems[i].pdata, value.c_str(), myMenuItems[i].maxlen);
+              strncpy(myMenuItems[i].pdata, value.c_str(), myMenuItems[i].maxlen);
 
               break;
             }

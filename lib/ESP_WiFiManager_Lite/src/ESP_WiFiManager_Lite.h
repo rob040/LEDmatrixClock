@@ -566,7 +566,7 @@ class ESP_WiFiManager_Lite
     void begin(const char* ssid,
                const char* pass )
     {
-      ESP_WML_LOGERROR(F("conW"));
+      ESP_WML_LOGINFO(F("conW"));
       connectWiFi(ssid, pass);
     }
 
@@ -814,7 +814,7 @@ class ESP_WiFiManager_Lite
           {
             wifiDisconnectedOnce = false;
             wifi_connected = false;
-            ESP_WML_LOGERROR(F("r:Check&WLost"));
+            ESP_WML_LOGINFO(F("r:Check&WLost"));
           }
           else
           {
@@ -874,7 +874,7 @@ class ESP_WiFiManager_Lite
             {
               lastMillis = curMillis;
 
-              ESP_WML_LOGERROR(F("r:WLost.ReconW"));
+              ESP_WML_LOGINFO(F("r:WLost.ReconW"));
 
               if (connectMultiWiFi() == WL_CONNECTED)
               {
@@ -1255,7 +1255,7 @@ class ESP_WiFiManager_Lite
       if (!FileFS.begin(true))
   #endif
       {
-        ESP_WML_LOGERROR(F("SPIFFS/LittleFS failed!"));
+        ESP_WML_LOGWARN(F("SPIFFS/LittleFS failed!"));
         return false;
       }
 
@@ -1282,7 +1282,7 @@ class ESP_WiFiManager_Lite
       if (!FileFS.begin(true))
   #endif
       {
-        ESP_WML_LOGERROR(F("SPIFFS/LittleFS failed!"));
+        ESP_WML_LOGWARN(F("SPIFFS/LittleFS failed!"));
         return;
       }
 
@@ -1413,9 +1413,9 @@ class ESP_WiFiManager_Lite
 
     void displayConfigData(const ESP_WM_LITE_Configuration& configData)
     {
-      ESP_WML_LOGERROR1(F("Hdr="), configData.header);
+      ESP_WML_LOGINFO1(F("Hdr="), configData.header);
       for (int i = 0; i < NUM_WIFI_CREDENTIALS; i++) {
-        ESP_WML_LOGERROR5(F("SSID"), i, "=", configData.WiFi_Creds[i].wifi_ssid, F(",PW.len="), strlen(configData.WiFi_Creds[i].wifi_pw));
+        ESP_WML_LOGINFO5(F("SSID"), i, "=", configData.WiFi_Creds[i].wifi_ssid, F(",PW.len="), strlen(configData.WiFi_Creds[i].wifi_pw));
       }
 
 #if USE_DYNAMIC_PARAMETERS
@@ -1432,8 +1432,8 @@ class ESP_WiFiManager_Lite
 
     void displayWiFiData()
     {
-      ESP_WML_LOGERROR3(F("SSID="), WiFi.SSID(), F(",RSSI="), WiFi.RSSI());
-      ESP_WML_LOGERROR1(F("IP="), WiFi.localIP() );
+      ESP_WML_LOGINFO3(F("SSID="), WiFi.SSID(), F(",RSSI="), WiFi.RSSI());
+      ESP_WML_LOGINFO1(F("IP="), WiFi.localIP() );
     }
 
     //////////////////////////////////////
@@ -1485,7 +1485,7 @@ class ESP_WiFiManager_Lite
 #endif
       {
         // If SSID, PW ="blank" or NULL, set the flag
-        ESP_WML_LOGERROR(F("Invalid Stored WiFi Config Data"));
+        ESP_WML_LOGINFO(F("Invalid Stored WiFi Config Data"));
 
         // Nullify the invalid data to avoid displaying garbage
         memset(&ESP_WM_LITE_config, 0, sizeof(ESP_WM_LITE_config));
@@ -1667,7 +1667,7 @@ class ESP_WiFiManager_Lite
         // check to see NULL => stop and return false
         if (readBuffer == NULL)
         {
-          ESP_WML_LOGERROR(F("ChkCrR: Error can't allocate buffer."));
+          ESP_WML_LOGINFO(F("ChkCrR: Error can't allocate buffer."));
           return false;
         }
         else
@@ -1968,7 +1968,7 @@ class ESP_WiFiManager_Lite
       // Including config and dynamic data, and assume valid
       saveConfigData();
 
-      ESP_WML_LOGERROR(F("======= Start Default Config Data ======="));
+      ESP_WML_LOGINFO(F("======= Start Default Config Data ======="));
       displayConfigData(ESP_WM_LITE_config);
     }
 
@@ -1994,14 +1994,14 @@ class ESP_WiFiManager_Lite
       if (!FileFS.begin(true))
       {
 #endif
-        ESP_WML_LOGERROR(F("SPIFFS/LittleFS failed! Formatting."));
+        ESP_WML_LOGWARN(F("SPIFFS/LittleFS failed! Formatting."));
 
         if (!FileFS.begin())
         {
 #if USE_LITTLEFS
-          ESP_WML_LOGERROR(F("LittleFS failed!. Please use SPIFFS or EEPROM."));
+          ESP_WML_LOGWARN(F("LittleFS failed!. Please use SPIFFS or EEPROM."));
 #else
-          ESP_WML_LOGERROR(F("SPIFFS failed!. Please use LittleFS or EEPROM."));
+          ESP_WML_LOGWARN(F("SPIFFS failed!. Please use LittleFS or EEPROM."));
 #endif
           return false;
         }
@@ -2226,7 +2226,7 @@ class ESP_WiFiManager_Lite
         if (myMenuItems[i].maxlen > BUFFER_LEN)
         {
           // Size too large, abort and flag false
-          ESP_WML_LOGERROR(F("ChkCrR: Error Small Buffer."));
+          ESP_WML_LOGWARN(F("ChkCrR: Error Small Buffer."));
           return false;
         }
       }
@@ -2590,7 +2590,7 @@ class ESP_WiFiManager_Lite
       }
       else
       {
-        ESP_WML_LOGERROR(F("WiFi not connected"));
+        ESP_WML_LOGINFO(F("WiFi not connected"));
 
 #if RESET_IF_NO_WIFI
         // To avoid unnecessary MRD
@@ -2829,7 +2829,7 @@ class ESP_WiFiManager_Lite
           }
           else
           {
-            ESP_WML_LOGERROR(F("h: Error can't alloc memory for menuItemUpdated" ));
+            ESP_WML_LOGWARN(F("h: Error can't alloc memory for menuItemUpdated" ));
           }
         }
 
@@ -2911,11 +2911,11 @@ class ESP_WiFiManager_Lite
 #endif
         {
 #if USE_LITTLEFS
-          ESP_WML_LOGERROR1(F("h:Updating LittleFS:"), CONFIG_FILENAME);
+          ESP_WML_LOGINFO1(F("h:Updating LittleFS:"), CONFIG_FILENAME);
 #elif USE_SPIFFS
-          ESP_WML_LOGERROR1(F("h:Updating SPIFFS:"), CONFIG_FILENAME);
+          ESP_WML_LOGINFO1(F("h:Updating SPIFFS:"), CONFIG_FILENAME);
 #else
-          ESP_WML_LOGERROR(F("h:Updating EEPROM. Please wait for reset"));
+          ESP_WML_LOGINFO(F("h:Updating EEPROM. Please wait for reset"));
 #endif
 
           saveAllConfigData();
@@ -2926,7 +2926,7 @@ class ESP_WiFiManager_Lite
           if (isForcedConfigPortal)
             clearForcedCP();
 
-          ESP_WML_LOGERROR(F("h:Rst"));
+          ESP_WML_LOGWARN(F("h:Rst"));
 
           // TO DO : what command to reset
           // Delay then reset the board after save data
@@ -2987,8 +2987,8 @@ class ESP_WiFiManager_Lite
 
       WiFi.softAP(portal_ssid.c_str(), portal_pass.c_str(), channel);
 
-      ESP_WML_LOGERROR3(F("stConf:SSID="), portal_ssid, F(",PW="), portal_pass);
-      ESP_WML_LOGERROR3(F("IP="), portal_apIP.toString(), ",ch=", channel);
+      ESP_WML_LOGINFO3(F("stConf:SSID="), portal_ssid, F(",PW="), portal_pass);
+      ESP_WML_LOGINFO3(F("IP="), portal_apIP.toString(), ",ch=", channel);
 
       delay(100); // ref: https://github.com/espressif/arduino-esp32/issues/985#issuecomment-359157428
 

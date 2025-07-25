@@ -140,7 +140,7 @@ The web configuration portal, served from the `ESP32/ESP8266 WiFi` is operating 
 New recent features:
 
 - **MultiWiFi** feature for configuring/auto(re)connecting **ESP32/ESP8266 WiFi** to the available MultiWiFi APs at runtime.
-- **Multi/DoubleDetectDetector** feature to force Config Portal when multi/double reset is detected within predetermined time, default 10s.
+- **MultiDetectDetector** (MRD) feature to force Config Portal when double or multi resets are detected within predetermined time, default 10s.
 - **Powerful-yet-simple-to-use feature to enable adding dynamic custom parameters** from sketch and input using the same Config Portal. Config Portal will be auto-adjusted to match the number of dynamic parameters.
 - Optional default **Credentials as well as Dynamic parameters to be optionally autoloaded into Config Portal** to use or change instead of manually input.
 - Dynamic custom parameters to be saved **automatically in non-volatile memory, such as LittleFS, SPIFFS or EEPROM.**.
@@ -169,7 +169,8 @@ This [**ESP_WiFiManager_Lite** library](https://github.com/khoih-prog/ESP_WiFiMa
  1. [`Arduino IDE 1.8.19+` for Arduino](https://github.com/arduino/Arduino). [![GitHub release](https://img.shields.io/github/release/arduino/Arduino.svg)](https://github.com/arduino/Arduino/releases/latest)
  2. [`ESP32 Core 2.0.6+`](https://github.com/espressif/arduino-esp32) for ESP32-based boards. [![Latest release](https://img.shields.io/github/release/espressif/arduino-esp32.svg)](https://github.com/espressif/arduino-esp32/releases/latest/)
  3. [`ESP8266 Core 3.1.1+`](https://github.com/esp8266/Arduino) for ESP8266-based boards. [![Latest release](https://img.shields.io/github/release/esp8266/Arduino.svg)](https://github.com/esp8266/Arduino/releases/latest/). SPIFFS is deprecated from ESP8266 core 2.7.1+, to use LittleFS.
- 4. [`ESP_DoubleResetDetector v1.3.2+`](https://github.com/khoih-prog/ESP_DoubleResetDetector) if using DRD feature. To install, check [![arduino-library-badge](https://www.ardu-badge.com/badge/ESP_DoubleResetDetector.svg?)](https://www.ardu-badge.com/ESP_DoubleResetDetector).
+ 4. <del>[`ESP_DoubleResetDetector v1.3.2+`](https://github.com/khoih-prog/ESP_DoubleResetDetector) if using DRD feature. To install, check [![arduino-library-badge](https://www.ardu-badge.com/badge/ESP_DoubleResetDetector.svg?)](https://www.ardu-badge.com/ESP_DoubleResetDetector).</del>
+    Use improved ESP_MultiResetDetector instead of ESP_DoubleResetDetector; it is more robust, easier to configure and setup, smaller, requires no filesystem and does the same job.
  5. [`ESP_MultiResetDetector v1.3.2+`](https://github.com/khoih-prog/ESP_MultiResetDetector) if using MRD feature. To install, check [![arduino-library-badge](https://www.ardu-badge.com/badge/ESP_MultiResetDetector.svg?)](https://www.ardu-badge.com/ESP_MultiResetDetector).
  6. [`LittleFS_esp32 v1.0.6+`](https://github.com/lorol/LITTLEFS) for ESP32-based boards using LittleFS with ESP32 core **v1.0.5-**. To install, check [![arduino-library-badge](https://www.ardu-badge.com/badge/LittleFS_esp32.svg?)](https://www.ardu-badge.com/LittleFS_esp32). **Notice**: This [`LittleFS_esp32 library`](https://github.com/lorol/LITTLEFS) has been integrated to Arduino [ESP32 core v1.0.6+](https://github.com/espressif/arduino-esp32/tree/master/libraries/LITTLEFS) and **you don't need to install it if using ESP32 core v1.0.6+**
 
@@ -472,14 +473,20 @@ But it's always advisable to use and input both sets for reliability.
 
 #### 12.1 Enable auto-scan of WiFi networks for selection in Configuration Portal
 
+To enable auto-scan of WiFi networks for selection in Configuration Portal
 
 ```cpp
 #define SCAN_WIFI_NETWORKS                  true
 ```
 
-The manual input of SSIDs is default enabled, so that users can input arbitrary SSID, not only from the scanned list. This is for the sample use-cases in which users can input the known SSIDs of another place, then send the boards to that place. The boards can connect to WiFi without users entering Config Portal to re-configure.
-
 #### 12.2 Disable manually input SSIDs
+
+```cpp
+// To be able to manually input SSID, not just from a scanned SSID lists
+#define MANUAL_SSID_INPUT_ALLOWED           true
+```
+
+The manual input of SSIDs is by default enabled, so that users can input arbitrary SSID, not only from the scanned list. This is for the use-cases where users can input the known SSIDs of another place, then send the boards to that place. The boards can connect to WiFi without users entering Config Portal to re-configure.
 
 ```cpp
 // To disable manually input SSID, only from a scanned SSID lists
@@ -608,9 +615,10 @@ See this example and modify as necessary
 
 ```cpp
 // Used mostly for development and debugging. FORCES default values to be loaded each run.
-// Config Portal data input will be ignored and overridden by DEFAULT_CONFIG_DATA
-bool LOAD_DEFAULT_CONFIG_DATA = true;
+// Config Portal saved data will be ignored and overridden by DEFAULT_CONFIG_DATA
+#define LOAD_DEFAULT_CONFIG_DATA      true
 ```
+
 
 #### 2. To load [Default Credentials](https://github.com/khoih-prog/ESP_WiFiManager_Lite/tree/main/examples//Credentials.h) when there is no valid Credentials.
 
@@ -618,8 +626,8 @@ Config Portal data input will be override DEFAULT_CONFIG_DATA
 
 ```cpp
 // Used mostly once debugged. Assumes good data already saved in device.
-// Config Portal data input will be override DEFAULT_CONFIG_DATA
-bool LOAD_DEFAULT_CONFIG_DATA = false;
+// Config Portal saved data and data input will override DEFAULT_CONFIG_DATA
+#define LOAD_DEFAULT_CONFIG_DATA      false
 ```
 
 #### 3. Example of [Default Credentials](https://github.com/khoih-prog/ESP_WiFiManager_Lite/tree/main/examples/ESP_WiFi/Credentials.h)
@@ -658,15 +666,15 @@ typedef struct Configuration
 #if TO_LOAD_DEFAULT_CONFIG_DATA
 
 // This feature is primarily used in development to force a known set of values as Config Data
-// It will NOT force the Config Portal to activate. Use DRD or erase Config Data with ESP_WiFiManager.clearConfigData()
+// It will NOT force the Config Portal to activate. Use MRD or erase Config Data with ESP_WiFiManager.clearConfigData()
 
 // Used mostly for development and debugging. FORCES default values to be loaded each run.
-// Config Portal data input will be ignored and overridden by DEFAULT_CONFIG_DATA
-//bool LOAD_DEFAULT_CONFIG_DATA = true;
+// Config Portal saved data will be ignored and overridden by DEFAULT_CONFIG_DATA
+//#define LOAD_DEFAULT_CONFIG_DATA      true
 
 // Used mostly once debugged. Assumes good data already saved in device.
-// Config Portal data input will be override DEFAULT_CONFIG_DATA
-bool LOAD_DEFAULT_CONFIG_DATA = false;
+// Config Portal saved data and data input will override DEFAULT_CONFIG_DATA
+#define LOAD_DEFAULT_CONFIG_DATA      false
 
 
 ESP_WM_LITE_Configuration defaultConfig =
@@ -698,7 +706,7 @@ ESP_WM_LITE_Configuration defaultConfig =
 
 #else
 
-bool LOAD_DEFAULT_CONFIG_DATA = false;
+#define LOAD_DEFAULT_CONFIG_DATA  false
 
 ESP_WM_LITE_Configuration defaultConfig;
 

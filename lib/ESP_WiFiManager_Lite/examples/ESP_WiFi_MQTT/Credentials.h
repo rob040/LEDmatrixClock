@@ -51,12 +51,12 @@ typedef struct Configuration
 // It will NOT force the Config Portal to activate. Use MRD or erase Config Data with ESP_WiFiManager.clearConfigData()
 
 // Used mostly for development and debugging. FORCES default values to be loaded each run.
-// Config Portal data input will be ignored and overridden by DEFAULT_CONFIG_DATA
-//bool LOAD_DEFAULT_CONFIG_DATA = true;
+// Config Portal saved data will be ignored and overridden by DEFAULT_CONFIG_DATA
+//#define LOAD_DEFAULT_CONFIG_DATA      true
 
 // Used mostly once debugged. Assumes good data already saved in device.
-// Config Portal data input will be override DEFAULT_CONFIG_DATA
-bool LOAD_DEFAULT_CONFIG_DATA = false;
+// Config Portal saved data and data input will override DEFAULT_CONFIG_DATA
+#define LOAD_DEFAULT_CONFIG_DATA      false
 
 
 ESP_WM_LITE_Configuration defaultConfig =
@@ -88,7 +88,7 @@ ESP_WM_LITE_Configuration defaultConfig =
 
 #else
 
-bool LOAD_DEFAULT_CONFIG_DATA = false;
+#define LOAD_DEFAULT_CONFIG_DATA false
 
 ESP_WM_LITE_Configuration defaultConfig;
 

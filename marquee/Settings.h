@@ -25,10 +25,7 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPUpdateServer.h>
-//#include <WiFiManager.h> // --> https://github.com/tzapu/WiFiManager
-//later  #include <ESP_WiFiManager_Lite.h> // --> https://github.com/khoih-prog/ESP_WiFiManager_Lite
-#include "WmlSettings.h"
-#include "ESP_WiFiManager_Lite.h"
+
 #include <ESP8266mDNS.h>
 #include <ArduinoOTA.h>
 #include "LittleFS.h"
@@ -43,6 +40,13 @@
 #if COMPILE_MQTT
 #include "MqttClient.h"
 #endif
+
+// For ESP_WiFiManager_Lite, the include sequence does matter!
+//#include <WiFiManager.h> // --> https://github.com/tzapu/WiFiManager
+//local version of #include <ESP_WiFiManager_Lite.h> // --> https://github.com/khoih-prog/ESP_WiFiManager_Lite
+#include "WmlSettings.h"
+#include "ESP_WiFiManager_Lite.h"
+#include "dynamicParams.h"
 
 //******************************
 // Hard(-ware related) settings

@@ -46,6 +46,8 @@
 1. Massive simplification to reset detector configuration
 2. Using the simplified MultiResetDetector v2.0, makes the DoubleResetDetector library superfluous
 3. BREAKING CHANGE: replaced everywhere "Customs" with "Custom" (spelling error introduced in version 1.2.0). This affects users with configurable **Custom HTML Headers**, including Custom Style and Custom Head Elements.
+4. Flexible number of wifi credentials NUM_WIFI_CREDENTIALS
+5. Reviewed / changed html generation
 
 ### Release v1.10.5
 

@@ -9,14 +9,16 @@
 // ESP Accesspoint hostname by ESP_WifiManager_Lite; The device MAC address will be added
 #define AP_HOSTNAME_BASE "CLOCK-"
 #define ESP_WM_LITE_DEBUG_OUTPUT                  Serial
-#define _ESP_WM_LITE_LOGLEVEL_                    3
+#define _ESP_WM_LITE_LOGLEVEL_                    4
 #define USE_LED_BUILTIN                           true
 #define USE_DYNAMIC_PARAMETERS                    true
-#define USING_CUSTOM_STYLE                        false  // Spelling error in library, should be _CUSTOM_
-#define USING_CUSTOM_HEAD_ELEMENT                 false  // Spelling error in library, should be _CUSTOM_
+#define USING_CUSTOM_STYLE                        false
+#define USING_CUSTOM_HEAD_ELEMENT                 false
 #define USING_CORS_FEATURE                        false
 #define NUM_WIFI_CREDENTIALS                      4
-#define TIMEOUT_RECONNECT_WIFI                    10000L
+#define TIMEOUT_RECONNECT_WIFI                    10000
+// set to true for debug-test: FORCES default values to be loaded each run.
+#define LOAD_DEFAULT_CONFIG_DATA                  false
 // Permit running CONFIG_TIMEOUT_RETRYTIMES_BEFORE_RESET times before reset hardware
 // to permit user another chance to config. Only if Config Data is valid.
 // If Config Data is invalid, this has no effect as Config Portal will persist
@@ -24,10 +26,11 @@
 // Permitted range of user-defined CONFIG_TIMEOUT_RETRYTIMES_BEFORE_RESET between 2-100
 #define CONFIG_TIMEOUT_RETRYTIMES_BEFORE_RESET    5
 // Config Timeout 120s (default 60s). Applicable only if Config Data is Valid
-#define CONFIG_TIMEOUT                            120000L
+#define CONFIG_TIMEOUT                            120000
 // Permit input only one set of WiFi SSID/PWD. The other can be "NULL or "blank"
 // Default is false (if not defined) => must input 2 sets of SSID/PWD
-#define REQUIRE_ONE_SET_SSID_PW                   false
+// TODO: remove this option and input check
+#define REQUIRE_ONE_SET_SSID_PW                   true
 // Max times to try WiFi per loop() iteration. To avoid blocking issue in loop()
 // Default 1 if not defined, and minimum 1.
 #define MAX_NUM_WIFI_RECON_TRIES_PER_LOOP         2
@@ -40,7 +43,7 @@
 #define RESET_IF_NO_WIFI                          false
 #define SCAN_WIFI_NETWORKS                        true
 // To be able to manually input SSID, not from scanned SSID lists
-#define MANUAL_SSID_INPUT_ALLOWED                 true
+#define MANUAL_SSID_INPUT_ALLOWED                 false
 // List nearby SSID's found, From 2-15
 #define MAX_SSID_IN_LIST                          8
 // Optional, to use Board Name in Menu
@@ -57,27 +60,13 @@
 #define USE_LITTLEFS                              false
 #define USE_SPIFFS                                false
 
-// USE_DYNAMIC_PARAMETERS defined above, used just for testing
-
-/////////////// Start dynamic Credentials ///////////////
-
-//Defined in <ESP_WiFiManager_Lite.h>
-/**************************************
-  #define MAX_ID_LEN                5
-  #define MAX_DISPLAY_NAME_LEN      16
-
-  typedef struct
-  {
-  char id             [MAX_ID_LEN + 1];
-  char displayName    [MAX_DISPLAY_NAME_LEN + 1];
-  char *pdata;
-  uint8_t maxlen;
-  } MenuItem;
-**************************************/
-
-#if USE_DYNAMIC_PARAMETERS
-
-#endif
+// For testing, create a default config
+#define WML_DEFAULT_CONFIG {  "ESP8266", \
+  "SSID1",  "password1",\
+  "SSID2",  "password2",\
+  "SSID3",  "password3",\
+  "SSID4",  "password4",\
+  "ESP8266-Control", 0 };
 
 //#include <ESP_WiFiManager_Lite.h> // --> https://github.com/khoih-prog/ESP_WiFiManager_Lite (Archived) --> ../lib/ESP_WiFiManager_Lite.h
-
+//#include "dynamicParams.h"

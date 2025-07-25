@@ -159,8 +159,9 @@ ESP8266WebServer server(WEBSERVER_PORT);
 ESP8266HTTPUpdateServer serverUpdater;
 
 ESP_WiFiManager_Lite* ESP_WiFiManager;
-bool LOAD_DEFAULT_CONFIG_DATA = false; // set to true for debug-test: FORCES default values to be loaded each run.
-ESP_WM_LITE_Configuration defaultConfig = {0};
+
+ESP_WM_LITE_Configuration defaultConfig = WML_DEFAULT_CONFIG;//{0};
+
 
 static const char webHeaderHtml[] PROGMEM = "<!DOCTYPE HTML>"
   "<html><head>"
@@ -424,7 +425,7 @@ void setup() {
   FS.begin();
   // uncomment for testing, comment for release!
   //FS.remove(CONFIG);
-  delay(10);
+  delay(10*200);
 
   // Initialize digital pin for LED
   pinMode(LED_ONBOARD, OUTPUT);

@@ -9,3 +9,5 @@ marquee.ino.cpp
 *.?-
 *.-
 *-
+--no-check-sections
+firmware.map

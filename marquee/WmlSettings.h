@@ -28,7 +28,7 @@
 // Config Timeout 120s (default 60s). Applicable only if Config Data is Valid
 #define CONFIG_TIMEOUT                            120000
 // Permit input only one set of WiFi SSID/PWD. The other can be "NULL or "blank"
-// Default is false (if not defined) => must input 2 sets of SSID/PWD
+// Default is false (if not defined) => must input ALL sets of SSID/PWD WIFI_CREDENTIALS
 // TODO: remove this option and input check
 #define REQUIRE_ONE_SET_SSID_PW                   true
 // Max times to try WiFi per loop() iteration. To avoid blocking issue in loop()
@@ -41,12 +41,19 @@
 //#define WIFI_RECON_INTERVAL                       30000
 // Permit reset hardware if no WiFi to permit user another chance to access Config Portal.
 #define RESET_IF_NO_WIFI                          false
+
+// The next two defines determine the WiFi SSID input field on config html page;
+// With SCAN_WIFI_NETWORKS=true and MANUAL_SSID_INPUT_ALLOWED=true, a free text input field with SSID proposal list filtered with text typed is presented.
+// With SCAN_WIFI_NETWORKS=true and MANUAL_SSID_INPUT_ALLOWED=false, a traditional drop-downbox is presented.
+// With SCAN_WIFI_NETWORKS=false, a text input field is presented without any aid of present WiFi stations.
+
+// show list of possible AP to choose from; when false,
 #define SCAN_WIFI_NETWORKS                        true
 // To be able to manually input SSID, not from scanned SSID lists
-#define MANUAL_SSID_INPUT_ALLOWED                 false
+#define MANUAL_SSID_INPUT_ALLOWED                 true
 // List nearby SSID's found, From 2-15
 #define MAX_SSID_IN_LIST                          8
-// Optional, to use Board Name in Menu
+// Optional, to use and modify Board Name in Menu
 #define USING_BOARD_NAME                          true
 
 
@@ -56,7 +63,7 @@
 #define MRD_TIMEOUT                               10
 
 //WM configuration storage
-// for wifi config, use EEPROM (default)
+// for wifi config, use EEPROM (default, when both are false)
 #define USE_LITTLEFS                              false
 #define USE_SPIFFS                                false
 
@@ -66,7 +73,7 @@
   "SSID2",  "password2",\
   "SSID3",  "password3",\
   "SSID4",  "password4",\
-  "ESP8266-Control", 0 };
+  "LED matrix Clock", 0 };
 
 //#include <ESP_WiFiManager_Lite.h> // --> https://github.com/khoih-prog/ESP_WiFiManager_Lite (Archived) --> ../lib/ESP_WiFiManager_Lite.h
 //#include "dynamicParams.h"

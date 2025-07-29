@@ -307,7 +307,7 @@ ESP_WiFiManager_Lite* ESP_WiFiManager;
 ```cpp
 #include "defines.h"
 
-// USE_DYNAMIC_PARAMETERS defined in defined.h
+// USE_DYNAMIC_PARAMETERS defined in defines.h
 
 /////////////// Start dynamic Credentials ///////////////
 

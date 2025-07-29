@@ -425,7 +425,7 @@ void setup() {
   FS.begin();
   // uncomment for testing, comment for release!
   //FS.remove(CONFIG);
-  delay(10*200);
+  delay(10);
 
   // Initialize digital pin for LED
   pinMode(LED_ONBOARD, OUTPUT);

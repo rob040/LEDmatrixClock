@@ -28,7 +28,7 @@
   Either will work, but have to check availability on Arduino IDE and PlatformIO / PioArduino  version/release
   Likely it wasn't available when this library was created
 
-  For Arduino ESP8266 there is at leaste the longer used
+  For Arduino ESP8266 there is at least the longer used
   `ESP.rtcUserMemoryRead(address, &multiResetDetectorFlag, sizeof(multiResetDetectorFlag));`
   and `ESP.rtcUserMemoryWrite()`
 
@@ -42,9 +42,10 @@
   1.2.0   K Hoang      26/11/2021 Auto detect ESP32 core and use either built-in LittleFS or LITTLEFS library
   1.2.1   K Hoang      26/11/2021 Fix compile error for ESP32 core v1.0.5-
   1.3.0   K Hoang      10/02/2022 Add support to new ESP32-S3
-  1.3.1   K Hoang      04/03/2022 Add waitingForMRD() function to signal in MRD wating period
+  1.3.1   K Hoang      04/03/2022 Add waitingForMRD() function to signal in MRD waiting period
   1.3.2   K Hoang      09/09/2022 Fix ESP32 chipID for example ConfigOnMultiReset
   2.0.0   rob040       2025-07-22 Massive reduction in (configuration) complexity: use RAM storage only
+  2.0.0   rob040       2025-07-30 Renamed "Bytes" to "Word", place debug strings into PROGMEM
 *****************************************************************************************************************************/
 
 #pragma once
@@ -84,7 +85,7 @@
 #endif
 
 #ifndef MRD_ADDRESS
-  #define MRD_ADDRESS       0  // only appliccable to RTC storage offset
+  #define MRD_ADDRESS       0  // only applicable to ESP8266 RTC storage offset
 #endif
 
 ///////////////////
@@ -119,7 +120,7 @@ class MultiResetDetector
       if (multiResetDetected)
       {
 #if (MULTIRESETDETECTOR_DEBUG)
-        Serial.printf("multiResetDetected, count = %d (>=%d)\n", (uint16_t) (multiResetDetectorFlag), MRD_TIMES);
+        Serial.printf_P(PSTR("multiResetDetected, count = %d (>=%d)\n"), (uint16_t) (multiResetDetectorFlag), MRD_TIMES);
 #endif
 
         clearRecentlyResetFlag();
@@ -127,7 +128,7 @@ class MultiResetDetector
       else
       {
 #if (MULTIRESETDETECTOR_DEBUG)
-        Serial.printf("No multiResetDetected, count = %d\n", (uint16_t) (multiResetDetectorFlag) );
+        Serial.printf_P(PSTR("No multiResetDetected, count = %d\n"), (uint16_t) (multiResetDetectorFlag) );
 #endif
 
         setRecentlyResetFlag();
@@ -176,7 +177,7 @@ class MultiResetDetector
       multiResetDetectorFlag = noinit_multiResetDetectorFlag;
   #endif
   #if (MULTIRESETDETECTOR_DEBUG)
-      Serial.printf("MRD ReadFlag 0x%08X\n", multiResetDetectorFlag);
+      Serial.printf_P(PSTR("MRD ReadFlag 0x%08X\n"), multiResetDetectorFlag);
   #endif
 
       return true;
@@ -187,15 +188,15 @@ class MultiResetDetector
       if (!readRecentlyResetFlag())
         return false;
 
-      uint16_t upperBytes = (uint16_t) ~(multiResetDetectorFlag >> 16);
-      uint16_t lowerBytes = (uint16_t) multiResetDetectorFlag;
+      uint16_t upperWord = (uint16_t) ~(multiResetDetectorFlag >> 16);
+      uint16_t lowerWord = (uint16_t) multiResetDetectorFlag;
 
 #if (MULTIRESETDETECTOR_DEBUG)
-      Serial.printf("multiResetDetectorFlag = 0x%08X\n", multiResetDetectorFlag);
-      Serial.printf("lowerBytes = 0x%04X, upperBytes = 0x%04X\n", lowerBytes, upperBytes);
+      Serial.printf_P(PSTR("multiResetDetectorFlag = 0x%08X\n"), multiResetDetectorFlag);
+      Serial.printf_P(PSTR("lowerWord = 0x%04X, upperWord = 0x%04X\n"), lowerWord, upperWord);
 #endif
 
-      if ( ( lowerBytes >= MRD_TIMES ) && ( lowerBytes == upperBytes )  )
+      if ( ( lowerWord >= MRD_TIMES ) && ( lowerWord == upperWord )  )
       {
         multiResetDetected = true;
       }
@@ -203,13 +204,13 @@ class MultiResetDetector
       {
         multiResetDetected = false;
 
-        if (lowerBytes != upperBytes)
+        if (lowerWord != upperWord)
         {
           // To reset if data corrupted
           multiResetDetectorFlag = multiResetDetectorFlag_CLEAR;
 #if (MULTIRESETDETECTOR_DEBUG)
           Serial.println(F("detectRecentlyResetFlag: Data corrupted. Reset to 0"));
-          Serial.printf("multiResetDetectorFlag = 0x%08X\n", multiResetDetectorFlag);
+          Serial.printf_P(PSTR("multiResetDetectorFlag = 0x%08X\n"), multiResetDetectorFlag);
 #endif
         }
       }

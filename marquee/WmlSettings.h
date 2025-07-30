@@ -9,9 +9,9 @@
 // ESP Accesspoint hostname by ESP_WifiManager_Lite; The device MAC address will be added
 #define AP_HOSTNAME_BASE "CLOCK-"
 #define ESP_WM_LITE_DEBUG_OUTPUT                  Serial
-#define _ESP_WM_LITE_LOGLEVEL_                    4
+#define _ESP_WM_LITE_LOGLEVEL_                    -1
 #define USE_LED_BUILTIN                           true
-#define USE_DYNAMIC_PARAMETERS                    true
+#define USE_DYNAMIC_PARAMETERS                    false
 #define USING_CUSTOM_STYLE                        false
 #define USING_CUSTOM_HEAD_ELEMENT                 false
 #define USING_CORS_FEATURE                        false
@@ -58,7 +58,7 @@
 
 
 // We are using MRD (Multi reset detector): after 3 resets within 10 seconds after startup, we enter Wifi Manager AP mode
-#define MULTIRESETDETECTOR_DEBUG                  true
+#define MULTIRESETDETECTOR_DEBUG                  (_ESP_WM_LITE_LOGLEVEL_>1)
 #define MRD_TIMES                                 3
 #define MRD_TIMEOUT                               10
 

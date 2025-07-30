@@ -32,6 +32,7 @@
                                    Do LOAD_DEFAULT_CONFIG_DATA (restore default on EVERY startup) from 5 to 1 place: begin(),
                                    Rework isWiFiConfigValid(),
                                    Rename loadAndSaveDefaultConfigData() method to restoreDefaultConfiguration()
+                                   Fix hadConfigData flag usage, and rename to present tense hasConfigData
 
  *****************************************************************************************************************************/
 
@@ -122,6 +123,7 @@
   #include <WiFiMulti.h>
   #include <WebServer.h>
 
+  //TODO: check if these exceptions are still valid
   // To be sure no LittleFS for ESP32-C3 for core v1.0.6-
   #if ( defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 2) )
     // For core v2.0.0+, ESP32-C3 can use LittleFS, SPIFFS or EEPROM
@@ -653,24 +655,25 @@ class ESP_WiFiManager_Lite
 
       if (LOAD_DEFAULT_CONFIG_DATA)
       {
-         // Forced default configuration for DEBUG TEST
+         // Special case: Force default configuration for DEBUG TEST
         restoreDefaultConfiguration();
 
         // Don't need Config Portal anymore, when defaultConfig is properly set
-        // (the user could chose to just declare a zero defaultConfig, in which case the CP is entered)
-        hadConfigData = isWiFiConfigValid();
+        // (the user could chose to just declare a zero defaultConfig, in which case the CP should be entered)
+        hasConfigData = isWiFiConfigValid();
       }
       else
       {
-        hadConfigData = getConfigData();
+        // Normal case: Get Config data from non-volatile storage
+        hasConfigData = getConfigData();
       }
 
       isForcedConfigPortal = isForcedCP();
 
       //  noConfigPortal when getConfigData() OK and not MRD'ed
-      if (hadConfigData && noConfigPortal && (!isForcedConfigPortal) )
+      if (hasConfigData && noConfigPortal && (!isForcedConfigPortal) )
       {
-        //hadConfigData = true; // was already true
+        //hasConfigData = true; // was already true
 
         //ESP_WML_LOGDEBUG1(F("bg:noConfigPortal="), noConfigPortal); // is always true
 
@@ -716,8 +719,7 @@ class ESP_WiFiManager_Lite
           clearForcedCP();
 
         }
-
-        hadConfigData = isForcedConfigPortal ? true : (noConfigPortal ? false : true);
+        hasConfigData = isForcedConfigPortal && !noConfigPortal ? true : false;
 
         // failed to connect to WiFi, will start configuration mode
         startConfigurationMode();
@@ -731,11 +733,11 @@ class ESP_WiFiManager_Lite
 #else
     // Force range of user-defined TIMEOUT_RECONNECT_WIFI between 10-60s
 #if (TIMEOUT_RECONNECT_WIFI < 10000L)
-#warning TIMEOUT_RECONNECT_WIFI too low. Reseting to 10000
+#warning TIMEOUT_RECONNECT_WIFI too low. Resetting to 10000
 #undef TIMEOUT_RECONNECT_WIFI
 #define TIMEOUT_RECONNECT_WIFI   10000L
 #elif (TIMEOUT_RECONNECT_WIFI > 60000L)
-#warning TIMEOUT_RECONNECT_WIFI too high. Reseting to 60000
+#warning TIMEOUT_RECONNECT_WIFI too high. Resetting to 60000
 #undef TIMEOUT_RECONNECT_WIFI
 #define TIMEOUT_RECONNECT_WIFI   60000L
 #endif
@@ -746,11 +748,11 @@ class ESP_WiFiManager_Lite
 #else
     // Force range of user-defined RETRY_TIMES_RECONNECT_WIFI between 2-5 times
 #if (RETRY_TIMES_RECONNECT_WIFI < 2)
-#warning RETRY_TIMES_RECONNECT_WIFI too low. Reseting to 2
+#warning RETRY_TIMES_RECONNECT_WIFI too low. Resetting to 2
 #undef RETRY_TIMES_RECONNECT_WIFI
 #define RETRY_TIMES_RECONNECT_WIFI   2
 #elif (RETRY_TIMES_RECONNECT_WIFI > 5)
-#warning RETRY_TIMES_RECONNECT_WIFI too high. Reseting to 5
+#warning RETRY_TIMES_RECONNECT_WIFI too high. Resetting to 5
 #undef RETRY_TIMES_RECONNECT_WIFI
 #define RETRY_TIMES_RECONNECT_WIFI   5
 #endif
@@ -765,11 +767,11 @@ class ESP_WiFiManager_Lite
 #else
     // Force range of user-defined TIMES_BEFORE_RESET between 2-100
 #if (CONFIG_TIMEOUT_RETRYTIMES_BEFORE_RESET < 2)
-#warning CONFIG_TIMEOUT_RETRYTIMES_BEFORE_RESET too low. Reseting to 2
+#warning CONFIG_TIMEOUT_RETRYTIMES_BEFORE_RESET too low. Resetting to 2
 #undef CONFIG_TIMEOUT_RETRYTIMES_BEFORE_RESET
 #define CONFIG_TIMEOUT_RETRYTIMES_BEFORE_RESET   2
 #elif (CONFIG_TIMEOUT_RETRYTIMES_BEFORE_RESET > 100)
-#warning CONFIG_TIMEOUT_RETRYTIMES_BEFORE_RESET too high. Reseting to 100
+#warning CONFIG_TIMEOUT_RETRYTIMES_BEFORE_RESET too high. Resetting to 100
 #undef CONFIG_TIMEOUT_RETRYTIMES_BEFORE_RESET
 #define CONFIG_TIMEOUT_RETRYTIMES_BEFORE_RESET   100
 #endif
@@ -1036,10 +1038,10 @@ class ESP_WiFiManager_Lite
 
     String getWiFiSSID(uint8_t index)
     {
-      if (!hadConfigData)
+      if (!hasConfigData)
         getConfigData();
 
-      if ((index >= NUM_WIFI_CREDENTIALS) || !hadConfigData)
+      if ((index >= NUM_WIFI_CREDENTIALS) || !hasConfigData)
         return "";  // even after getConfigData, still no (valid) configdata
 
       return (String(ESP_WM_LITE_config.WiFi_Creds[index].wifi_ssid));
@@ -1049,10 +1051,10 @@ class ESP_WiFiManager_Lite
 
     String getWiFiPW(uint8_t index)
     {
-      if (!hadConfigData)
+      if (!hasConfigData)
         getConfigData();
 
-      if ((index >= NUM_WIFI_CREDENTIALS) || !hadConfigData)
+      if ((index >= NUM_WIFI_CREDENTIALS) || !hasConfigData)
         return "";  // even after getConfigData, still no (valid) configdata
 
       return (String(ESP_WM_LITE_config.WiFi_Creds[index].wifi_pw));
@@ -1062,10 +1064,10 @@ class ESP_WiFiManager_Lite
 
     String getBoardName()
     {
-      if (!hadConfigData)
+      if (!hasConfigData)
         getConfigData();
 
-      if (!hadConfigData)
+      if (!hasConfigData)
         return "";  // even after getConfigData, still no (valid) configdata
 
       return (String(ESP_WM_LITE_config.board_name));
@@ -1082,10 +1084,10 @@ class ESP_WiFiManager_Lite
 
     ESP_WM_LITE_Configuration* getFullConfigData(ESP_WM_LITE_Configuration *configData)
     {
-      if (!hadConfigData)
+      if (!hasConfigData)
         getConfigData();
 
-      if (!hadConfigData)
+      if (!hasConfigData)
         return NULL;  // even after getConfigData, still no (valid) configdata
 
       // Check if NULL pointer
@@ -1127,7 +1129,7 @@ class ESP_WiFiManager_Lite
 
     bool isConfigDataValid()
     {
-      return hadConfigData;
+      return hasConfigData;
     }
 
     //////////////////////////////////////////////
@@ -1327,8 +1329,8 @@ class ESP_WiFiManager_Lite
     bool configuration_mode = false;
 
     unsigned long configTimeout;
-    bool hadConfigData = false;
-    bool hadDynamicData = false;
+    bool hasConfigData = false;
+    bool hasDynamicData = false;
 
     bool isForcedConfigPortal   = false;
     bool persForcedConfigPortal = false;
@@ -1726,7 +1728,7 @@ class ESP_WiFiManager_Lite
 
     bool loadDynamicData()
     {
-      if (hadDynamicData)
+      if (hasDynamicData)
       {
         return true;
       }
@@ -1783,7 +1785,7 @@ class ESP_WiFiManager_Lite
         return false;
       }
 
-      hadDynamicData = true;
+      hasDynamicData = true;
       return true;
     }
 
@@ -1956,7 +1958,7 @@ class ESP_WiFiManager_Lite
       bool configDataValid;
       int calChecksum;
 
-      hadConfigData = false;  //TODO: check this flag usage
+      hadConfigData = false;
 
 #if ESP8266
 
@@ -2079,6 +2081,7 @@ class ESP_WiFiManager_Lite
       ESP_WML_LOGINFO(F("== Retrieved Config =="));
       displayConfigData(ESP_WM_LITE_config);
 
+      hadConfigData = true;
       return true;
     }
 
@@ -2220,6 +2223,10 @@ class ESP_WiFiManager_Lite
 
     bool loadDynamicData()
     {
+      if (hasDynamicData)
+      { // already loaded
+        return true;
+      }
       int readCheckSum;
       int checkSum = 0;
       uint16_t offset = CONFIG_EEPROM_START + sizeof(ESP_WM_LITE_config) + FORCED_CONFIG_PORTAL_FLAG_DATA_SIZE;
@@ -2253,6 +2260,7 @@ class ESP_WiFiManager_Lite
         return false;
       }
 
+      hasDynamicData = true;
       return true;
     }
 
@@ -2347,7 +2355,7 @@ class ESP_WiFiManager_Lite
       bool configDataValid;
       int calChecksum;
 
-      hadConfigData = false;  //TODO: check this flag usage, why set in past tense?
+      hasConfigData = false;
 
       EEPROM.begin(EEPROM_SIZE);
 
@@ -2447,7 +2455,7 @@ class ESP_WiFiManager_Lite
 
       ESP_WML_LOGINFO(F("== Retrieved Config =="));
       displayConfigData(ESP_WM_LITE_config);
-
+      hasConfigData = true;
       return true;
     }
 
@@ -2969,7 +2977,7 @@ class ESP_WiFiManager_Lite
 
       // If there is no saved config Data, stay in config mode forever until having config Data.
       // or SSID, PW, Server,Token ="nothing"
-      if (hadConfigData)
+      if (hasConfigData)
       {
         configTimeout = millis() + CONFIG_TIMEOUT;
 

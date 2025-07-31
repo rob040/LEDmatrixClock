@@ -1,5 +1,6 @@
 .pio
 .vscode
+backup
 binaries
 logs
 marquee.ino.cpp

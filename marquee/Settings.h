@@ -1,25 +1,7 @@
-/** The MIT License (MIT)
-
-Copyright (c) 2018 David Payne
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
+/**
+ *
+ * parts Copyright (c) 2018 David Payne, MIT License (MIT)
+ */
 
 /******************************************************************************
  * This is designed for the Wemos D1 ESP8266, but other ESP8266 boards work as well.
@@ -43,7 +25,7 @@ SOFTWARE.
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPUpdateServer.h>
-#include <WiFiManager.h> // --> https://github.com/tzapu/WiFiManager
+
 #include <ESP8266mDNS.h>
 #include <ArduinoOTA.h>
 #include "LittleFS.h"
@@ -58,6 +40,13 @@ SOFTWARE.
 #if COMPILE_MQTT
 #include "MqttClient.h"
 #endif
+
+// For ESP_WiFiManager_Lite, the include sequence does matter!
+//#include <WiFiManager.h> // --> https://github.com/tzapu/WiFiManager
+//local version of #include <ESP_WiFiManager_Lite.h> // --> https://github.com/khoih-prog/ESP_WiFiManager_Lite
+#include "WmlSettings.h"
+#include "ESP_WiFiManager_Lite.h"
+#include "dynamicParams.h"
 
 //******************************
 // Hard(-ware related) settings
@@ -86,8 +75,7 @@ const int ledRotation = 3;
 // uncomment define BUZZER pin when BUZZER is installed
 // #define BUZZER_PIN  D2
 
-// ESP Accesspoint hostname by WifiManager; The device MAC address will be added
-#define AP_HOSTNAME_BASE "CLOCK-"
+
 // Configuration.ini file is stored in local filesystem
 #define CONFIG "/conf.txt"
 
@@ -98,7 +86,7 @@ const int ledRotation = 3;
 // (no need to change; these can be set on configuration page)
 //******************************
 
-String owmApiKey = ""; // Your API Key from http://openweathermap.org/
+String owmApiKey = ""; // Your free API Key from http://openweathermap.org/ (registration required; use Free Access for everyone )
 // Default GEO Location (use http://openweathermap.org/find to find location name being "cityname,countrycode" or "city ID" or GPS "latitude,longitude")
 String geoLocation = "Breda,NL";
 String marqueeMessage = "";

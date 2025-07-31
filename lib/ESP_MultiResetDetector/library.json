@@ -1,0 +1,32 @@
+{
+  "name": "ESP_MultiResetDetector",
+  "version": "2.0.0",
+  "keywords": "rtc, eeprom, littlefs, spiffs, reset, data, esp32, esp32-c3, esp32-s2, esp32-s3, esp8266, double-reset, multi-reset, detector, DoubleResetDetector, double-reset-detector, multi-reset-detector, esp-wifimanager, espasync-wifimanager",
+  "description": "Library to detect multiple resets within a predetermined time, using RTC or RAM Memory for ESP8266 and ESP32, ESP32_C3, ESP32_S2, ESP32_S3. An alternative start-up mode can be used. One example use is to allow re-configuration of device WiFi credentials. Replaces DoubleResetDetector.",
+  "authors":
+  {
+  "name":  "Khoi Hoang",
+  "url":   "https://github.com/khoih-prog",
+  "maintainer": false
+  },
+  "repository":
+  {
+      "type": "git",
+      "url": "https://github.com/khoih-prog/ESP_MultiResetDetector"
+  },
+  "homepage": "https://github.com/khoih-prog/ESP_MultiResetDetector",
+  "export": {
+    "exclude": [
+      "linux",
+      "extras",
+      "tests"
+    ]
+  },
+  "dependencies":
+  [
+  ],
+  "frameworks": "arduino",
+  "platforms": [ "espressif32", "espressif8266" ],
+  "examples": "examples/*/*/*.ino",
+  "headers": "ESP_MultiResetDetector.h"
+}

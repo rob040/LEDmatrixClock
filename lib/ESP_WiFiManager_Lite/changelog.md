@@ -6,8 +6,6 @@
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](#Contributing)
 [![GitHub issues](https://img.shields.io/github/issues/khoih-prog/ESP_WiFiManager_Lite.svg)](http://github.com/khoih-prog/ESP_WiFiManager_Lite/issues)
 
-<a href="https://www.buymeacoffee.com/khoihprog6" title="Donate to my libraries using BuyMeACoffee"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Donate to my libraries using BuyMeACoffee" style="height: 50px !important;width: 181px !important;" ></a>
-<a href="https://www.buymeacoffee.com/khoihprog6" title="Donate to my libraries using BuyMeACoffee"><img src="https://img.shields.io/badge/buy%20me%20a%20coffee-donate-orange.svg?logo=buy-me-a-coffee&logoColor=FFDD00" style="height: 20px !important;width: 200px !important;" ></a>
 
 ---
 ---
@@ -44,10 +42,16 @@
 ### Release v1.11.0 (beta)
 
 1. Massive simplification to reset detector configuration
-2. Using the simplified MultiResetDetector v2.0, makes the DoubleResetDetector library superfluous
-3. BREAKING CHANGE: replaced everywhere "Customs" with "Custom" (spelling error introduced in version 1.2.0). This affects users with configurable **Custom HTML Headers**, including Custom Style and Custom Head Elements.
-4. Flexible number of wifi credentials NUM_WIFI_CREDENTIALS
+2. Using the simplified MultiResetDetector v2.0, makes the DoubleResetDetector library superfluous, hence, DRD option was removed.
+3. Replaced everywhere "Customs" with "Custom" (spelling error introduced in v1.2.0). This affects users with configurable **Custom HTML Headers**, including Custom Style and Custom Head Elements.
+4. Flexible number of wifi credentials NUM_WIFI_CREDENTIALS; now supports 1...n configurable WiFi SSID's
 5. Reviewed / changed html generation
+6. Compile warnings removed; configuration messages as warnings only at log level > 3
+
+BREAKING Changes:
+1. Renamed "Customs" to "Custom"
+2. Renamed loadAndSaveDefaultConfigData() method to restoreDefaultConfiguration()
+
 
 ### Release v1.10.5
 

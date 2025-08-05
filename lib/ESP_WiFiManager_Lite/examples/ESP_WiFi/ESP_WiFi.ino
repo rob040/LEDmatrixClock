@@ -2,7 +2,7 @@
   ESP_WiFi.ino
   For ESP8266 / ESP32 boards
 
-  ESP_WiFiManager_Lite (https://github.com/khoih-prog/ESP_WiFiManager_Lite) is a library
+  ESP_WiFiManager_Lite (https://github.com/rob040/ESP_WiFiManagerLite2) is a library
   for the ESP32/ESP8266 boards to enable store Credentials in EEPROM/SPIFFS/LittleFS for easy
   configuration/reconfiguration and autoconnect/autoreconnect of WiFi and other services without Hardcoding.
 
@@ -12,6 +12,7 @@
 
 #include "defines.h"
 #include "Credentials.h"
+#include <ESP_WiFiManager_Lite.h>
 #include "dynamicParams.h"
 
 ESP_WiFiManager_Lite* ESP_WiFiManager;
@@ -45,7 +46,6 @@ void check_status()
 {
   static unsigned long checkstatus_timeout = 0;
 
-  //KH
 #define HEARTBEAT_INTERVAL    20000L
   // Print hearbeat every HEARTBEAT_INTERVAL (20) seconds.
   if ((millis() > checkstatus_timeout) || (checkstatus_timeout == 0))
@@ -56,8 +56,14 @@ void check_status()
 }
 
 #if USING_CUSTOM_STYLE
-const char NewCustomStyle[] PROGMEM = "<style>div,input{padding:5px;font-size:1em;}input{width:95%;}body{text-align: center;}"\
-"button{background-color:blue;color:white;line-height:2.4rem;font-size:1.2rem;width:100%;}fieldset{border-radius:0.3rem;margin:0px;}</style>";
+// Demonstrate Custom Style
+const char NewCustomStyle[] PROGMEM = "<style>"
+  "div,input{padding:5px;font-size:1em;}"
+  "input{width:95%;}"
+  "body{text-align: center;}"
+  "button{background-color:blue;color:white;line-height:2.4rem;font-size:1.2rem;width:100%;}"
+  "fieldset{border-radius:0.3rem;margin:0px;}"
+  "</style>";
 #endif
 
 void setup()
@@ -65,6 +71,8 @@ void setup()
   // Debug console
   Serial.begin(115200);
   while (!Serial);
+
+  pinMode(LED_PIN, OUTPUT);
 
   delay(200);
 
@@ -84,7 +92,7 @@ void setup()
 
   // Optional to change default AP IP(192.168.4.1) and channel(10)
   //ESP_WiFiManager->setConfigPortalIP(IPAddress(192, 168, 120, 1));
-  ESP_WiFiManager->setConfigPortalChannel(0);
+  //ESP_WiFiManager->setConfigPortalChannel(0);
 
 #if USING_CUSTOM_STYLE
   ESP_WiFiManager->setCustomStyle(NewCustomStyle);
@@ -100,7 +108,7 @@ void setup()
 
   // Set customized DHCP HostName
   ESP_WiFiManager->begin(HOST_NAME);
-  //Or use default Hostname "ESP32-WIFI-XXXXXX"
+  //Or use default Hostname "ESP-WIFI-XXXXXX"
   //ESP_WiFiManager->begin();
 }
 

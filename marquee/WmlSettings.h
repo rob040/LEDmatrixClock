@@ -62,8 +62,8 @@
 #define MRD_TIMES                                 3
 #define MRD_TIMEOUT                               10
 
-//WM configuration storage
-// for wifi config, use EEPROM (default, when both are false)
+// WML configuration storage; Choose one and only one
+#define USE_EEPROM                                true
 #define USE_LITTLEFS                              false
 #define USE_SPIFFS                                false
 

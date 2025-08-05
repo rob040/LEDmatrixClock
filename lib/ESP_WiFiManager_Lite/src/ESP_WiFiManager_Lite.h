@@ -32,7 +32,8 @@
                                    Do LOAD_DEFAULT_CONFIG_DATA (restore default on EVERY startup) from 5 to 1 place: begin(),
                                    Rework isWiFiConfigValid(),
                                    Rename loadAndSaveDefaultConfigData() method to restoreDefaultConfiguration()
-                                   Fix hadConfigData flag usage, and rename to present tense hasConfigData
+                                   Fix hadConfigData flag usage, and rename to present tense hasConfigData.
+                                   Method setHostName now accepts a hostname.
 
  *****************************************************************************************************************************/
 
@@ -40,6 +41,9 @@
 
 #ifndef ESP_WiFiManager_Lite_h
 #define ESP_WiFiManager_Lite_h
+
+
+//TODO: check if these exceptions on ESP32* are still valid! (they may be outdated)
 
 #if !( defined(ESP8266) ||  defined(ESP32) )
   #error This code is intended to run on the ESP8266 or ESP32 platform! Please check your Tools->Board setting.
@@ -88,7 +92,6 @@
   #include <ESP8266WiFiMulti.h>
   #include <ESP8266WebServer.h>
 
-  //default to use EEPROM, otherwise, use LittleFS or SPIFFS
   #if ( USE_LITTLEFS || USE_SPIFFS )
 
     #if USE_LITTLEFS
@@ -108,13 +111,16 @@
     #endif
 
     #include <FS.h>
-  #else
+  #elif USE_EEPROM
     #include <EEPROM.h>
     #define FS_Name         "EEPROM"
     #define EEPROM_SIZE     2048
     #if (_ESP_WM_LITE_LOGLEVEL_ > 3)
       #warning Using EEPROM in ESP_WiFiManager_Lite.h
     #endif
+
+  #else
+    #error You must select one WM configuration storage: USE_EEPROM, USE_SPIFFS, USE_LITTLEFS
   #endif
 
 #else   //ESP32
@@ -123,28 +129,25 @@
   #include <WiFiMulti.h>
   #include <WebServer.h>
 
-  //TODO: check if these exceptions are still valid
+  //TODO: check if these exceptions are still valid (they may be outdated); for the moment no config change, just warnings
+
   // To be sure no LittleFS for ESP32-C3 for core v1.0.6-
   #if ( defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 2) )
     // For core v2.0.0+, ESP32-C3 can use LittleFS, SPIFFS or EEPROM
     // LittleFS has higher priority than SPIFFS.
     // For core v2.0.0+, if not specified any, use better LittleFS
     #if ! (defined(USE_LITTLEFS) || defined(USE_SPIFFS) )
-      #define USE_LITTLEFS      true
-      #define USE_SPIFFS        false
+      #warning use #define USE_LITTLEFS      true
     #endif
   #elif defined(ARDUINO_ESP32C3_DEV)
     // For core v1.0.6-, ESP32-C3 only supporting SPIFFS and EEPROM. To use v2.0.0+ for LittleFS
     #if USE_LITTLEFS
-      #undef USE_LITTLEFS
-      #define USE_LITTLEFS            false
-      #undef USE_SPIFFS
-      #define USE_SPIFFS              true
+      #warning use #define USE_SPIFFS              true
     #endif
   #else
     // For core v1.0.6-, if not specified any, use SPIFFS to not forcing user to install LITTLEFS library
     #if ! (defined(USE_LITTLEFS) || defined(USE_SPIFFS) )
-      #define USE_SPIFFS      true
+      #warning use #define USE_SPIFFS      true
     #endif
   #endif
 
@@ -185,13 +188,17 @@
     #if (_ESP_WM_LITE_LOGLEVEL_ > 3)
       #warning Using SPIFFS in ESP_WiFiManager_Lite.h
     #endif
-  #else
+
+  #elif USE_EEPROM
     #include <EEPROM.h>
     #define FS_Name         "EEPROM"
     #define EEPROM_SIZE     2048
     #if (_ESP_WM_LITE_LOGLEVEL_ > 3)
       #warning Using EEPROM in ESP_WiFiManager_Lite.h
     #endif
+
+  #else
+    #error You must select one WM configuration storage: USE_EEPROM, USE_SPIFFS, USE_LITTLEFS
   #endif
 
 #endif
@@ -237,8 +244,6 @@ uint32_t getChipOUI();
 
 //////////////////////////////////////////////
 
-// New from v1.3.0
-// KH, Some minor simplification
 #if !defined(SCAN_WIFI_NETWORKS)
   #define SCAN_WIFI_NETWORKS     true     //false
 #endif
@@ -266,38 +271,41 @@ uint32_t getChipOUI();
 #endif
 
 
-  // These defines must be put before #include <ESP_DoubleResetDetector.h>
-  // to select where to store DoubleResetDetector's variable.
-  // For ESP32, You must select one to be true (EEPROM or SPIFFS/LittleFS)
-  // For ESP8266, You must select one to be true (RTC, EEPROM or SPIFFS/LittleFS)
-  // Otherwise, library will use default EEPROM storage
+// These defines must be put before #include <ESP_MultiResetDetector.h>
+// The MultiResetDetector's variable is stored in Volatile memory that is not
+// erased by chip reset or application start; it is never stored in
+// non-volatile flash storage, like it was before version 1.11.
 
-  #ifndef MULTIRESETDETECTOR_DEBUG
-    #define MULTIRESETDETECTOR_DEBUG     false
-  #endif
+#ifndef MULTIRESETDETECTOR_DEBUG
+  #define MULTIRESETDETECTOR_DEBUG     false
+#endif
 
-  // These definitions must be placed before #include <ESP_MultiResetDetector.h> to be used
-  // Otherwise, default values (MRD_TIMES = 3, MRD_TIMEOUT = 10 seconds and MRD_ADDRESS = 0) will be used
-  // Number of subsequent resets during MRD_TIMEOUT to activate
-  #ifndef MRD_TIMES
-    #define MRD_TIMES               3
-  #endif
+// These definitions must be placed before #include <ESP_MultiResetDetector.h> to be used
+// Otherwise, default values (MRD_TIMES = 3, MRD_TIMEOUT = 10 seconds and MRD_ADDRESS = 0) will be used
+// Number of subsequent resets during MRD_TIMEOUT to activate
+#ifndef MRD_TIMES
+  #define MRD_TIMES               3
+#endif
 
-  // Number of seconds after reset during which a
-  // subsequent reset will be considered a double reset.
-  #ifndef MRD_TIMEOUT
-    #define MRD_TIMEOUT 10
-  #endif
+// Number of seconds after reset during which a
+// subsequent reset will be considered a double reset.
+#ifndef MRD_TIMEOUT
+  #define MRD_TIMEOUT 10
+#endif
 
-  // RTC Memory Address for the MultiResetDetector to use
-  #ifndef MRD_ADDRESS
-    #define MRD_ADDRESS 0
-  #endif
+// RTC Memory Address for the MultiResetDetector to use
+#ifndef MRD_ADDRESS
+  #define MRD_ADDRESS 0
+#endif
 
-  #include <ESP_MultiResetDetector.h>      // https://github.com/rob040/LEDmatrixClock/lib/ESP_MultiResetDetector
+#define MRD_ALLOCATE_STATIC_DATA
 
-  //MultiResetDetector mrd(MRD_TIMEOUT, MRD_ADDRESS);
-  MultiResetDetector* mrd;
+#include <ESP_MultiResetDetector.h>      // https://github.com/rob040/LEDmatrixClock/lib/ESP_MultiResetDetector
+
+#undef MRD_ALLOCATE_STATIC_DATA
+
+//MultiResetDetector mrd(MRD_TIMEOUT, MRD_ADDRESS);
+MultiResetDetector* mrd;
 
 
 ///////////////////////////////////////////
@@ -345,7 +353,7 @@ typedef struct Credentials_s
 }  WiFi_Credentials;
 
 #ifndef NUM_WIFI_CREDENTIALS
-#define NUM_WIFI_CREDENTIALS      2  // (select 2..4, but actually no limit)
+#define NUM_WIFI_CREDENTIALS      2  // (select 1...4, but actually no limit)
 #endif
 
 #if USING_BOARD_NAME
@@ -486,7 +494,7 @@ uint32_t getChipOUI()
 
 //////////////////////////////////////////
 
-// afternatively use IPAddress.toString() or WiFi.localIP().toString() or localIP()
+// alternately use IPAddress.toString() or WiFi.localIP().toString() or localIP()
 /*String IPAddressToString(const IPAddress& _address)
 {
   String str = String(_address[0]);
@@ -638,7 +646,7 @@ class ESP_WiFiManager_Lite
 
       WiFi.mode(WIFI_STA);
 
-      if (iHostname[0] == 0)
+      if (iHostname == NULL || iHostname[0] == 0)
       {
         String _hostname = "ESP_" + String(ESP_getChipId(), HEX);
         _hostname.toUpperCase();
@@ -950,8 +958,13 @@ class ESP_WiFiManager_Lite
 
     //////////////////////////////////////////////
 
-    void setHostname()
+    void setHostname(const char *iHostname = "")
     {
+      if (iHostname && iHostname[0] != 0)
+      {
+        setWmlHostname(iHostname);
+      }
+
       if (wmlHostname[0] != 0)
       {
 #if ESP8266
@@ -1299,13 +1312,10 @@ class ESP_WiFiManager_Lite
         return;
       }
 
-      saveDynamicData();
-
-#else   // #if ( USE_LITTLEFS || USE_SPIFFS )
-
-      saveDynamicData();
-
 #endif   // #if ( USE_LITTLEFS || USE_SPIFFS )
+
+      saveDynamicData();
+
     }
 
 #endif
@@ -1958,7 +1968,7 @@ class ESP_WiFiManager_Lite
       bool configDataValid;
       int calChecksum;
 
-      hadConfigData = false;
+      hasConfigData = false;
 
 #if ESP8266
 
@@ -2081,13 +2091,15 @@ class ESP_WiFiManager_Lite
       ESP_WML_LOGINFO(F("== Retrieved Config =="));
       displayConfigData(ESP_WM_LITE_config);
 
-      hadConfigData = true;
+      hasConfigData = true;
       return true;
     }
 
     //////////////////////////////////////////////
 
-#else   // #if ( USE_LITTLEFS || USE_SPIFFS )
+#endif // ( USE_LITTLEFS || USE_SPIFFS )
+
+#if USE_EEPROM
 
 #ifndef EEPROM_SIZE  // Must agree with application if that also uses EEPROM
 #define EEPROM_SIZE     2048
@@ -2459,7 +2471,7 @@ class ESP_WiFiManager_Lite
       return true;
     }
 
-#endif    // #if ( USE_LITTLEFS || USE_SPIFFS )
+#endif // USE_EEPROM
 
     //////////////////////////////////////////////
 

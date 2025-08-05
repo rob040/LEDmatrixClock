@@ -2,7 +2,7 @@
   ESP_WiFi_MQTT.ino
   For ESP8266 / ESP32 boards
 
-  ESP_WiFiManager_Lite (https://github.com/khoih-prog/ESP_WiFiManager_Lite) is a library
+  ESP_WiFiManager_Lite (https://github.com/rob040/ESP_WiFiManagerLite2) is a library
   for the ESP32/ESP8266 boards to enable store Credentials in EEPROM/SPIFFS/LittleFS for easy
   configuration/reconfiguration and autoconnect/autoreconnect of WiFi and other services without Hardcoding.
 
@@ -11,23 +11,16 @@
   *****************************************************************************************************************************/
 
 /****************************************************************************************************************************
-  You have to modify file ./libraries/Adafruit_MQTT_Library/Adafruit_MQTT.cpp  as follows to avoid dtostrf error
+  You have to modify Adafruit_MQTT_Library
 
-  //#if defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_SAMD_MKR1000) ||             \
-  //    defined(ARDUINO_ARCH_SAMD)
-  #if !( ESP32 || ESP8266 || defined(CORE_TEENSY) || defined(STM32F1) || defined(STM32F2) || defined(STM32F3) || defined(STM32F4) || defined(STM32F7) )
-  static char *dtostrf(double val, signed char width, unsigned char prec, char *sout)
-  {
-    char fmt[20];
-    sprintf(fmt, "%%%d.%df", width, prec);
-    sprintf(sout, fmt, val);
-    return sout;
-  }
-  #endif
+  20250801: For build under platformio, the Adafruit MQTT Library file "library.properties" needs to be changed:
+  remove/ comment out (with #) the 'depends=' line,
+  to prevent WiFi101 build errors
  *****************************************************************************************************************************/
 
 #include "defines.h"
 #include "Credentials.h"
+#include <ESP_WiFiManager_Lite.h>
 #include "dynamicParams.h"
 
 #define LOCAL_DEBUG       true  //false
@@ -279,8 +272,13 @@ void MQTT_connect()
 }
 
 #if USING_CUSTOM_STYLE
-const char NewCustomStyle[] PROGMEM = "<style>div,input{padding:5px;font-size:1em;}input{width:95%;}body{text-align: center;}"\
-"button{background-color:blue;color:white;line-height:2.4rem;font-size:1.2rem;width:100%;}fieldset{border-radius:0.3rem;margin:0px;}</style>";
+const char NewCustomStyle[] PROGMEM = "<style>"
+  "div,input{padding:5px;font-size:1em;}"
+  "input{width:95%;}"
+  "body{text-align: center;}"
+  "button{background-color:blue;color:white;line-height:2.4rem;font-size:1.2rem;width:100%;}"
+  "fieldset{border-radius:0.3rem;margin:0px;}"
+  "</style>";
 #endif
 
 void setup()
@@ -309,7 +307,7 @@ void setup()
 
   // Optional to change default AP IP(192.168.4.1) and channel(10)
   //ESP_WiFiManager->setConfigPortalIP(IPAddress(192, 168, 120, 1));
-  ESP_WiFiManager->setConfigPortalChannel(0);
+  //ESP_WiFiManager->setConfigPortalChannel(0);
 
 #if USING_CUSTOM_STYLE
   ESP_WiFiManager->setCustomStyle(NewCustomStyle);

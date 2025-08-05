@@ -1,12 +1,12 @@
 The ESP_WifiManager_lite has some very compelling good points in favour of the original Tzapu WiFiManager, which takes quite some flash rom space.
 This library has also quite some following and has been maintained for quite some years (2021-2023) , but is now in Archived state.
-One of its big plus points is that despite being a 'Lite' version, it has quite some positive extra features, such as 
+One of its big plus points is that despite being a 'Lite' version, it has quite some positive extra features, such as
 - allow multiple (2) WiFi stations to be pre-configured. Good when device is portable it can be used in wider range.
 - allow to configure other parameters as well. Helpful that the main application doesn't have to have a web configuration page.
 - allow to re-enter configuration page when wifi connection is still good, by using the double or multiple reset detection feature.
 
-Looking into the code and into its behaviour, there are quite some questions and 
-- the number of configuration parameters are overwhelming 
+Looking into the code and into its behaviour, there are quite some questions and
+- the number of configuration parameters are overwhelming
 - the functionality of the double reset detector and multi reset detector are overlapping such that there shouldn't need to serve both; the MRD can do the job of DRD, so DRD should have been removed.
 - The MRD / DRD have far too many config parameters; the should not have to store their status in non-volatile memory (flash emulated EEPROM or filesystem), especially when you can expect write interruption by a next reset, which can easily corrupt that flash storage.
 - it looks that some of those 'extra' features are not well thought out. It looks like bringing extra features, perhaps to satisfy someone's request, was more important.
@@ -17,10 +17,10 @@ The fact that Multi Wifi stations is limited to 2, brought me to create my own v
 
 Questions about the ESP_MultiResetDetector
 
-- Suggestion is to remove all Flash FS or EEPROM R/W and only use RAM / RTC RAM. 
+- Suggestion is to remove all Flash FS or EEPROM R/W and only use RAM / RTC RAM.
   With these, (configuration-) complexity will be reduced greatly! Also the Flash size.
 
-- The implementation suggest that RTC RAM storage is only available on ESP8266. 
+- The implementation suggest that RTC RAM storage is only available on ESP8266.
   However there is also simple solution for the ESP32; to place reset flag in slow RTC RAM:
   `RTC_NOINIT_ATTR uint32_t noinit_multiResetDetectorFlag;`
   or use normal ram that isn't initialized by reset/application restart:
@@ -30,7 +30,7 @@ Questions about the ESP_MultiResetDetector
 
 Questions about the ESP_WifiManager_lite
 
-- 
+-
 
 ESP_WiFiManager_Lite issues
 - NUM_WIFI_CREDENTIALS is fixed to 2 in ESP_WiFiManager_Lite.h,
@@ -70,6 +70,8 @@ however, the code checks on several instances that header MUST contain "ESP_WM_L
 
 - in function getConfigData() (both for FS and EPROM), there are 2x `if (LOAD_DEFAULT_CONFIG_DATA)`, however at the first it already has returned from the function, so the 2nd is never reachable.
   Also, uppercase `LOAD_DEFAULT_CONFIG_DATA` is not a macro but an external variable; they should never be written in uppercase (confusing).
+  X rename LOAD_DEFAULT_CONFIG_DATA to LoadDefaultConfigData
+  - Changed into Macro "#define LOAD_DEFAULT_CONFIG_DATA true", placed in defines.h of examples
 
 - function `loadAndSaveDefaultConfigData()` naming is confusing, there is no explanation. But there is also no reference anywhere, so it could be removed.
   otoh, when renamed to `restoreDefaultConfiguration()` it says what it does, and can be used at runtime of what `LOAD_DEFAULT_CONFIG_DATA` at build-time forces, and is therefore a smarter approach to testing the library.
@@ -81,7 +83,7 @@ however, the code checks on several instances that header MUST contain "ESP_WM_L
   What is the thought behind this?
   It is much simpler and less code to pass by value; the const declaration is unnecessary because the receiving function can't modify it.
 
-  For example, when calling a function with parameter by reference with simple boolean value, means that the compiler must allocate a location on stack containing that value 'true', and then pass the address of that location to the called function. 
+  For example, when calling a function with parameter by reference with simple boolean value, means that the compiler must allocate a location on stack containing that value 'true', and then pass the address of that location to the called function.
   With a call by reference, it would load a register with the value and call the function; much simpler and shorter.
 ```cpp
    setForcedCP(true);
@@ -103,7 +105,7 @@ however, the code checks on several instances that header MUST contain "ESP_WM_L
   - In this size restricted piece of code, pulling in the ctype table costs extra flash
   - The question is, why is there the need to 'correct' a hostname?
   - This function is named get, but behaves like a set function; confusing!
-  ==> resolved remarks by 
+  ==> resolved remarks by
   - renaming getRFC952_hostname to setWmlHostname
   - renaming pivate stored String RFC952_hostname  to wmlHostname
   - not using ctype but self testing for allowed characters {A-Z,a-z,0-9} + {-._} allowed  excluding first and last char.
@@ -119,7 +121,7 @@ however, the code checks on several instances that header MUST contain "ESP_WM_L
   7 When isWiFiConfigValid() returned false, the hadConfigData is also set to false
   8 In startConfigurationMode(), the hadConfigData determines the config timeout timer; only when set the timer is started (OK)
   ? why is the name set in past tense? (note that library was made by US resident Chinese that often don't know the difference); there are many more signs of weak language usage)
-  >5  since getConfigData() does clear but not set that flag, it would be called on every subsequent get function. 
+  >5  since getConfigData() does clear but not set that flag, it would be called on every subsequent get function.
   > clearly not designed usage or bad code changes did happen somewhere along the line
   > calls for re-design.
 

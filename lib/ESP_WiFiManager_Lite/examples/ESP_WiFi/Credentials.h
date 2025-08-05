@@ -2,7 +2,7 @@
   Credentials.h
   For ESP8266 / ESP32 boards
 
-  ESP_WiFiManager_Lite (https://github.com/khoih-prog/ESP_WiFiManager_Lite) is a library
+  ESP_WiFiManager_Lite (https://github.com/rob040/ESP_WiFiManagerLite2) is a library
   for the ESP32/ESP8266 boards to enable store Credentials in EEPROM/SPIFFS/LittleFS for easy
   configuration/reconfiguration and autoconnect/autoreconnect of WiFi and other services without Hardcoding.
 
@@ -43,21 +43,10 @@ typedef struct Configuration
 } ESP_WM_LITE_Configuration;
 */
 
-#define TO_LOAD_DEFAULT_CONFIG_DATA      false
-
-#if TO_LOAD_DEFAULT_CONFIG_DATA
-
-// This feature is primarily used in development to force a known set of values as Config Data
-// It will NOT force the Config Portal to activate. Use MRD or erase Config Data with ESP_WiFiManager.clearConfigData()
-
-// Used mostly for development and debugging. FORCES default values to be loaded each run.
-// Config Portal saved data will be ignored and overridden by DEFAULT_CONFIG_DATA
-//#define LOAD_DEFAULT_CONFIG_DATA      true
-
-// Used mostly once debugged. Assumes good data already saved in device.
-// Config Portal saved data and data input will override DEFAULT_CONFIG_DATA
-#define LOAD_DEFAULT_CONFIG_DATA      false
-
+// Activate Wifi Credentials pre-loading on first run (with erased Flash)
+// by changing #if 0 into #if 1
+// Together with #define LOAD_DEFAULT_CONFIG_DATA (defines.h) it is possible to force load defaults on every run.
+#if 1
 
 ESP_WM_LITE_Configuration defaultConfig =
 {
@@ -72,8 +61,8 @@ ESP_WM_LITE_Configuration defaultConfig =
   // WiFi_Credentials.wifi_ssid and WiFi_Credentials.wifi_pw
   "SSID1",  "password1",
   "SSID2",  "password2",
-  //char board_name     [24];
 
+  //char board_name     [24];
 #if ESP8266
   "ESP8266-Control",
 #else
@@ -87,8 +76,6 @@ ESP_WM_LITE_Configuration defaultConfig =
 };
 
 #else
-
-#define LOAD_DEFAULT_CONFIG_DATA  false
 
 ESP_WM_LITE_Configuration defaultConfig;
 

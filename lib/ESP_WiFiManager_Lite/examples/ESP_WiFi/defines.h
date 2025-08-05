@@ -2,7 +2,7 @@
   defines.h
   For ESP8266 / ESP32 boards
 
-  ESP_WiFiManager_Lite (https://github.com/khoih-prog/ESP_WiFiManager_Lite) is a library
+  ESP_WiFiManager_Lite (https://github.com/rob040/ESP_WiFiManagerLite2) is a library
   for the ESP32/ESP8266 boards to enable store Credentials in EEPROM/SPIFFS/LittleFS for easy
   configuration/reconfiguration and autoconnect/autoreconnect of WiFi and other services without Hardcoding.
 
@@ -37,19 +37,10 @@
 
 /////////////////////////////////////////////
 
-// LittleFS has higher priority than SPIFFS
-#if ( defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 2) )
-  #define USE_LITTLEFS    true
-  #define USE_SPIFFS      false
-#elif defined(ARDUINO_ESP32C3_DEV)
-  // For core v1.0.6-, ESP32-C3 only supporting SPIFFS and EEPROM. To use v2.0.0+ for LittleFS
-  #define USE_LITTLEFS          false
-  #define USE_SPIFFS            true
-#else
-  // For ESP8266, and other boards
-  #define USE_LITTLEFS    true
-  #define USE_SPIFFS      false
-#endif
+// WML configuration storage; Choose one and only one
+#define USE_EEPROM                                true
+#define USE_LITTLEFS                              false
+#define USE_SPIFFS                                false
 
 /////////////////////////////////////////////
 
@@ -62,6 +53,9 @@
 
 // Force some params
 #define TIMEOUT_RECONNECT_WIFI                    10000L
+
+// set to true for debug-test: FORCES default values to be loaded each run.
+#define LOAD_DEFAULT_CONFIG_DATA                  false
 
 // Permit running CONFIG_TIMEOUT_RETRYTIMES_BEFORE_RESET times before reset hardware
 // to permit user another chance to config. Only if Config Data is valid.

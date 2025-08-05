@@ -14,7 +14,7 @@
   Licensed under MIT license
   Version: 2.0.0
 
-  [rob040]
+  [rob040]  https://github.com/rob040/ESP_WiFiManagerLite2
   For version 2.0, the configuration complexity is massively reduced, by only using (uninitialized) RAM storage,
   and remove all Flash FS or EEPROM R/W functions.
   Also the similarity with ESP_DoubleResetDetector is so much that the MRD can do the job of DRD, just
@@ -93,49 +93,79 @@
 // Flag clear to 0xFFFE0001 if no MRD within MRD_TIMEOUT. Flag will increase 1 for each reset within MRD_TIMEOUT
 // Will use the inverted upper 2 bytes to check for valid data.
 #define multiResetDetectorFlag_BEGIN  0xFFFE0001     // Used when beginning a new cycle
-#define multiResetDetectorFlag_CLEAR  0xFFFF0000     // Used when data corrupted, such as power-on
+
+///////////////////
+#ifdef MRD_ALLOCATE_STATIC_DATA
+#ifdef ESP8266
+//RTC only for ESP8266
+#else
+// RAM storage for ESP32, not affected by application reset (?)
+__NOINIT_ATTR uint32_t noinit_multiResetDetectorFlag;
+#endif
+#else
+extern __NOINIT_ATTR uint32_t noinit_multiResetDetectorFlag;
+#endif
+
+///////////////////
+
+
 
 class MultiResetDetector
 {
   public:
     MultiResetDetector(int timeout = MRD_TIMEOUT, int address = MRD_ADDRESS)
     {
-  #ifdef ESP8266
-      //RTC only for ESP8266
-  #else
-      // RAM storage for ESP32, not affected by application reset
-      __NOINIT_ATTR uint32_t noinit_multiResetDetectorFlag;
-  #endif
 
       this->timeout = timeout * 1000;
       this->address = address;
       multiResetDetected = false;
       waitingForMultiReset = false;
-    };
+    }
 
     bool detectMultiReset()
     {
-      multiResetDetected = detectRecentlyResetFlag();
+      readRecentlyResetFlag();
 
-      if (multiResetDetected)
-      {
+      uint16_t upperWord = (uint16_t) ~(multiResetDetectorFlag >> 16);
+      uint16_t lowerWord = (uint16_t) multiResetDetectorFlag;
+
 #if (MULTIRESETDETECTOR_DEBUG)
-        Serial.printf_P(PSTR("multiResetDetected, count = %d (>=%d)\n"), (uint16_t) (multiResetDetectorFlag), MRD_TIMES);
+      Serial.printf_P(PSTR("multiResetDetectorFlag = 0x%08X\n"), multiResetDetectorFlag);
+      Serial.printf_P(PSTR("lowerWord = 0x%04X, upperWord = 0x%04X\n"), lowerWord, upperWord);
 #endif
 
+      if ( ( lowerWord > MRD_TIMES ) && ( lowerWord == upperWord )  )
+      {
+        multiResetDetected = true;
+#if (MULTIRESETDETECTOR_DEBUG)
+        Serial.printf_P(PSTR("multiResetDetected, count = %d (>%d)\n"), (uint16_t) (multiResetDetectorFlag), MRD_TIMES);
+#endif
         clearRecentlyResetFlag();
       }
       else
       {
-#if (MULTIRESETDETECTOR_DEBUG)
-        Serial.printf_P(PSTR("No multiResetDetected, count = %d\n"), (uint16_t) (multiResetDetectorFlag) );
-#endif
-
-        setRecentlyResetFlag();
+        multiResetDetected = false;
         waitingForMultiReset = true;
+
+        if (lowerWord != upperWord)
+        {
+          // To reset if data corrupted
+#if (MULTIRESETDETECTOR_DEBUG)
+          Serial.println(F("detectMultiReset: Data corrupted, Clear Flag"));
+#endif
+          clearRecentlyResetFlag();
+        }
+        else
+        {
+#if (MULTIRESETDETECTOR_DEBUG)
+          Serial.printf_P(PSTR("No multiResetDetected, count = %d\n"), (uint16_t) (multiResetDetectorFlag)+1 );
+#endif
+          setRecentlyResetFlag();
+        }
       }
+
       return multiResetDetected;
-    };
+    }
 
     bool waitingForMRD()
     {
@@ -157,7 +187,7 @@ class MultiResetDetector
     {
       clearRecentlyResetFlag();
       waitingForMultiReset = false;
-    };
+    }
 
     bool multiResetDetected;
 
@@ -183,50 +213,20 @@ class MultiResetDetector
       return true;
     }
 
-    bool detectRecentlyResetFlag()
-    {
-      if (!readRecentlyResetFlag())
-        return false;
-
-      uint16_t upperWord = (uint16_t) ~(multiResetDetectorFlag >> 16);
-      uint16_t lowerWord = (uint16_t) multiResetDetectorFlag;
-
-#if (MULTIRESETDETECTOR_DEBUG)
-      Serial.printf_P(PSTR("multiResetDetectorFlag = 0x%08X\n"), multiResetDetectorFlag);
-      Serial.printf_P(PSTR("lowerWord = 0x%04X, upperWord = 0x%04X\n"), lowerWord, upperWord);
-#endif
-
-      if ( ( lowerWord >= MRD_TIMES ) && ( lowerWord == upperWord )  )
-      {
-        multiResetDetected = true;
-      }
-      else
-      {
-        multiResetDetected = false;
-
-        if (lowerWord != upperWord)
-        {
-          // To reset if data corrupted
-          multiResetDetectorFlag = multiResetDetectorFlag_CLEAR;
-#if (MULTIRESETDETECTOR_DEBUG)
-          Serial.println(F("detectRecentlyResetFlag: Data corrupted. Reset to 0"));
-          Serial.printf_P(PSTR("multiResetDetectorFlag = 0x%08X\n"), multiResetDetectorFlag);
-#endif
-        }
-      }
-
-      return multiResetDetected;
-    };
 
     void setRecentlyResetFlag()
     {
       // Add 1 every time detecting a reset
       // To read first, increase and update 2 checking bytes
-      readRecentlyResetFlag();
+      //readRecentlyResetFlag();
 
       multiResetDetectorFlag += 1;
       multiResetDetectorFlag = ((~multiResetDetectorFlag) << 16) | (multiResetDetectorFlag & 0xFFFF);
 
+#if (MULTIRESETDETECTOR_DEBUG)
+      Serial.printf_P(PSTR("setRecentlyResetFlag = 0x%08X\n"), multiResetDetectorFlag);
+      Serial.flush();
+#endif
   #ifdef ESP8266
       //RTC only for ESP8266
       ESP.rtcUserMemoryWrite(address, &multiResetDetectorFlag, sizeof(multiResetDetectorFlag));
@@ -234,13 +234,17 @@ class MultiResetDetector
       // ESP32 RAM storage
       noinit_multiResetDetectorFlag = multiResetDetectorFlag;
   #endif
-    };
+    }
 
 
     void clearRecentlyResetFlag()
     {
       multiResetDetectorFlag = multiResetDetectorFlag_BEGIN;
 
+  #if (MULTIRESETDETECTOR_DEBUG)
+      Serial.printf_P(PSTR("clearRecentlyResetFlag = 0x%08X\n"), multiResetDetectorFlag);
+      Serial.flush();
+  #endif
   #ifdef ESP8266
       //RTC only for ESP8266
       ESP.rtcUserMemoryWrite(address, &multiResetDetectorFlag, sizeof(multiResetDetectorFlag));
@@ -248,6 +252,6 @@ class MultiResetDetector
       // ESP32 RAM storage
       noinit_multiResetDetectorFlag = multiResetDetectorFlag;
   #endif
-    };
+    }
 };
 #endif // ESP_MultiResetDetector_H

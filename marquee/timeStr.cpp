@@ -1,7 +1,8 @@
 /*
  * Time Str - Support functions For Arduino String
  *
- * By rob040, Copyleft
+ * Copyright (c) 2025 rob040@users.github.com
+ * This code is licensed under MIT license (see LICENSE.txt for details)
  *
  */
 #include <Arduino.h>

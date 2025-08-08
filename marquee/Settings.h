@@ -1,7 +1,8 @@
 /**
- *
- * parts Copyright (c) 2018 David Payne, MIT License (MIT)
- */
+* Parts Copyright (c) 2018 David Payne
+* Parts Copyright (c) 2025 rob040@users.github.com
+* This code is licensed under MIT license (see LICENSE.txt for details)
+*/
 
 /******************************************************************************
  * This is designed for the Wemos D1 ESP8266, but other ESP8266 boards work as well.
@@ -59,12 +60,7 @@ const int pinCS = D6; // Attach CS to this pin, DIN to MOSI and CLK to SCK (cf h
 int displayIntensity = 1;  //(This can be set from 0 - 15)
 int displayWidth = 4; // default 4 for standard 4 x 1 display Max size of 16
 const int displayHeight = 1; // default 1 for a single row height (do not change, this SW does not support multiple lines, nor double hight chars)
-/* set ledRotation for LED Display panels (3 is default)
-0: no rotation
-1: 90 degrees clockwise
-2: 180 degrees
-3: 90 degrees counter clockwise (default)
-*/
+// set ledRotation for LED Display panels, 0: no rotation, 1: 90 degrees clockwise, 2: 180 degrees, 3: 90 degrees counter clockwise (default)
 const int ledRotation = 3;
 
 // Change the LED_ONBOARD to the pin you wish to use if other than the Built-in LED

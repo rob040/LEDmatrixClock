@@ -1,5 +1,9 @@
-/*
+/**
  * Time NTP - Synchronize time with Network Time Protocol
+ *
+ * Copyright (c) 2025 rob040@users.github.com
+ * This code is licensed under MIT license (see LICENSE.txt for details)
+ *
  */
 #include <TimeLib.h> // https://github.com/PaulStoffregen/Time
 

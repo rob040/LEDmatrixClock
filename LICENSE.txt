@@ -1,6 +1,7 @@
 MIT License
 
-Copyright (c) 2018 by David Payne
+Parts Copyright (c) 2018 David Payne
+Copyright (c) 2025 rob040@users.github.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

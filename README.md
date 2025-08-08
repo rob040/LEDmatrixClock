@@ -25,7 +25,8 @@ Read the [feature enhancements below](#feature-enhancements)
 ## Feature Enhancements
 Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixClock) :
 * Removed the TimeZoneDB.com registration requirement.
-* Added Time NTP and more efficient time strings instead. Actual time zone information is used from OpenWeather API.
+* Actual time zone information is used from OpenWeather API.
+* Added Time NTP and more efficient time strings instead.
 * Update to new OpenWeatherMap.org API. Newly requested Free Service API-keys can no longer use the older call and structure.
 * Reduce RAM usage. The ESP8266 is an older WiFi processor with limited RAM (80kB), especially when compared to its newer ESP32 members.
 * Added MQTT support with basic Authentication, to send message to be displayed. Message is displayed immediately when display shows the time, and repeated every minute with default configuration.
@@ -42,7 +43,7 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 * Instead of scrolling text, there is also a static display mode for short messages, date, temperature or humidity only next to the time display.
 * Weather Location lookup has been made simpler; there is no longer the need to lookup the City-ID code; just enter a (valid) city name with optional 2-letter country code. Also GPS coordinates are now allowed as location input.
 * Added a display QUIET time config option, where the display can be Off or Dimmed or Dimmed with no Motion (ie. no scrolling, no blinking)
-
+* Replaced Wifi_manager with ESP_WiFiManager_Lite library, which allows multiple WiFi Accesspoints (SSID's) to be (pre-)configured, which is handy for a portable device. It also provides a fallback if one WiFi station goes down.
 
 ### known issues
 * Webpage update does halt the scrolling display for a moment. See [issue #8](https://github.com/rob040/LEDmatrixClock/issues/8) for more details.

@@ -1,25 +1,8 @@
-/** The MIT License (MIT)
-
-  Copyright (c) 2018 David Payne
-
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files (the "Software"), to deal
-  in the Software without restriction, including without limitation the rights
-  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  copies of the Software, and to permit persons to whom the Software is
-  furnished to do so, subject to the following conditions:
-
-  The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software.
-
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  SOFTWARE.
-*/
+/**
+ * Copyright (c) 2018 David Payne
+ * Copyright (c) 2025 rob040@users.github.com
+ * This code is licensed under MIT license (see LICENSE.txt for details)
+ */
 
 #include "Settings.h"
 
@@ -35,7 +18,7 @@
 #define CLEARSCREEN  0
 
 
-//declaring prototypes
+// declaring local prototypes
 
 void setup();
 void loop();
@@ -61,7 +44,6 @@ void redirectHome();
 void sendHeader(boolean isMainPage = false);
 void sendFooter();
 void webDisplayWeatherData();
-//void configModeCallback(WiFiManager* myWiFiManager);
 void onBoardLed(boolean on);
 void flashLED(int number, int delayTime);
 String getTempSymbol(bool forWeb = false);
@@ -85,9 +67,7 @@ void centerPrint(const String &msg, boolean extraStuff = false);
 String EncodeHtmlSpecialChars(const char *msg);
 String EncodeUrlSpecialChars(const char *msg);
 
-
-
-// LED font Settings
+// LED font constants; the font is a 5x7 pixels in a 6x8 space
 const int font_space = 1;  // dots between letters
 const int font_width = 5 + font_space; // The font width is 5 pixels + font_space
 
@@ -1265,7 +1245,7 @@ void sendHeader(boolean isMainPage) {
 
 void sendFooter() {
   int8_t rssi = getWifiQuality();
-  Serial.printf_P(PSTR("Signal Strength (RSSI): %d%%\n"), rssi);
+  Serial.printf_P(PSTR("Signal Strength (RSSI): %d%%, %d db\n"), rssi, WiFi.RSSI());
   String html = FPSTR(webFooterHtml);
 
   html.replace(F("$UPD$"), getTimeTillUpdate());
@@ -1371,18 +1351,6 @@ void webDisplayWeatherData() {
   onBoardLed(LED_OFF);
 }
 
-/*void configModeCallback(WiFiManager* myWiFiManager) {
-  Serial.println(F("Entered config mode"));
-  Serial.println(WiFi.softAPIP());
-  Serial.println(F("Wifi Manager"));
-  Serial.println(F("Please connect to AP"));
-  Serial.println(myWiFiManager->getConfigPortalSSID());
-  Serial.println(F("To setup Wifi Configuration"));
-  scrollMessageWait(F("Please Connect to AP: ") + String(myWiFiManager->getConfigPortalSSID()));
-  centerPrint("wifi");
-
-  //TODO find alternative for this
-}*/
 
 void onBoardLed(boolean on) {
   if (isSysLed) {

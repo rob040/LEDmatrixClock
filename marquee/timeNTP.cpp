@@ -1,12 +1,16 @@
-/*
+/**
  * Time NTP - Synchronize time with Network Time Protocol
  *
- * By rob040, Copyleft
+ * Copyright (c) 2025 rob040@users.github.com
+ * This code is licensed under MIT license (see LICENSE.txt for details)
+ *
  * Based on example code from TimeLib
- * *
- * * Note that on ESP8266 the time_t type is 64 bits! passing it back and forth, and doing operations on it wil cost extra performance.
+ *
+ * Note that on ESP8266 the time_t type is 64 bits! passing it back and forth,
+ * and doing operations on it wil cost extra performance.
  */
 
+#include <Arduino.h>
 #include <TimeLib.h>
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>

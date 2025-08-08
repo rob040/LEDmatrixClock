@@ -104,6 +104,15 @@ TODO items
     There is no conversion from UTF8 to ANSI (Extended ASCII or CP437) available
 29. Restructure the main loop: have an executive like structure, with all process functions return in limited time.
     ==> DONE in v3.1.36
+30. The message string from HTML page is in UTF8 encoding, because the HTML page is. This means the user can specify characters outside ASCII-96 range.
+    The Adafruit GFX uses the CP437 code-page for LED Matrix display, and none of the optional free type fonts are useable here (none are constant width and fit in 5x7 matrix).
+    Convert a limited UTF8 subset of special characters to the existing CP437 characters. 
+    Note for the Euro sign '€' we need a modified CP437; some suggest char code 0x80 as in ANSI charset (Windows-1252).
+    Otoh., who needs the extended charset (beyond ASCII-96) and is satisfied with the limitations of CP437?
+      https://upload.wikimedia.org/wikipedia/commons/f/f8/Codepage-437.png
+      https://nagatan.web.fc2.com/moji/codepage437.png
+      https://cdn-learn.adafruit.com/assets/assets/000/103/682/original/graphic_lcds_gfx-cp437-bug.png
+      https://en.wikipedia.org/wiki/UTF-8
 
 Future
 - Add REST API for various controls
@@ -137,4 +146,7 @@ ESP_WiFiManager_Lite issues
 - Why two different solutions doing basically the same: DOUBLERESETDETECTOR (DRD) or MULTIRESETDETECTOR (MRD) ? get rid of one
 - In both DRD and MRD implementation, the main flag (uint32_t) is double defined, both in uppercase and lowercase.
   The significance of that is beond me, it appears to serve no purpose; probably has to do with some external modification history...
--
+--> All Done v3.2.0 
+  TODO: Fork that library and ref to that one iso including it.
+
+

@@ -7,36 +7,30 @@
  * Change History:
  * 20250628 rob040   Completely changed this OWM client API and OWM access API to use the Free Service
  * 20250712 rob040   Revised data invalidation and data get retry count until data invalid error. New API dataGetRetryCount(), removed API getCached().
- * 20250714 rob040   add more options for geo location; it is no longer centered around CityID
+ * 20250714 rob040   add more options for geo location; it is no longer centered around CityID, Class Ctor does not need CityID, new method setGeoLocation()
  *
  */
 
 #include "OpenWeatherMapClient.h"
 #include "timeStr.h"
 
-//OpenWeatherMapClient::OpenWeatherMapClient(const String &ApiKey, int CityID, boolean isMetric) {
-//  myGeoLocation_CityID = CityID;
-//  myGeoLocation = "";
-//  myGeoLocationType = LOC_CITYID;
-//  myApiKey = ApiKey;
-//  this->isMetric = isMetric;
-//  isValid = false;
-//}
-OpenWeatherMapClient::OpenWeatherMapClient(const String &ApiKey, boolean isMetric) {
+OpenWeatherMapClient::OpenWeatherMapClient(const String &ApiKey, bool isMetric) {
   myGeoLocation = "";
   myGeoLocation_CityID = 0;
   myGeoLocationType = LOC_UNSET;
   myApiKey = ApiKey;
   this->isMetric = isMetric;
-  isValid = false;
+  weather.isValid = false;
 }
 
 // setGeoLocation
 // args  String location
 // return int 0 on success, 1 on failure such as invalid location; no check with weather server has been performed.
 //
-// location string can be: A) CityID number (old backwards compatibility), B) Longitude,lattitude,
-// C) Cityname[,state],Countrycode
+// location string can be:
+// A) CityID number (old backwards compatibility),
+// B) Longitude,lattitude,
+// C) Cityname[[,state],Countrycode]
 // The location name must be spelled with ASCII-64, no special chars are allowed. This is
 // because the HTML page text encoding is in UTF-8 and internally we use only ASCII with
 // LED matrix font using ANSI CP437 extended ASCII, however there is no conversion from
@@ -63,6 +57,7 @@ int OpenWeatherMapClient::setGeoLocation(const String &location) {
     }
   }
 
+  // Find out what kind of GeoLocation has been passed
   myGeoLocationType = LOC_UNKNOWN;
   myGeoLocation = "";
   myGeoLocation_CityID = 0;
@@ -81,9 +76,6 @@ int OpenWeatherMapClient::setGeoLocation(const String &location) {
   if ((ch_cnt_digits == 0) && (ch_cnt_letters >= len-2)) {
     myGeoLocationType = LOC_NAME;    // city,state,countrycode OR city,countrycode OR city
     myGeoLocation = location;
-    // USE http://api.openweathermap.org/geo/1.0/direct?q={city-name},{state-code},{country-code}&limit={limit}&appid={API-key}
-    // to convert location to lat,lon
-    // OR
     // USE http://api.openweathermap.org/data/2.5/weather?q={city-name}&appid={API-key}
     // USE http://api.openweathermap.org/data/2.5/weather?q={city-name},{country-code}&appid={API-key}
     // USE http://api.openweathermap.org/data/2.5/weather?q={city-name},{state-code},{country-code}&appid={API-key}
@@ -100,7 +92,7 @@ void OpenWeatherMapClient::updateWeather() {
   if (myApiKey == "") {
     errorMsg = F("Please provide an API key for weather.");
     Serial.println(errorMsg);
-    isValid = false;
+    weather.isValid = false;
     return;
   }
   switch (myGeoLocationType) {
@@ -109,7 +101,7 @@ void OpenWeatherMapClient::updateWeather() {
   case LOC_UNKNOWN:
     errorMsg = F("Please set location for weather.");
     Serial.println(errorMsg);
-    isValid = false;
+    weather.isValid = false;
     return;
   case LOC_CITYID:
     apiGetData += F("id=");
@@ -141,7 +133,7 @@ void OpenWeatherMapClient::updateWeather() {
   else {
     errorMsg = F("Connection for weather data failed");
     Serial.println(errorMsg);
-    if (++dataGetRetryCount > dataGetRetryCountError) isValid = false;
+    if (++dataGetRetryCount > dataGetRetryCountError) weather.isValid = false;
     return;
   }
 
@@ -159,7 +151,7 @@ void OpenWeatherMapClient::updateWeather() {
   if ((millis()-start) >= timeout_ms) {
     errorMsg = F("TIMEOUT on weatherClient data receive");
     Serial.println(errorMsg);
-    if (++dataGetRetryCount > dataGetRetryCountError) isValid = false;
+    if (++dataGetRetryCount > dataGetRetryCountError) weather.isValid = false;
     return;
   }
   //else { //FIXME DEBUG
@@ -174,7 +166,7 @@ void OpenWeatherMapClient::updateWeather() {
   if (strcmp(status, "HTTP/1.1 200 OK") != 0) {
     errorMsg = F("Unexpected response: ") + String(status);
     Serial.println(errorMsg);
-    if (++dataGetRetryCount > dataGetRetryCountError) isValid = false;
+    if (++dataGetRetryCount > dataGetRetryCountError) weather.isValid = false;
     return;
   }
 
@@ -183,7 +175,7 @@ void OpenWeatherMapClient::updateWeather() {
   if (!weatherClient.find(endOfHeaders)) {
     errorMsg = F("Invalid response endOfHeaders");
     Serial.println(errorMsg);
-    if (++dataGetRetryCount > dataGetRetryCountError) isValid = false;
+    if (++dataGetRetryCount > dataGetRetryCountError) weather.isValid = false;
     return;
   }
 
@@ -193,7 +185,7 @@ void OpenWeatherMapClient::updateWeather() {
   if (error) {
     errorMsg = F("Weather Data Parsing failed!");
     Serial.println(errorMsg);
-    if (++dataGetRetryCount > dataGetRetryCountError) isValid = false;
+    if (++dataGetRetryCount > dataGetRetryCountError) weather.isValid = false;
     return;
   }
 
@@ -204,62 +196,62 @@ void OpenWeatherMapClient::updateWeather() {
     Serial.println(F("Error incomplete message, size ") + String(len));
     errorMsg = F("Error: ") + jdoc[F("message")].as<String>();
     Serial.println(errorMsg);
-    if (++dataGetRetryCount > dataGetRetryCountError) isValid = false;
+    if (++dataGetRetryCount > dataGetRetryCountError) weather.isValid = false;
     return;
   }
 
 
-  lat = jdoc["coord"]["lat"];
-  lon = jdoc["coord"]["lon"];
-  reportTimestamp = jdoc["dt"];
-  city = jdoc["name"].as<String>();
-  country = jdoc["sys"]["country"].as<String>();
-  temperature = jdoc["main"]["temp"];
-  humidity = jdoc["main"]["humidity"];
-  weatherId = jdoc["weather"][0]["id"];
-  weatherCondition = jdoc["weather"][0]["main"].as<String>();
-  weatherDescription = jdoc["weather"][0]["description"].as<String>();
-  icon = jdoc["weather"][0]["icon"].as<String>();
-  pressure = jdoc["main"]["grnd_level"];
-  if (pressure == 0) // no local ground level pressure? then get main pressure (at sea level)
-    pressure = jdoc["main"]["pressure"];
-  windSpeed = jdoc["wind"]["speed"];
-  windDirection = jdoc["wind"]["deg"];
-  cloudCoverage = jdoc["clouds"]["all"];
-  tempHigh = jdoc["main"]["temp_max"];
-  tempLow = jdoc["main"]["temp_min"];
-  timeZone = jdoc["timezone"];
-  sunRise = jdoc["sys"]["sunrise"];
-  sunSet = jdoc["sys"]["sunset"];
-  isValid = true;
+  weather.lat = jdoc["coord"]["lat"];
+  weather.lon = jdoc["coord"]["lon"];
+  weather.reportTimestamp = jdoc["dt"];
+  weather.city = jdoc["name"].as<String>();
+  weather.country = jdoc["sys"]["country"].as<String>();
+  weather.temperature = jdoc["main"]["temp"];
+  weather.humidity = jdoc["main"]["humidity"];
+  weather.weatherId = jdoc["weather"][0]["id"];
+  weather.condition = jdoc["weather"][0]["main"].as<String>();
+  weather.description = jdoc["weather"][0]["description"].as<String>();
+  weather.icon = jdoc["weather"][0]["icon"].as<String>();
+  weather.pressure = jdoc["main"]["grnd_level"];
+  if (weather.pressure == 0) // no local ground level pressure? then get main pressure (at sea level)
+    weather.pressure = jdoc["main"]["pressure"];
+  weather.windSpeed = jdoc["wind"]["speed"];
+  weather.windDirection = jdoc["wind"]["deg"];
+  weather.cloudCoverage = jdoc["clouds"]["all"];
+  weather.tempHigh = jdoc["main"]["temp_max"];
+  weather.tempLow = jdoc["main"]["temp_min"];
+  weather.timeZone = jdoc["timezone"];
+  weather.sunRise = jdoc["sys"]["sunrise"];
+  weather.sunSet = jdoc["sys"]["sunset"];
+  weather.isValid = true;
 
   if (isMetric) {
     // convert m/s to kmh
-    windSpeed *= 3.6;
+    weather.windSpeed *= 3.6;
   } else {
     // Imperial mode
     // windspeed is already in mph
     //convert millibars (hPa) to Inches mercury (inHg)
-    pressure = (int)((float)pressure * 0.0295300586 + 0.5);
+    weather.pressure = (int)((float)weather.pressure * 0.0295300586 + 0.5);
     //convert millibars (hPa) to PSI
     //pressure = (int)((float)pressure * 0.0145037738 + 0.5);
   }
 
 #if 1 //DEBUG
   Serial.println(F("Weather data:"));
-  //Serial.print(F("lat: ")); Serial.println(lat);
-  //Serial.print(F("lon: ")); Serial.println(lon);
-  Serial.print(F("reportTimestamp: ")); Serial.println(reportTimestamp);
-  //Serial.print(F("city: ")); Serial.println(city);
-  //Serial.print(F("country: ")); Serial.println(country);
-  Serial.print(F("temperature: ")); Serial.println(temperature);
-  Serial.print(F("humidity: ")); Serial.println(humidity);
-  Serial.print(F("wind: ")); Serial.println(windSpeed);
-  Serial.print(F("windDirection: ")); Serial.println(windDirection);
-  //Serial.print(F("weatherId: ")); Serial.println(weatherId);
-  Serial.print(F("weatherCondition: ")); Serial.println(weatherCondition);
-  Serial.print(F("weatherDescription: ")); Serial.println(weatherDescription);
-  //Serial.print(F("icon: ")); Serial.println(icon);
+  //Serial.print(F("lat: ")); Serial.println(weather.lat);
+  //Serial.print(F("lon: ")); Serial.println(weather.lon);
+  //Serial.print(F("reportTimestamp: ")); Serial.println(weather.reportTimestamp);
+  //Serial.print(F("city: ")); Serial.println(weather.city);
+  //Serial.print(F("country: ")); Serial.println(weather.country);
+  Serial.print(F("temperature: ")); Serial.println(weather.temperature);
+  Serial.print(F("humidity: ")); Serial.println(weather.humidity);
+  Serial.print(F("wind: ")); Serial.println(weather.windSpeed);
+  Serial.print(F("windDirection: ")); Serial.println(weather.windDirection);
+  //Serial.print(F("weatherId: ")); Serial.println(weather.weatherId);
+  Serial.print(F("weatherCondition: ")); Serial.println(weather.condition);
+  Serial.print(F("weatherDescription: ")); Serial.println(weather.description);
+  //Serial.print(F("icon: ")); Serial.println(weather.icon);
   Serial.print(F("timezone: ")); Serial.println(getTimeZone());
   Serial.println();
 #endif
@@ -267,7 +259,7 @@ void OpenWeatherMapClient::updateWeather() {
 
 
 String OpenWeatherMapClient::getWindDirectionText() {
-  int val = floor((windDirection / 22.5) + 0.5);
+  int val = floor((weather.windDirection / 22.5) + 0.5);
   String arr[] = {"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"};
   return arr[(val % 16)];
 }
@@ -275,21 +267,11 @@ String OpenWeatherMapClient::getWindDirectionText() {
 
 String OpenWeatherMapClient::getWeekDay() {
   String rtnValue = "";
-  long timestamp = reportTimestamp;
+  long timestamp = weather.reportTimestamp;
   long day = 0;
-  /*static const char* dayarr[] = {
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday"
-  };*/
   if (timestamp != 0) {
-    //day = (((timestamp + (3600 * (int)offset)) / 86400) + 4) % 7;
     // Add timezone from OWM
-    timestamp += timeZone;
+    timestamp += weather.timeZone;
     day = ((timestamp / 86400) + 4) % 7;
     rtnValue = getDayName(day);
   }
@@ -297,71 +279,31 @@ String OpenWeatherMapClient::getWeekDay() {
 }
 
 String OpenWeatherMapClient::getWeatherIcon() {
-  int id = weatherId;
-  String W = ")";
-  switch(id)
+  // match weather condition codes to OLED icon in the weatherstation font
+  // see https://openweathermap.org/weather-conditions
+  // TODO: the weatherstation fonts (Meteocons, http://oleddisplay.squix.ch/) contain far more icons than used here
+  // TODO: There is no night/day difference made here
+  // TODO: check if translation from weather icon code OLED icon makes more sense.
+  static const struct { int16_t nr; char w;} lookuptable[] =
   {
-    case 800: W = "B"; break;
-    case 801: W = "Y"; break;
-    case 802: W = "H"; break;
-    case 803: W = "H"; break;
-    case 804: W = "Y"; break;
-
-    case 200: W = "0"; break;
-    case 201: W = "0"; break;
-    case 202: W = "0"; break;
-    case 210: W = "0"; break;
-    case 211: W = "0"; break;
-    case 212: W = "0"; break;
-    case 221: W = "0"; break;
-    case 230: W = "0"; break;
-    case 231: W = "0"; break;
-    case 232: W = "0"; break;
-
-    case 300: W = "R"; break;
-    case 301: W = "R"; break;
-    case 302: W = "R"; break;
-    case 310: W = "R"; break;
-    case 311: W = "R"; break;
-    case 312: W = "R"; break;
-    case 313: W = "R"; break;
-    case 314: W = "R"; break;
-    case 321: W = "R"; break;
-
-    case 500: W = "R"; break;
-    case 501: W = "R"; break;
-    case 502: W = "R"; break;
-    case 503: W = "R"; break;
-    case 504: W = "R"; break;
-    case 511: W = "R"; break;
-    case 520: W = "R"; break;
-    case 521: W = "R"; break;
-    case 522: W = "R"; break;
-    case 531: W = "R"; break;
-
-    case 600: W = "W"; break;
-    case 601: W = "W"; break;
-    case 602: W = "W"; break;
-    case 611: W = "W"; break;
-    case 612: W = "W"; break;
-    case 615: W = "W"; break;
-    case 616: W = "W"; break;
-    case 620: W = "W"; break;
-    case 621: W = "W"; break;
-    case 622: W = "W"; break;
-
-    case 701: W = "M"; break;
-    case 711: W = "M"; break;
-    case 721: W = "M"; break;
-    case 731: W = "M"; break;
-    case 741: W = "M"; break;
-    case 751: W = "M"; break;
-    case 761: W = "M"; break;
-    case 762: W = "M"; break;
-    case 771: W = "M"; break;
-    case 781: W = "M"; break;
-
-    default:break;
+    { 800, 'B'},    { 801, 'Y'},    { 802, 'H'},    { 803, 'H'},    { 804, 'Y'},
+    { 200, '0'},    { 201, '0'},    { 202, '0'},    { 210, '0'},    { 211, '0'},
+    { 212, '0'},    { 221, '0'},    { 230, '0'},    { 231, '0'},    { 232, '0'},
+    { 300, 'R'},    { 301, 'R'},    { 302, 'R'},    { 310, 'R'},    { 311, 'R'},
+    { 312, 'R'},    { 313, 'R'},    { 314, 'R'},    { 321, 'R'},
+    { 500, 'R'},    { 501, 'R'},    { 502, 'R'},    { 503, 'R'},    { 504, 'R'},
+    { 511, 'R'},    { 520, 'R'},    { 521, 'R'},    { 522, 'R'},    { 531, 'R'},
+    { 600, 'W'},    { 601, 'W'},    { 602, 'W'},    { 611, 'W'},    { 612, 'W'},
+    { 615, 'W'},    { 616, 'W'},    { 620, 'W'},    { 621, 'W'},    { 622, 'W'},
+    { 701, 'M'},    { 711, 'M'},    { 721, 'M'},    { 731, 'M'},    { 741, 'M'},
+    { 751, 'M'},    { 761, 'M'},    { 762, 'M'},    { 771, 'M'},    { 781, 'M'},
+    { 0,   ')'}
+  };
+  int id = weather.weatherId;
+  int i;
+  for (i=0; lookuptable[i].nr != 0; i++)
+  {
+    if (lookuptable[i].nr == id) break;
   }
-  return W;
+  return String(lookuptable[i].w);
 }

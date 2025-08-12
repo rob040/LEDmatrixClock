@@ -1391,7 +1391,13 @@ String getPressureSymbol()
 // converts the dBm to a range between 0 and 100%
 int8_t getWifiQuality() {
   int32_t dbm = WiFi.RSSI();
-  if (dbm <= -100) {
+  // found out that RSSI returns 31 when wifi connection is lost
+  // we return -1 in that case
+  if (dbm > 0)
+  {
+    return -1; // wifi error
+  }
+  else if (dbm <= -100) {
     return 0;
   } else if (dbm >= -50) {
     return 100;
@@ -1548,7 +1554,7 @@ void readConfiguration() {
     line.trim();
     //print each line read
     if (1) {
-      int idx = line.indexOf("Key");
+      idx = line.indexOf("Key");
       if (idx < 0) idx = line.indexOf("KEY");
       if (idx < 0) idx = line.indexOf("Pass");
       if (idx > 0) idx = line.indexOf("=");

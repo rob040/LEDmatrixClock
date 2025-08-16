@@ -40,13 +40,13 @@ public:
    * hDisplays  number of displays horizontally
    * vDisplays  number of displays vertically
    */
-  Max72xxPanel(byte csPin, byte hDisplays=1, byte vDisplays=1);
+  Max72xxPanel(uint8_t csPin, uint8_t hDisplays=1, uint8_t vDisplays=1);
 
   /*
    * Define how the displays are ordered. The first display (0)
    * is the one closest to the Arduino.
    */
-  void setPosition(byte display, byte x, byte y);
+  void setPosition(uint8_t display, uint8_t x, uint8_t y);
 
   /*
    * Define if and how the displays are rotated. The first display
@@ -56,14 +56,14 @@ public:
    *   2: 180 degrees
    *   3: 90 degrees counter clockwise
    */
-  void setRotation(byte display, byte rotation);
+  void setRotation(uint8_t display, uint8_t rotation);
 
   /*
    * Implementation of Adafruit's setRotation(). Probably, you don't
    * need this function as you can achieve the same result by using
    * the previous two functions.
    */
-  void setRotation(byte rotation);
+  void setRotation(uint8_t rotation);
 
   /*
    * Draw a pixel on your canvas. Note that for performance reasons,
@@ -85,14 +85,14 @@ public:
    * status If true the device goes into power-down mode. Set to false
    *    for normal operation.
    */
-  void shutdown(boolean status);
+  void shutdown(bool status);
 
   /*
    * Set the brightness of the display.
    * Parameters:
    * intensity  the brightness of the display. (0..15)
    */
-  void setIntensity(byte intensity);
+  void setIntensity(uint8_t intensity);
 
   /*
    * After you're done filling the bitmap buffer with your picture,
@@ -101,18 +101,18 @@ public:
   void write();
 
 private:
-  byte SPI_CS; /* SPI chip selection */
+  uint8_t SPI_CS; /* SPI chip selection */
 
   /* Send out a single command to the device */
-  void spiTransfer(byte opcode, byte data=0);
+  void spiTransfer(uint8_t opcode, uint8_t data=0);
 
   /* We keep track of the led-status for 8 devices in this array */
-  byte *bitmap;
+  uint8_t *bitmap;
   uint16_t bitmapSize; // [rob040] fix 32 display limit
 
-  byte hDisplays;
-  byte *matrixPosition;
-  byte *matrixRotation;
+  uint8_t hDisplays;
+  uint8_t *matrixPosition;
+  uint8_t *matrixRotation;
 };
 
 #endif  // Max72xxPanel_h

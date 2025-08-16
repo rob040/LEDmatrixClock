@@ -10,5 +10,5 @@
 #define TIME_VALID_MIN  1735686000  // 2025-01-01
 
 void timeNTPsetup();
-boolean set_timeZoneSec(int timeZoneSeconds);
+bool set_timeZoneSec(int timeZoneSeconds);
 time_t getNtpTime();

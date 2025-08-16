@@ -1392,7 +1392,7 @@ class ESP_WiFiManager_Lite
     // updated_flags is an internal structure to keep track of which key-value pairs
     // are already handled in handleRequest()
     struct updated_flags_s {
-      byte number_items;
+      uint8_t number_items;
       struct wificreds_s{
         bool wfidn;
         bool wfpwn;
@@ -1473,7 +1473,7 @@ class ESP_WiFiManager_Lite
 
       for (uint16_t index = 0; index < (sizeof(ESP_WM_LITE_config) - sizeof(ESP_WM_LITE_config.checkSum)); index++)
       {
-        checkSum += * ( ( (byte*) &ESP_WM_LITE_config ) + index);
+        checkSum += * ( ( (uint8_t*) &ESP_WM_LITE_config ) + index);
       }
 
       return checkSum;

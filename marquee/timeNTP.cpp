@@ -47,9 +47,9 @@ void timeNTPsetup()
   setSyncInterval(20);
 }
 
-boolean set_timeZoneSec(int timeZoneSeconds)
+bool set_timeZoneSec(int timeZoneSeconds)
 {
-  boolean timechange = false;
+  bool timechange = false;
   if (timeZoneSec != timeZoneSeconds) {
     Serial.print("New timezone set: ");Serial.println(timeZoneSeconds);
     // we have received new timezone value
@@ -67,7 +67,7 @@ boolean set_timeZoneSec(int timeZoneSeconds)
 /*-------- NTP code ----------*/
 
 const int NTP_PACKET_SIZE = 48; // NTP time is in the first 48 bytes of message
-byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming & outgoing packets
+uint8_t packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming & outgoing packets
 
 time_t getNtpTime()
 {

@@ -23,12 +23,12 @@
 void setup();
 void loop();
 void displayScrollMessage(const String &msg);
-void displayScrollErrorMessage(const String &msg, boolean showOnce);
+void displayScrollErrorMessage(const String &msg, bool showOnce);
 void processEveryMinute();
 void processEverySecond();
-String hourMinutes(boolean isRefresh);
-char secondsIndicator(boolean isRefresh);
-boolean authentication();
+String hourMinutes(bool isRefresh);
+char secondsIndicator(bool isRefresh);
+bool authentication();
 void handlePull();
 void handleSaveMqtt();
 void handleSaveConfig();
@@ -41,10 +41,10 @@ void handleDisplay();
 void getWeatherData();
 void webDisplayMessage(const String &message);
 void redirectHome();
-void sendHeader(boolean isMainPage = false);
+void sendHeader(bool isMainPage = false);
 void sendFooter();
 void webDisplayWeatherData();
-void onBoardLed(boolean on);
+void onBoardLed(bool on);
 void flashLED(int number, int delayTime);
 String getTempSymbol(bool forWeb = false);
 String getSpeedSymbol();
@@ -53,17 +53,17 @@ String getTimeTillUpdate();
 int8_t getWifiQuality();
 int getMinutesFromLastRefresh();
 int getMinutesFromLastDisplay();
-void enableDisplay(boolean enable);
+void enableDisplay(bool enable);
 void checkDisplay();
 void writeConfiguration();
 void readConfiguration();
 void scrollMessageSetup(const String &msg);
-boolean scrollMessageNext();
+bool scrollMessageNext();
 void scrollMessageWait(const String &msg);
-boolean staticDisplaySetupSingle(char * message);
+bool staticDisplaySetupSingle(char * message);
 void staticDisplaySetup(void);
 void staticDisplayNext(void);
-void centerPrint(const String &msg, boolean extraStuff = false);
+void centerPrint(const String &msg, bool extraStuff = false);
 String EncodeHtmlSpecialChars(const char *msg);
 String EncodeUrlSpecialChars(const char *msg);
 
@@ -80,13 +80,13 @@ int displayRefreshCount = 1;
 uint32_t lastRefreshDataTimestamp;
 uint32_t firstTimeSync;
 uint32_t displayOffTimestamp;
-boolean displayOn = true;
-boolean isDisplayTimeNew;
-boolean isDisplayMessageNew;
-boolean isDisplayScrollErrorMsgNew;
-boolean isDisplayScrollErrorMsgOnce;
-boolean isQuietPeriod;
-boolean isQuietPeriodNoBlinkNoscroll;
+bool displayOn = true;
+bool isDisplayTimeNew;
+bool isDisplayMessageNew;
+bool isDisplayScrollErrorMsgNew;
+bool isDisplayScrollErrorMsgOnce;
+bool isQuietPeriod;
+bool isQuietPeriodNoBlinkNoscroll;
 String displayTime;
 char * newMqttMessage;
 String displayScrollMessageStr;
@@ -94,7 +94,7 @@ String displayScrollErrorMsgStr;
 
 
 // Scroll message variables
-boolean scrlBusy;
+bool scrlBusy;
 int scrlPixTotal;
 int scrlPixIdx;
 int scrlPixY;
@@ -104,8 +104,8 @@ String scrlMsg; // copy of scrolling message
 
 //Static data display
 String staticDisplay[8];
-boolean isStaticDisplayNew;
-boolean isStaticDisplayBusy;
+bool isStaticDisplayNew;
+bool isStaticDisplayBusy;
 int staticDisplayIdx;
 int staticDisplayIdxOut;
 unsigned long staticDisplayLastTime;
@@ -649,7 +649,7 @@ void displayScrollMessage(const String &msg)
   isDisplayMessageNew = true;
 }
 
-void displayScrollErrorMessage(const String &msg, boolean showOnce)
+void displayScrollErrorMessage(const String &msg, bool showOnce)
 {
   Serial.printf_P(PSTR("setDispERRmsg: %s\n"), msg.c_str());
   displayScrollErrorMsgStr = msg;
@@ -854,7 +854,7 @@ void processEverySecond() {
 }
 
 
-String hourMinutes(boolean isRefresh) {
+String hourMinutes(bool isRefresh) {
   if (is24hour) {
     return spacePad(hour()) + secondsIndicator(isRefresh) + zeroPad(minute());
   } else {
@@ -862,7 +862,7 @@ String hourMinutes(boolean isRefresh) {
   }
 }
 
-char secondsIndicator(boolean isRefresh) {
+char secondsIndicator(bool isRefresh) {
   char rtnValue = ':';
   if (!isRefresh && !isQuietPeriodNoBlinkNoscroll && flashOnSeconds && ((second() % 2) == 0)) {
     rtnValue = ' ';
@@ -870,7 +870,7 @@ char secondsIndicator(boolean isRefresh) {
   return rtnValue;
 }
 
-boolean authentication() {
+bool authentication() {
   if (isBasicAuth) {
     return server.authenticate(www_username, www_password);
   }
@@ -907,7 +907,7 @@ void handleSaveMqtt() {
 #endif
 
 void handleSaveConfig() {
-  boolean configChangedMustRestart = false;
+  bool configChangedMustRestart = false;
   // test that some important args are present to accept new config
   if (server.hasArg(F("openWeatherMapApiKey")) &&
       server.hasArg(F("gloc")) &&
@@ -1215,7 +1215,7 @@ void redirectHome() {
   delay(1000);
 }
 
-void sendHeader(boolean isMainPage) {
+void sendHeader(bool isMainPage) {
   server.sendHeader(F("Cache-Control"), F("no-cache, no-store"));
   server.sendHeader(F("Pragma"), F("no-cache"));
   server.sendHeader(F("Expires"), "-1");
@@ -1352,7 +1352,7 @@ void webDisplayWeatherData() {
 }
 
 
-void onBoardLed(boolean on) {
+void onBoardLed(bool on) {
   if (isSysLed) {
     digitalWrite(LED_ONBOARD, on);
   }
@@ -1428,7 +1428,7 @@ int getMinutesFromLastDisplay() {
   return minutes;
 }
 
-void enableDisplay(boolean enable) {
+void enableDisplay(bool enable) {
   displayOn = enable;
   if (enable) {
     if (getMinutesFromLastDisplay() >= refreshDataInterval) {
@@ -1732,7 +1732,7 @@ void scrollMessageSetup(const String &msg) {
 }
 
 // Call this every <displayScrollSpeed> ms
-boolean scrollMessageNext() {
+bool scrollMessageNext() {
   if (scrlBusy) {
     int msgIdx = scrlPixIdx / font_width;
     int x = (matrix.width() - 1) - scrlPixIdx % font_width;
@@ -1781,7 +1781,7 @@ void scrollMessageWait(const String &msg) {
   matrix.setCursor(0, 0);
 }
 
-boolean staticDisplaySetupSingle(char * message) {
+bool staticDisplaySetupSingle(char * message) {
   if (isStaticDisplay &&
       ((int)strlen(message) > 0) &&
       ((int)strlen(message) <= ((displayWidth * 8) / 6)))
@@ -1831,7 +1831,7 @@ void staticDisplayNext(void) {
   }
 }
 
-void centerPrint(const String &msg, boolean extraStuff) {
+void centerPrint(const String &msg, bool extraStuff) {
   int x = (matrix.width() - (msg.length() * font_width)) / 2;
   if (x < 0) {
     Serial.printf_P(PSTR("Error: centerPrint msg too large! len=%u:%s\n"), msg.length(), msg);
@@ -1886,7 +1886,7 @@ const static char special[] = {'\x20','\x22','\x23','\x24','\x25','\x26','\x2B',
   String encoded;
   int inIdx;
   char ch, hex;
-  boolean convert;
+  bool convert;
   const int inLen = strlen(msg);
   //Serial.printf_P(PSTR("EncodeURL in:  %s\n"), msg);
   encoded.reserve(inLen+128);

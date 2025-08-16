@@ -88,31 +88,31 @@ String geoLocation = "Breda,NL";
 String marqueeMessage = "";
 
 // Default Weather Settings
-boolean showTemperature = true;
-boolean showDate = false;
-boolean showCity = true;
-boolean showCondition = true;
-boolean showHumidity = true;
-boolean showWind = true;
-boolean showWindDir = true;
-boolean showPressure = false;
-boolean showHighLow = true;
+bool showTemperature = true;
+bool showDate = false;
+bool showCity = true;
+bool showCondition = true;
+bool showHumidity = true;
+bool showWind = true;
+bool showWindDir = true;
+bool showPressure = false;
+bool showHighLow = true;
 
 const int staticDisplayTime = 5000;  // static display time per item, in ms
-boolean isStaticDisplay = false; // static display above SHOW_* items
-boolean isMetric = true; // false = Imperial and true = Metric
-boolean is24hour = true; // 24 hour clock is displayed, false = 12 hour clock (for configuration, 24h time is always used)
-boolean isPmIndicator = true; // Show PM indicator on Clock when in AM/PM mode
-boolean isSysLed = true; // flash onboard LED on system actions
+bool isStaticDisplay = false; // static display above SHOW_* items
+bool isMetric = true; // false = Imperial and true = Metric
+bool is24hour = true; // 24 hour clock is displayed, false = 12 hour clock (for configuration, 24h time is always used)
+bool isPmIndicator = true; // Show PM indicator on Clock when in AM/PM mode
+bool isSysLed = true; // flash onboard LED on system actions
 const int WEBSERVER_PORT = 80; // The port you can access this device on over HTTP
-const boolean isWebserverEnabled = true;  // Device will provide a web interface via http://[ip]:[port]/
-boolean isBasicAuth = false;  // Use Basic Authorization for Configuration security on Web Interface
+const bool isWebserverEnabled = true;  // Device will provide a web interface via http://[ip]:[port]/
+bool isBasicAuth = false;  // Use Basic Authorization for Configuration security on Web Interface
 char www_username[32] = {"admin"};  // User account for the Web Interface
 char www_password[32] = {"password"};  // Password for the Web Interface
 int refreshDataInterval = 15;  // Time in minutes between data refresh (default 15 minutes)
 int displayScrollingInterval = 1; // Time in minutes between scrolling data (default 1 minutes and max is 10)
 int displayScrollSpeed = 25; // In milliseconds -- Configurable by the web UI (slow = 35, normal = 25, fast = 15, very fast = 5)
-boolean flashOnSeconds = true; // when true the ':' character in the time will blink as a seconds indicator
+bool flashOnSeconds = true; // when true the ':' character in the time will blink as a seconds indicator
 
 // New wide clock style config, different screen formats for 8+ tiles:
 int wideClockStyle = 1; // 1=HH:MM, 2=HH:MM:SS, 3=HH:MM *CF, 4=HH:MM %RH, 5=mm dd HH:MM, 6=HH:MM mmdd, 7=HH:MM ddmm, 8=HH:MM WwwDD (or HH:MM Www DD on >= 10 tile display)
@@ -142,14 +142,14 @@ int quietTimeDimlevel = 0;
 
 #if COMPILE_MQTT
 // Mqtt add scrolling messages with Mqtt
-boolean isMqttEnabled = false;             // Set true to display mqtt messages
+bool isMqttEnabled = false;             // Set true to display mqtt messages
 String MqttServer = "";               // IP or Address only (DO NOT include http://)
 int MqttPort = 1883;                  // Port of your mqtt server (default 1883)
 String MqttTopic = "display/message"; // Topic on which to listen
 String  MqttAuthUser, MqttAuthPass;   // mqtt server authentication
 #endif
 
-const boolean isOTAenabled = true;    // this will allow you to load firmware to the device over WiFi (see OTA for ESP8266)
+const bool isOTAenabled = true;    // this will allow you to load firmware to the device over WiFi (see OTA for ESP8266)
 String OTA_Password = "";     // Set an OTA password here -- leave blank if you don't want to be prompted for password
 
 //blue-grey

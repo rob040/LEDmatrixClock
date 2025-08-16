@@ -63,7 +63,7 @@ String MqttClient::getError() {
 
 void MqttClient::loop() {
   if (!client.connected()) {
-    boolean connectstatus;
+    bool connectstatus;
     if (strlen(authUser) > 0) {
       connectstatus = client.connect("marquee", authUser, authPass);
     } else {

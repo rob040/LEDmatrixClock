@@ -72,7 +72,7 @@ void MqttClient::loop() {
     if (connectstatus) {
       failMessage[0] = 0;
       if (!client.subscribe(topic)) {
-        sprintf(failMessage, "Failed to connect to topic:%s", topic);
+        sprintf_P(failMessage, PSTR("Failed to connect to topic:%s"), topic);
       } else {
         // publish on topic + "/ready" the time to signal MQTT we are there
         String pubtopic = topic;
@@ -80,7 +80,7 @@ void MqttClient::loop() {
         client.publish(pubtopic.c_str(), "ready");
       }
     } else {
-      sprintf(failMessage, "Failed to connect to: %s:%d, reason: %d", server, port, client.state());
+      sprintf_P(failMessage, PSTR("Failed to connect to: %s:%d, reason: %d"), server, port, client.state());
     }
   }
   if (client.connected()) {

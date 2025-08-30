@@ -1158,7 +1158,7 @@ void getWeatherData() //client function to send/receive GET request data.
 // when scrolling the display causing that to stall.
 // Solution: cancel setup sync provider, and call getNtpTime() here explicitly,
 // then the time update is visualized on the LED display.
-Serial.printf("Timestatus=%d\n", timeStatus());  // status timeNeedsSync(1) is NEVER set
+Serial.printf_P(PSTR("Timestatus=%d\n"), timeStatus());  // status timeNeedsSync(1) is NEVER set
   if (1) { //ALWAYS;   (timeStatus() != timeSet || updateTime) { // when timeNotSet OR timeNeedsSync
     Serial.println(F("Updating Time..."));
     //Update the Time

@@ -81,7 +81,7 @@ TODO items
 20.9  Add wide clock style config, different screen formats for 8+ tiles: HH:MM, HH:MM:SS, HH:MM *CF, HH:MM %RH, mm dd HH:MM,  HH:MM Www DD (12 chars! 8 tiles fit 10 chars! ,
       (There are smaller fonts, but everything in this code is assuming fixed size chars.)
       ==> Done v3.1.25; now there are 8 variants. No font change.
-21. News headlines: Do not use newsapi.org, it is NOT free but costs 450 USD per __MONTH__ (5400 USD per annum)! rediculous pricing for this Indian company!
+21. News headlines: Do not use newsapi.org, it is NOT free but costs 450 USD per __MONTH__ (5400 USD per annum)! ridiculous pricing for this Indian company!
     ==> Done v3.1.26
 22. Change to use latest Arduino json V7 library. this makes the JsonStreamingParser and json buffer size (mis)calculation unnecessary.
     ==> Done v3.1.27  (thanks to bit4man)

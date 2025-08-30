@@ -36,7 +36,7 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 * Automatic timezone (from Local weather), hence no need for TimeZoneDB.
 * Added a favicon for easy recognition in your browser.
 * Support for different display sizes without re-compilation, via configuration page (device will reboot upon change).
-* Using the 'LittleFS' filesystem in stead of the depecated 'SPIFFS' filesystem
+* Using the 'LittleFS' filesystem in stead of the deprecated 'SPIFFS' filesystem
 * Using ArduinoJson upgraded to version 7
 * Webpage now has switchable dark-mode view
 * Webpage now has switchable automatic page update
@@ -47,7 +47,7 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 
 ### known issues
 * Webpage update does halt the scrolling display for a moment. See [issue #8](https://github.com/rob040/LEDmatrixClock/issues/8) for more details.
-* Scrolling text appears to have some 'flex' in it. See [issue #9](https://github.com/rob040/LEDmatrixClock/issues/9) for meore details.
+* Scrolling text appears to have some 'flex' in it. See [issue #9](https://github.com/rob040/LEDmatrixClock/issues/9) for more details.
 * When using the LED display at lowest intensity, some pixel flicker might be visible. See [issue #10](https://github.com/rob040/LEDmatrixClock/issues/10) for more details.
 
 
@@ -116,12 +116,10 @@ Still, the source directory structure is kept such that this project can be buil
 Use the Arduino guide for details on how to installing and manage libraries https://www.arduino.cc/en/Guide/Libraries
 
 **Packages** -- the following packages and libraries are used (download and install):
-* <WiFiManager.h> --> https://github.com/tzapu/WiFiManager (latest)
 * <TimeLib.h> --> https://github.com/PaulStoffregen/Time
 * <Adafruit_GFX.h> --> https://github.com/adafruit/Adafruit-GFX-Library
-* <Max72xxPanel.h> --> https://github.com/markruys/arduino-Max72xxPanel
-* <JsonStreamingParser.h> --> https://github.com/squix78/json-streaming-parser  (to be discarded soon)
-* <ArduinoJson> -->  https://github.com/bblanchon/ArduinoJson v7.4.2+
+* <ArduinoJson.h> -->  https://github.com/bblanchon/ArduinoJson v7.4.2+
+* <PubSubClient.h> --> https://github.com/hmueller01/pubsubclient3 v3.2.0
 
 ## Building with PlatformIO.
 Use [**VScode**](https://code.visualstudio.com/docs) with [**PlatformIO**](https://platformio.org/) or better, its desendant fork [**PIOarduino**](https://marketplace.visualstudio.com/items?itemName=pioarduino.pioarduino-ide) extension.
@@ -144,6 +142,7 @@ All settings and API Keys are managed from the Web Interface.
 ## Web Interface
 The Marquee Scroller uses the **WiFiManager** so when it can't find the last network it was connected to,
 it will become an **Access Point Hotspot** -- connect to it with your phone at http://192.168.4.1/ and you can then enter your WiFi connection information.
+This is shown on the LED display.
 
 After connected to your WiFi network it will display the IP address assigned to it and that can be
 used to open a browser to the Web Interface.  You will be able to manage your API Keys through the web interface.

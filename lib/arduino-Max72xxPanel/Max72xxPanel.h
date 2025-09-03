@@ -11,7 +11,7 @@
  by purchasing products from Adafruit!
 
  Written by Mark Ruys, 2013.
- Contains fixes by rob040@user.github.com
+ Contains fixes by rob040@user.github.com to support 32 and more display tiles
  BSD license, check license.txt for more information.
  All text above must be included in any redistribution.
 

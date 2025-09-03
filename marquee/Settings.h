@@ -33,7 +33,7 @@
 #define FS LittleFS
 #include <SPI.h>
 #include <Adafruit_GFX.h> // --> https://github.com/adafruit/Adafruit-GFX-Library
-#include <Max72xxPanel.h> // --> https://github.com/markruys/arduino-Max72xxPanel
+#include <Max72xxPanel.h> // --> https://github.com/markruys/arduino-Max72xxPanel, fixed locally lib/arduino-Max72xxPanel
 #include <pgmspace.h>
 #include "OpenWeatherMapClient.h"
 #include "TimeNTP.h"
@@ -44,7 +44,7 @@
 
 // For ESP_WiFiManager_Lite, the include sequence does matter!
 //#include <WiFiManager.h> // --> https://github.com/tzapu/WiFiManager
-//local version of #include <ESP_WiFiManager_Lite.h> // --> https://github.com/khoih-prog/ESP_WiFiManager_Lite
+//#include <ESP_WiFiManager_Lite.h> // --> https://github.com/khoih-prog/ESP_WiFiManager_Lite, now updated local version
 #include "WmlSettings.h"
 #include "ESP_WiFiManager_Lite.h"
 #include "dynamicParams.h"

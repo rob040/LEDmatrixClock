@@ -10,7 +10,7 @@
  by purchasing products from Adafruit!
 
  Written by Mark Ruys.
- Contains fixes by rob040@user.github.com
+ Contains fixes by rob040@user.github.com to support 32 and more display tiles
  BSD license, check license.txt for more information.
  All text above must be included in any redistribution.
  ******************************************************************/
@@ -39,7 +39,7 @@ Max72xxPanel::Max72xxPanel(uint8_t csPin, uint8_t hDisplays, uint8_t vDisplays) 
 
   Max72xxPanel::SPI_CS = csPin;
 
-  uint8_t displays = hDisplays * vDisplays;
+  uint16_t displays = hDisplays * vDisplays;
   Max72xxPanel::hDisplays = hDisplays;
   Max72xxPanel::bitmapSize = displays << 3;
 
@@ -182,8 +182,8 @@ void Max72xxPanel::spiTransfer(uint8_t opcode, uint8_t data) {
 
   // Now shift out the data, two bytes per display. The first byte is the opcode,
   // the second byte the data.
-  uint8_t end = opcode - OP_DIGIT0;
-  uint8_t start = bitmapSize + end;
+  uint16_t end = opcode - OP_DIGIT0;
+  uint16_t start = bitmapSize + end;
   do {
     start -= 8;
     SPI.transfer(opcode);

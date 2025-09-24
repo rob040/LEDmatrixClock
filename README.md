@@ -57,7 +57,7 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 * MAX7219 LED Dot Matrix Module 4-in-1 Display (FC16) for Arduino. Commonly available from Chinese webshops, or Ebay or Amazon.com.
 
 
-## Wiring for the Wemos D1 Mini to the LED Dot Matrix Display
+## Wiring for the Wemos D1 Mini to the MAX7218 LED Dot Matrix Display
 
 | LED | D1 mini   |
 | --- | ---       |
@@ -71,7 +71,7 @@ The Connections in a picture:
 <p align="left" title="Wires from D1-mini to LED display">
   <img src="/images/marquee_scroller_pins.png" width="400"/>
 </p>
-Be aware that the display in above picture is actually upside-down; when viewed from front, the data input DIN is at the right hand side; the text on the PCB is usually upside-down.
+Be aware that the display in above picture is actually upside-down. When viewed from front, the data input DIN is at the right hand side; the text on the PCB is usually upside-down.
 
 
 ## 3D Printed Case by David Payne:
@@ -103,7 +103,7 @@ Double Wide LED version: https://www.thingiverse.com/thing:2989552
 
 From the .stl files posted on Thingiverse.com, a SketchUp model was re-created and new .stl with wider dotmatrix display module area was made. <br>
 Many [complained](https://www.thingiverse.com/thing:2867294/comments) that their dotmatrix display module didn't fit; some enlarged the X-axis in their slicer program to make it fit. Just too bad they needed to print it at least twice. <br>
-That was caused by the fact that the original .stl will fit a matrix display module of max 128.4 mm wide. <br>
+That was caused by the fact that the original .stl can only fit a matrix display module of 128.4 mm wide. <br>
 The models available here will fit up to 132.0 mm wide display module. <br>
 Most other characteristics, such as the loosely fitting backplate, were left unchanged; the unmatched screw holes were fixed though.
 
@@ -138,7 +138,7 @@ Use the Arduino guide for details on how to install and manage libraries https:/
 * <ArduinoJson.h> -->  https://github.com/bblanchon/ArduinoJson v7.4.2+
 * <PubSubClient.h> --> https://github.com/hmueller01/pubsubclient3 v3.2.0+
 
-**local libraries** --
+**Local libraries** --
 This project has local libraries in the lib directory.
 Having project local libraries is not supported by Arduino IDE.
 Therefore you must copy these manually to your Arduino sketchbook library directory. 
@@ -170,20 +170,21 @@ To build, open the `pioarduino` or `platformio` extension (icon on left hand sid
 Editing the **Settings.h** file is not required but optional to get different default values.
 All settings and API Keys are managed from the Web Interface.
 
-* Open Weather Map free service API key: http://openweathermap.org/  -- this is used to get weather data and the current time zone from the selected City. This API key is required for correct time.
+* Open Weather Map free service API key: http://openweathermap.org/  -- this is used to get weather data and the current time zone from the set Geo Location. This API key is required for correct time. Registration is required to obtain the API key.
 
 **NOTE:** The settings in the Settings.h are the default settings for the first loading. After loading you will manage changes to the settings via the Web Interface. If you want to change settings again in the settings.h, you will need to erase the file system on the Wemos or use the `Reset Settings` option in the Web Interface.
 
 ## Web Interface
 The Marquee Scroller uses the **WiFiManager** when it can't find the last network it was connected to,
 it will become an **Access Point Hotspot** -- connect to it with your phone at http://192.168.4.1/ and you can then enter your WiFi connection information.<br>
-When the **WiFiManager** is activated after power-up, the scrolling LED display shows the following message:
-   **`v1.2.3  IP: 192.168.4.1  Wifi Manager Started... Please Connect to AP: ESP-XXXXXX password: MyESP-XXXXXX`
-And finally it displays:
-   **`wifi`
-Where "XXXXXX" are device specific hex characters.
+When the **WiFiManager** is activated after power-up, the scrolling LED display shows the following message:<br>
+`   v1.2.3  IP: 192.168.4.1  Wifi Manager Started... Please Connect to AP: ESP-XXXXXX password: MyESP-XXXXXX`<br>
+And finally it displays:<br>
+`   wifi`<br>
+While the WiFiManager Access Point is active.<br>
+The above "XXXXXX" are device specific hex characters.
 
-After connected to your WiFi network it will display the IP address assigned to it and that can be
+After connected to your WiFi network it will, after power-up, display the IP address assigned to it and that can be
 used to open a browser to the Web Interface.  You will be able to manage your API Keys through the web interface.
 
 The default user / password for the configuration page is: admin / password
@@ -191,20 +192,20 @@ The default user / password for the configuration page is: admin / password
 The Clock will display the local time of the Geo Location selected for the weather after a short synchronization period.
 
 <p align="left" title="The new webinterface on a phone">
-  <img src="/images/Screenshot_main.png" width="133"/>
-  <img src="/images/Screenshot_main_menu.png" width="133"/>
-  <img src="/images/Screenshot_cfg_mqtt.png" width="133"/>
-  <img src="/images/Screenshot_cfg1.png" width="133"/>
-  <img src="/images/Screenshot_cfg2.png" width="133"/>
-  <img src="/images/Screenshot_cfg3.png" width="133"/>
+  <img src="/images/Screenshot_main.jpg" width="133"/>
+  <img src="/images/Screenshot_main_menu.jpg" width="133"/>
+  <img src="/images/Screenshot_cfg_mqtt.jpg" width="133"/>
+  <img src="/images/Screenshot_cfg1.jpg" width="133"/>
+  <img src="/images/Screenshot_cfg2.jpg" width="133"/>
+  <img src="/images/Screenshot_cfg3.jpg" width="133"/>
 </p>
 <p align="left" title="The new webinterface in DARK MODE on a phone">
-  <img src="/images/Screenshot_cfg4.png" width="133"/>
-  <img src="/images/Screenshot_cfg5.png" width="133"/>
-  <img src="/images/Screenshot_cfg6.png" width="133"/>
-  <img src="/images/Screenshot_dark_main.png" width="133"/>
-  <img src="/images/Screenshot_dark_main_menu.png" width="133"/>
-  <img src="/images/Screenshot_dark_cfg.png" width="133"/>
+  <img src="/images/Screenshot_cfg4.jpg" width="133"/>
+  <img src="/images/Screenshot_cfg5.jpg" width="133"/>
+  <img src="/images/Screenshot_cfg6.jpg" width="133"/>
+  <img src="/images/Screenshot_dark_main.jpg" width="133"/>
+  <img src="/images/Screenshot_dark_main_menu.jpg" width="133"/>
+  <img src="/images/Screenshot_dark_cfg.jpg" width="133"/>
 </p>
 
 

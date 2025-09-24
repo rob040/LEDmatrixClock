@@ -109,8 +109,8 @@ Most other characteristics, such as the loosely fitting backplate, were left unc
 
 New / Updated SketchUp model and STL models are available here:
 * [SketchUp model](/Models/LED_matrix_Clock_Marquee.skp)
-* [STL base](/Models/LED_matrix_Clock_Marquee-base.stl) <img src="/Models/LED_matrix_Clock_Marquee-stl-base.png" hight="40"/>
-* [STL back](/Models/LED_matrix_Clock_Marquee-back.stl) <img src="/Models/LED_matrix_Clock_Marquee-stl-back.png" hight="40"/>
+* [STL base](/Models/LED_matrix_Clock_Marquee-base.stl) <img src="/Models/LED_matrix_Clock_Marquee-stl-base.png" height="40"/>
+* [STL back](/Models/LED_matrix_Clock_Marquee-back.stl) <img src="/Models/LED_matrix_Clock_Marquee-stl-back.png" height="40"/>
 
 Pictures:
 <p align="left" title="Updated STL models">
@@ -175,22 +175,36 @@ All settings and API Keys are managed from the Web Interface.
 **NOTE:** The settings in the Settings.h are the default settings for the first loading. After loading you will manage changes to the settings via the Web Interface. If you want to change settings again in the settings.h, you will need to erase the file system on the Wemos or use the `Reset Settings` option in the Web Interface.
 
 ## Web Interface
-The Marquee Scroller uses the **WiFiManager** so when it can't find the last network it was connected to,
-it will become an **Access Point Hotspot** -- connect to it with your phone at http://192.168.4.1/ and you can then enter your WiFi connection information.
-This is shown on the LED display.
+The Marquee Scroller uses the **WiFiManager** when it can't find the last network it was connected to,
+it will become an **Access Point Hotspot** -- connect to it with your phone at http://192.168.4.1/ and you can then enter your WiFi connection information.<br>
+When the **WiFiManager** is activated after power-up, the scrolling LED display shows the following message:
+   **`v1.2.3  IP: 192.168.4.1  Wifi Manager Started... Please Connect to AP: ESP-XXXXXX password: MyESP-XXXXXX`
+And finally it displays:
+   **`wifi`
+Where "XXXXXX" are device specific hex characters.
 
 After connected to your WiFi network it will display the IP address assigned to it and that can be
 used to open a browser to the Web Interface.  You will be able to manage your API Keys through the web interface.
 
 The default user / password for the configuration page is: admin / password
 
-The Clock will display the local time of the City selected for the weather after a short synchronization period.
+The Clock will display the local time of the Geo Location selected for the weather after a short synchronization period.
 
-<p align="left" title="the (old) webinterface on a phone">
-  <img src="/images/20180419_065805.png" width="200"/>
-  <img src="/images/20180419_065815.png" width="200"/>
-  <img src="/images/20180419_065832.png" width="200"/>
-  <img src="/images/20180419_065858.png" width="200"/>
+<p align="left" title="The new webinterface on a phone">
+  <img src="/images/Screenshot_main.png" width="133"/>
+  <img src="/images/Screenshot_main_menu.png" width="133"/>
+  <img src="/images/Screenshot_cfg_mqtt.png" width="133"/>
+  <img src="/images/Screenshot_cfg1.png" width="133"/>
+  <img src="/images/Screenshot_cfg2.png" width="133"/>
+  <img src="/images/Screenshot_cfg3.png" width="133"/>
+</p>
+<p align="left" title="The new webinterface in DARK MODE on a phone">
+  <img src="/images/Screenshot_cfg4.png" width="133"/>
+  <img src="/images/Screenshot_cfg5.png" width="133"/>
+  <img src="/images/Screenshot_cfg6.png" width="133"/>
+  <img src="/images/Screenshot_dark_main.png" width="133"/>
+  <img src="/images/Screenshot_dark_main_menu.png" width="133"/>
+  <img src="/images/Screenshot_dark_cfg.png" width="133"/>
 </p>
 
 

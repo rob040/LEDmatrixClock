@@ -23,16 +23,16 @@ Read the [feature enhancements below](#feature-enhancements)
 * Build Video by Chris Riley: https://youtu.be/KqBiqJT9_lE
 
 ## Feature Enhancements
-Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixClock) :
+Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixClock) [by rob040](https://github.com/rob040/) :
 * Removed the TimeZoneDB.com registration requirement.
-* Actual time zone information is used from OpenWeather API.
+* Actual time zone information is used from OpenWeatherMap API.
 * Added Time NTP and more efficient time strings instead.
 * Update to new OpenWeatherMap.org API. Newly requested Free Service API-keys can no longer use the older call and structure.
 * Reduce RAM usage. The ESP8266 is an older WiFi processor with limited RAM (80kB), especially when compared to its newer ESP32 members.
-* Added MQTT support with basic Authentication, to send message to be displayed. Message is displayed immediately when display shows the time, and repeated every minute with default configuration.
+* Added MQTT support with basic Authentication, to get message to be displayed. Message is displayed immediately when display shows the time, and repeated every minute with default configuration.
 * Use VScode IDE with PlatformIO / PIOarduino, for better development and maintenance experience and much better build environment and library version control.
-* Improved start-up on time synchronisation and weather data update,
-* Improved weather data display on webpage (minor changes)
+* Improved start-up on time synchronisation and weather data update.
+* Improved weather data display on webpage (minor changes).
 * Automatic timezone (from Local weather), hence no need for TimeZoneDB.
 * Added a favicon for easy recognition in your browser.
 * Support for different display sizes without re-compilation, via configuration page (device will reboot upon change).
@@ -101,6 +101,23 @@ Double Wide LED version: https://www.thingiverse.com/thing:2989552
   <img src="/images/20180127_135828.jpg" width="200"/>
 </p>
 
+From the .stl files posted on Thingiverse.com, a SketchUp model was re-created and new .stl with wider dotmatrix display module area was made. <br>
+Many [complained](https://www.thingiverse.com/thing:2867294/comments) that their dotmatrix display module didn't fit; some enlarged the X-axis in their slicer program to make it fit. Just too bad they needed to print it at least twice. <br>
+That was caused by the fact that the original .stl will fit a matrix display module of max 128.4 mm wide. <br>
+The models available here will fit up to 132.0 mm wide display module. <br>
+Most other characteristics, such as the loosely fitting backplate, were left unchanged; the unmatched screw holes were fixed though.
+
+New / Updated SketchUp model and STL models are available here:
+* [SketchUp model](/Models/LED_matrix_Clock_Marquee.skp)
+* [STL base](/Models/LED_matrix_Clock_Marquee-base.stl) <img src="/Models/LED_matrix_Clock_Marquee-stl-base.png" hight="40"/>
+* [STL back](/Models/LED_matrix_Clock_Marquee-back.stl) <img src="/Models/LED_matrix_Clock_Marquee-stl-back.png" hight="40"/>
+
+Pictures:
+<p align="left" title="Updated STL models">
+  <img src="/Models/LED_matrix_Clock_Marquee-display_module_size.png" width="270"/>
+  <img src="/Models/LED_matrix_Clock_Marquee+electronics-front_xray.png" width="260"/>
+  <img src="/Models/LED_matrix_Clock_Marquee+electronics-back_xray.png" width="260"/>
+</p>
 
 
 ## Compiling and Loading to Wemos D1 Mini (ESP8266)
@@ -121,22 +138,25 @@ Use the Arduino guide for details on how to install and manage libraries https:/
 * <ArduinoJson.h> -->  https://github.com/bblanchon/ArduinoJson v7.4.2+
 * <PubSubClient.h> --> https://github.com/hmueller01/pubsubclient3 v3.2.0+
 
-**local libraries**
+**local libraries** --
 This project has local libraries in the lib directory.
 Having project local libraries is not supported by Arduino IDE.
-Therefore you must copy these manually to your Arduino sketchbook library directory. This is the directory where all libraries managed by the Arduino library manager are located.<br>
+Therefore you must copy these manually to your Arduino sketchbook library directory. 
+This is the directory where all libraries managed by the Arduino library manager are located.<br>
 By default this is `C:\Users\<userName>\Documents\Arduino\libraries` on Windows machines.
 
 Copy local libraries:
 * in command terminal, change to marquee directory,
 * `xcopy/s ..\lib\* C:\Users\<userName>\Documents\Arduino\libraries`
 
+After copy do restart the Arduino IDE.
+
 Assure there are no similarly named libaries (/packages) with higher version numbers.
 Use library manager to check. At end of compilation in the IDE, a list of used libraries is shown. Check these.
 
 
 ## Building with PlatformIO.
-Use [**VScode**](https://code.visualstudio.com/docs) with [**PlatformIO**](https://platformio.org/) or better, its desendant fork [**PIOarduino**](https://marketplace.visualstudio.com/items?itemName=pioarduino.pioarduino-ide) extension.
+Use [**VScode**](https://code.visualstudio.com/docs) with [**PlatformIO**](https://platformio.org/) or better, its descendant fork [**PIOarduino**](https://marketplace.visualstudio.com/items?itemName=pioarduino.pioarduino-ide) extension.
 
 Please refer to the provided links on how to install VScode on your OS.
 

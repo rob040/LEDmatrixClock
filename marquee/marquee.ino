@@ -1618,9 +1618,9 @@ void readConfiguration() {
       displayRefreshCount = 1;
       displayScrollingInterval = line.substring(idx + 24).toInt();
     }
-    if ((idx = line.indexOf(F("displayInterval="))) >= 0) {
+    if ((idx = line.indexOf(F("dispInterval="))) >= 0) {
       displayRefreshCount = 1;
-      displayScrollingInterval = line.substring(idx + 16).toInt();
+      displayScrollingInterval = line.substring(idx + 13).toInt();
     }
     if ((idx = line.indexOf(F("displayWidth="))) >= 0) {
       int n = line.substring(idx + 13).toInt();

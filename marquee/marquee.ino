@@ -53,12 +53,13 @@ String getTimeTillUpdate();
 int8_t getWifiQuality();
 int getMinutesFromLastRefresh();
 int getMinutesFromLastDisplay();
+int getMinutesFromLastDisplayScroll();
 void enableDisplay(bool enable);
 void checkDisplay();
 void writeConfiguration();
 void readConfiguration();
 void scrollMessageSetup(const String &msg);
-bool scrollMessageNext();
+void scrollMessageNext();
 void scrollMessageWait(const String &msg);
 bool staticDisplaySetupSingle(char * message);
 void staticDisplaySetup(void);
@@ -76,7 +77,7 @@ Max72xxPanel matrix = Max72xxPanel(pinCS, 0, 0); // will be re-instantiated late
 // Time
 int lastMinute;
 int lastSecond;
-int displayRefreshCount = 1;
+uint32_t lastDisplayScrollTimestamp;
 uint32_t lastRefreshDataTimestamp;
 uint32_t firstTimeSync;
 uint32_t displayOffTimestamp;
@@ -558,14 +559,20 @@ void setup() {
 //************************************************************
 void loop() {
 
-  if (lastSecond != second()) {
+  if (!scrlBusy && lastSecond != second()) {
+    uint32_t t = millis();
     lastSecond = second();
     processEverySecond();
+    t = millis() - t;
+    if (t > 100) Serial.printf_P(PSTR("loop1s took %u ms\n"), t);
   }
 
-  if (lastMinute != minute()) {
+  if (!scrlBusy && lastMinute != minute()) {
+    uint32_t t = millis();
     lastMinute = minute();
     processEveryMinute();
+    t = millis() - t;
+    if (t > 100) Serial.printf_P(PSTR("loop1m took %u ms\n"), t);
   }
 
   SCHEDULE_INTERVAL(scrlPixelLastTime, displayScrollSpeed, scrollMessageNext);
@@ -661,7 +668,7 @@ void displayScrollErrorMessage(const String &msg, bool showOnce)
 void processEveryMinute() {
   // we can't do anything without being connected to WIFI (TODO: is that true? a (temporary) loss of wifi doesn't render the clock useless...)
   //if ((WiFi.status() != WL_CONNECTED) && (timeStatus() == timeNotSet)) {
-  if (ESP_WiFiManager->isConfigMode()){
+  if (ESP_WiFiManager->isConfigMode()) {
     return;
   }
   if (1) {
@@ -675,10 +682,8 @@ void processEveryMinute() {
     }
     matrix.fillScreen(CLEARSCREEN);
 
-    displayRefreshCount--;
     // Check to see if we need to Scroll some weather Data
-    if ((displayRefreshCount <= 0) && weatherClient.getWeatherDataValid() && (weatherClient.getErrorMessage().length() == 0)) {
-      displayRefreshCount = displayScrollingInterval;
+    if ((getMinutesFromLastDisplayScroll() >= displayScrollingInterval) && weatherClient.getWeatherDataValid() && (weatherClient.getErrorMessage().length() == 0)) {
       String msg = " ";
       String temperature = String(weatherClient.getTemperature(),0);
       String weatherDescription = weatherClient.getWeatherDescription();
@@ -767,15 +772,15 @@ void processEveryMinute() {
       #endif
 
       if (isStaticDisplay) {
-
         if (staticDisplayIdx != 0) {
           isStaticDisplayNew = true;
           staticDisplayIdxOut = 0;
         }
-
       }
+
       if ((msg.length() > 3) && !isQuietPeriodNoBlinkNoscroll) {
         displayScrollMessage(msg);
+        lastDisplayScrollTimestamp = now();
       }
     }
   }
@@ -785,8 +790,9 @@ void processEverySecond() {
 
   // we can't do anything without being connected to WIFI (TODO: is that true? a (temporary) loss of wifi doesn't render the clock useless...)
   //if ((WiFi.status() != WL_CONNECTED) && (timeStatus() == timeNotSet))
-  if (ESP_WiFiManager->isConfigMode())
+  if (ESP_WiFiManager->isConfigMode()) {
     return;
+  }
 
   #if COMPILE_MQTT
   // allow the mqtt client to do its thing
@@ -796,11 +802,12 @@ void processEverySecond() {
   }
   #endif
 
-  //Get some Weather Data to serve
+  // Get some Weather Data to serve
   if ((getMinutesFromLastRefresh() >= refreshDataInterval) || lastRefreshDataTimestamp == 0) {
     getWeatherData();
+    lastRefreshDataTimestamp = now();
   }
-  checkDisplay(); // this will see if we need to turn it on or off for night mode.
+  checkDisplay(); // check if we need to turn display on or off for night mode.
 
   displayTime = hourMinutes(false);
   isDisplayTimeNew = true;
@@ -1152,7 +1159,6 @@ void getWeatherData() //client function to send/receive GET request data.
       }
     }
   }
-  lastRefreshDataTimestamp = now();
 
 // With time sync provider (timeNTP) set, the time sync may happen at inconvenient moments, like
 // when scrolling the display causing that to stall.
@@ -1428,6 +1434,11 @@ int getMinutesFromLastDisplay() {
   return minutes;
 }
 
+int getMinutesFromLastDisplayScroll() {
+  int minutes = (now() - lastDisplayScrollTimestamp) / 60;
+  return minutes;
+}
+
 void enableDisplay(bool enable) {
   displayOn = enable;
   if (enable) {
@@ -1561,7 +1572,7 @@ void readConfiguration() {
       if ((idx > 0) && (line.substring(idx+1).length() > 0)) {
         // do not print keys or passwords
         Serial.print(line.substring(0,idx+1));
-        Serial.println("***");
+        Serial.println(F("***"));
       } else {
         Serial.println(line);
       }
@@ -1615,12 +1626,11 @@ void readConfiguration() {
       }
     }
     if ((idx = line.indexOf(F("minutesBetweenScrolling="))) >= 0) {  /* for backwards compatibility settings migration */
-      displayRefreshCount = 1;
       displayScrollingInterval = line.substring(idx + 24).toInt();
     }
     if ((idx = line.indexOf(F("dispInterval="))) >= 0) {
-      displayRefreshCount = 1;
       displayScrollingInterval = line.substring(idx + 13).toInt();
+      lastDisplayScrollTimestamp = now() - displayScrollingInterval*60 + 5;
     }
     if ((idx = line.indexOf(F("displayWidth="))) >= 0) {
       int n = line.substring(idx + 13).toInt();
@@ -1732,7 +1742,7 @@ void scrollMessageSetup(const String &msg) {
 }
 
 // Call this every <displayScrollSpeed> ms
-bool scrollMessageNext() {
+void scrollMessageNext() {
   if (scrlBusy) {
     int msgIdx = scrlPixIdx / font_width;
     int x = (matrix.width() - 1) - scrlPixIdx % font_width;
@@ -1749,7 +1759,6 @@ bool scrollMessageNext() {
     scrlPixIdx++;
   }
   scrlBusy = scrlPixIdx < scrlPixTotal;
-  return scrlBusy;
 }
 
 void scrollMessageWait(const String &msg) {
@@ -1808,7 +1817,7 @@ void staticDisplaySetup(void) {
 
 void staticDisplayNext(void) {
   if (isStaticDisplayBusy) {
-    int maxMsgLen = (displayWidth * 8) / 6;
+    int maxMsgLen = (displayWidth * 8) / font_width;
     // find (next) fitting message (too long messages will not be shown)
     while (staticDisplayIdxOut < staticDisplayIdx) {
       int len = staticDisplay[staticDisplayIdxOut].length();

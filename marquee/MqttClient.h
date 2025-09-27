@@ -35,4 +35,9 @@ class MqttClient {
     void updateMqttClient(const String &passedServer, int port, const String &passedTopic, const String &authUser = "", const String &authPass = "");
 
     void loop();
+
+    bool connected() { return client.connected(); };
+    bool publish(const char* topic, const char* payload) { return client.publish(topic, payload);};
+    bool subscribe(const char* topic) { return client.subscribe(topic); };
+
 };

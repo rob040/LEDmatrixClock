@@ -64,6 +64,7 @@ String MqttClient::getError() {
 void MqttClient::loop() {
   if (!client.connected()) {
     bool connectstatus;
+    Serial.println(F("MQTT (Re-)connect"));
     if (strlen(authUser) > 0) {
       connectstatus = client.connect("marquee", authUser, authPass);
     } else {
@@ -72,18 +73,20 @@ void MqttClient::loop() {
     if (connectstatus) {
       failMessage[0] = 0;
       if (!client.subscribe(topic)) {
-        sprintf_P(failMessage, PSTR("Failed to connect to topic:%s"), topic);
+        sprintf_P(failMessage, PSTR("MQTT Failed to connect to topic: %s"), topic);
       } else {
         // publish on topic + "/ready" the time to signal MQTT we are there
-        String pubtopic = topic;
-        pubtopic += "/ready";
-        client.publish(pubtopic.c_str(), "ready");
+        //String pubtopic = topic;
+        //pubtopic += "/ready";
+        //client.publish(pubtopic.c_str(), "ready");
+        Serial.printf_P(PSTR("MQTT connected and subscribed to: %s\n"), topic);
       }
     } else {
-      sprintf_P(failMessage, PSTR("Failed to connect to: %s:%d, reason: %d"), server, port, client.state());
+      sprintf_P(failMessage, PSTR("MQTT Failed to connect to: %s:%d, reason: %d"), server, port, client.state());
     }
   }
   if (client.connected()) {
+    //Serial.println(F("MQTT connected loop"));
     client.loop();
   }
 }

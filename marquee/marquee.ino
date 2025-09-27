@@ -89,6 +89,7 @@ bool isDisplayScrollErrorMsgNew;
 bool isDisplayScrollErrorMsgOnce;
 bool isQuietPeriod;
 bool isQuietPeriodNoBlinkNoscroll;
+bool isMqttStatusPublishDone;
 String displayTime;
 char * newMqttMessage;
 String displayScrollMessageStr;
@@ -696,6 +697,7 @@ void processEveryMinute()
       displayScrollErrorMessage(weatherClient.getErrorMessage(), true);
       return;
     }
+    isMqttStatusPublishDone = false; // allow mqtt status publish again next minute
 
     // Check to see if we need to Scroll some weather Data
     if ((getMinutesFromLastDisplayScroll() >= displayScrollingInterval) && weatherClient.getWeatherDataValid() && (weatherClient.getErrorMessage().length() == 0)) {
@@ -811,6 +813,36 @@ void processEverySecond()
   if (isMqttEnabled) {
     mqttClient.loop();
     newMqttMessage = mqttClient.getNewMqttMessage();
+
+    // after first connection (and every minute), when time and weather are also connected, publish one time
+    // the current values of hostname and IP address
+    // this is useful for home automation systems to identify the device
+    if (mqttClient.connected() && !isMqttStatusPublishDone && (now() > TIME_VALID_MIN) && weatherClient.getWeatherDataValid()) {
+        // Post to unique status topic, containing hostname with value IP address
+      char msg[128];
+      String datetime = String(year()) + zeroPad(month()) + zeroPad(day()) + "T" + zeroPad(hour()) + zeroPad(minute()) + zeroPad(second());
+      String pubtopic(MqttTopic);
+      if (pubtopic.lastIndexOf('/') > 0)
+        pubtopic = pubtopic.substring(0, pubtopic.lastIndexOf('/'));
+      pubtopic += "/";
+      pubtopic += WiFi.getHostname();
+      pubtopic += "/status";
+      // {"device":"ESP123456","ip":"
+      snprintf(msg, sizeof(msg), "{\"device\":\"%s\",\"ip\":\"%s\",\"time\":\"%s\",\"temp\":%.1f,\"hum\":%d,\"cond\":\"%s\"}",
+        WiFi.getHostname(),
+        WiFi.localIP().toString().c_str(),
+        datetime.c_str(),
+        weatherClient.getTemperature(),
+        weatherClient.getHumidity(),
+        weatherClient.getWeatherDescription().c_str() );
+
+      if (mqttClient.publish(pubtopic.c_str(), msg)) {
+        Serial.printf_P(PSTR("MQTT publish to %s: %s\n"), pubtopic.c_str(), msg);
+        isMqttStatusPublishDone = true;
+      } else {
+        Serial.printf_P(PSTR("MQTT publish to %s FAILED\n"), pubtopic.c_str());
+      }
+    }
   }
   #endif
 

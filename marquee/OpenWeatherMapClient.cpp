@@ -52,7 +52,7 @@ int OpenWeatherMapClient::setGeoLocation(const String &location) {
     else if (ch == ' ' || ch == '-'|| ch == '('|| ch == ')') ch_cnt_letters++;
     else if (ch != ',') {
       ch_cnt_notallowed++;
-      Serial.print("Inval 0x");
+      Serial.print(F("Inval 0x"));
       Serial.println(ch,HEX);
     }
   }
@@ -144,7 +144,7 @@ void OpenWeatherMapClient::updateWeather() {
 
   // Wait for data, with timeout
   uint32_t start = millis();
-  const int timeout_ms = 2000;
+  const int timeout_ms = 5000;
   while (weatherClient.connected() &&
         !weatherClient.available() &&
         ((millis()-start) < timeout_ms))

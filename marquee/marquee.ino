@@ -685,15 +685,6 @@ void displayScrollErrorMessage(const String &msg, bool showOnce)
 // This is called every minute, synchronized with the internal clock minute change
 void processEveryMinute()
 {
-    // When in config mode, we can't connect to any server and the time is not set, so we can't do anything here
-    if (ESP_WiFiManager->isConfigMode()) {
-      return;
-    }
-
-    // When display is scrolling a message, don't do anything time consuming, like connecting to any server.
-    //if (loopState != lStateIdle) {
-    //  return;
-    //}
 
     // Get some Weather Data to serve
     if ((getMinutesFromLastRefresh() >= refreshDataInterval) || lastRefreshDataTimestamp == 0) {
@@ -705,12 +696,6 @@ void processEveryMinute()
       displayScrollErrorMessage(weatherClient.getErrorMessage(), true);
       return;
     }
-
-//    if (displayOn) {
-//      matrix.shutdown(false);
-//    }
-//    matrix.fillScreen(CLEARSCREEN);
-    //Serial.printf_P(PSTR("1m: gm %d iv %d\n"), getMinutesFromLastDisplayScroll(), displayScrollingInterval);
 
     // Check to see if we need to Scroll some weather Data
     if ((getMinutesFromLastDisplayScroll() >= displayScrollingInterval) && weatherClient.getWeatherDataValid() && (weatherClient.getErrorMessage().length() == 0)) {
@@ -820,22 +805,6 @@ void processEveryMinute()
 
 void processEverySecond()
 {
-
-  // When in config mode, we can't connect to any server and the time is not set, so we can't do anything here
-  if (ESP_WiFiManager->isConfigMode()) {
-    return;
-  }
-
-  // When display is scrolling a message, don't do anything time consuming, like connecting to any server.
-  //if (loopState != lStateIdle) {
-  //  return;
-  //}
-
-  // Call processEveryMinute() once every minute, synchronized with the internal clock minute change
-  if (lastMinute != minute()) {
-    lastMinute = minute();
-    processEveryMinute();
-  }
 
   #if COMPILE_MQTT
   // allow the mqtt client to do its thing

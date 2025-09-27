@@ -38,11 +38,11 @@ void sendNTPpacket(IPAddress &address);
 
 void timeNTPsetup()
 {
-  Serial.println("Starting UDP");
+  Serial.println(F("NTP: Starting UDP"));
   Udp.begin(localPort);
-  Serial.print("Local port: ");
+  Serial.print(F("Local port: "));
   Serial.println(Udp.localPort());
-  Serial.println("waiting for sync");
+  Serial.println(F("waiting for sync"));
   setSyncProvider(getNtpTime);
   setSyncInterval(20);
 }
@@ -51,7 +51,8 @@ bool set_timeZoneSec(int timeZoneSeconds)
 {
   bool timechange = false;
   if (timeZoneSec != timeZoneSeconds) {
-    Serial.print("New timezone set: ");Serial.println(timeZoneSeconds);
+    Serial.print(F("New timezone set: "));
+    Serial.println(timeZoneSeconds);
     // we have received new timezone value
     //
     timeZoneSec = timeZoneSeconds;

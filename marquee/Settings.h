@@ -47,7 +47,7 @@
 //#include <ESP_WiFiManager_Lite.h> // --> https://github.com/khoih-prog/ESP_WiFiManager_Lite, now updated local version
 #include "WmlSettings.h"
 #include "ESP_WiFiManager_Lite.h"
-#include "dynamicParams.h"
+#include "DynamicParams.h"
 
 //******************************
 // Hard(-ware related) settings

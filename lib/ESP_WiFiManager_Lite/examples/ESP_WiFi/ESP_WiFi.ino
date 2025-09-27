@@ -13,7 +13,7 @@
 #include "defines.h"
 #include "Credentials.h"
 #include <ESP_WiFiManager_Lite.h>
-#include "dynamicParams.h"
+#include "DynamicParams.h"
 
 ESP_WiFiManager_Lite* ESP_WiFiManager;
 

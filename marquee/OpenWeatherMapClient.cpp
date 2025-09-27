@@ -12,7 +12,7 @@
  */
 
 #include "OpenWeatherMapClient.h"
-#include "timeStr.h"
+#include "TimeStr.h"
 
 OpenWeatherMapClient::OpenWeatherMapClient(const String &ApiKey, bool isMetric) {
   myGeoLocation = "";

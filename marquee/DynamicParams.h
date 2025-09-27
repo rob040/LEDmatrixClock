@@ -1,5 +1,5 @@
 /****************************************************************************************************************************
-  dynamicParams.h
+  DynamicParams.h
   For ESP8266 / ESP32 boards
 
   ESP_WiFiManager_Lite (https://github.com/khoih-prog/ESP_WiFiManager_Lite) is a library
@@ -10,8 +10,8 @@
   Licensed under MIT license
  *****************************************************************************************************************************/
 
-#ifndef dynamicParams_h
-#define dynamicParams_h
+#ifndef DYNAMICPARAMS_H
+#define DYNAMICPARAMS_H
 
 //#include "defines.h"
 
@@ -75,4 +75,4 @@ uint16_t NUM_MENU_ITEMS = 0;
 #endif    //USE_DYNAMIC_PARAMETERS
 
 
-#endif      //dynamicParams_h
+#endif //DYNAMICPARAMS_H

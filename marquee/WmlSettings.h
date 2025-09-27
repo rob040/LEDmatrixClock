@@ -76,4 +76,4 @@
   "LED matrix Clock", 0 };
 
 //#include <ESP_WiFiManager_Lite.h> // --> https://github.com/khoih-prog/ESP_WiFiManager_Lite (Archived) --> ../lib/ESP_WiFiManager_Lite.h
-//#include "dynamicParams.h"
+//#include "DynamicParams.h"

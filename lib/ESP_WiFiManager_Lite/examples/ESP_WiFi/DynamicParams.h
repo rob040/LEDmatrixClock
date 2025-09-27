@@ -1,5 +1,5 @@
 /****************************************************************************************************************************
-  dynamicParams.h
+  DynamicParams.h
   For ESP8266 / ESP32 boards
 
   ESP_WiFiManager_Lite (https://github.com/rob040/ESP_WiFiManagerLite2) is a library
@@ -10,8 +10,8 @@
   Licensed under MIT license
  *****************************************************************************************************************************/
 
-#ifndef dynamicParams_h
-#define dynamicParams_h
+#ifndef DYNAMICPARAMS_H
+#define DYNAMICPARAMS_H
 
 #include "defines.h"
 
@@ -35,31 +35,29 @@
 
 #if USE_DYNAMIC_PARAMETERS
 
-#define AIO_SERVER_LEN       20
-#define AIO_SERVERPORT_LEN   6
-#define AIO_USERNAME_LEN     20
-#define AIO_KEY_LEN          40
+#define MAX_BLYNK_SERVER_LEN      34
+#define MAX_BLYNK_TOKEN_LEN       34
 
-//
-#define AIO_PUB_TOPIC_LEN    40
-#define AIO_SUB_TOPIC_LEN    40
+char Blynk_Server1 [MAX_BLYNK_SERVER_LEN + 1]  = "account.duckdns.org";
+char Blynk_Token1  [MAX_BLYNK_TOKEN_LEN + 1]   = "token1";
 
-char AIO_SERVER     [AIO_SERVER_LEN + 1]        = "io.adafruit.com";
-char AIO_SERVERPORT [AIO_SERVERPORT_LEN + 1]    = "1883";     //1883, or 8883 for SSL
-char AIO_USERNAME   [AIO_USERNAME_LEN + 1]      = "private";
-char AIO_KEY        [AIO_KEY_LEN + 1]           = "private";
+char Blynk_Server2 [MAX_BLYNK_SERVER_LEN + 1]  = "account.ddns.net";
+char Blynk_Token2  [MAX_BLYNK_TOKEN_LEN + 1]   = "token2";
 
-char AIO_PUB_TOPIC  [AIO_PUB_TOPIC_LEN + 1]     = "/feeds/Temperature";
-char AIO_SUB_TOPIC  [AIO_SUB_TOPIC_LEN + 1]     = "/feeds/LED_Control";
+#define MAX_BLYNK_PORT_LEN        6
+char Blynk_Port   [MAX_BLYNK_PORT_LEN + 1]  = "8080";
+
+#define MAX_MQTT_SERVER_LEN      34
+char MQTT_Server  [MAX_MQTT_SERVER_LEN + 1]   = "mqtt.duckdns.org";
 
 MenuItem myMenuItems [] =
 {
-  { "svr", "AIO_SERVER",      AIO_SERVER,     AIO_SERVER_LEN },
-  { "prt", "AIO_SERVERPORT",  AIO_SERVERPORT, AIO_SERVERPORT_LEN },
-  { "usr", "AIO_USERNAME",    AIO_USERNAME,   AIO_USERNAME_LEN },
-  { "key", "AIO_KEY",         AIO_KEY,        AIO_KEY_LEN },
-  { "pub", "AIO_PUB_TOPIC",   AIO_PUB_TOPIC,  AIO_PUB_TOPIC_LEN },
-  { "sub", "AIO_SUB_TOPIC",   AIO_SUB_TOPIC,  AIO_SUB_TOPIC_LEN },
+  { "sv1", "Blynk Server1", Blynk_Server1,  MAX_BLYNK_SERVER_LEN },
+  { "tk1", "Token1",        Blynk_Token1,   MAX_BLYNK_TOKEN_LEN },
+  { "sv2", "Blynk Server2", Blynk_Server2,  MAX_BLYNK_SERVER_LEN },
+  { "tk2", "Token2",        Blynk_Token2,   MAX_BLYNK_TOKEN_LEN },
+  { "prt", "Port",          Blynk_Port,     MAX_BLYNK_PORT_LEN },
+  { "mqt", "MQTT Server",   MQTT_Server,    MAX_MQTT_SERVER_LEN },
 };
 
 uint16_t NUM_MENU_ITEMS = sizeof(myMenuItems) / sizeof(MenuItem);  //MenuItemSize;
@@ -73,4 +71,4 @@ uint16_t NUM_MENU_ITEMS = 0;
 #endif    //USE_DYNAMIC_PARAMETERS
 
 
-#endif      //dynamicParams_h
+#endif //DYNAMICPARAMS_H

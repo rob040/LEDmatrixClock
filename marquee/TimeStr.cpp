@@ -6,8 +6,8 @@
  *
  */
 #include <Arduino.h>
-#include "timeLib.h"
-#include "timeStr.h"
+#include <timeLib.h>
+#include "TimeStr.h"
 
 String getDayName(int weekday) {
   static const char daynames[] PROGMEM = "Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,";

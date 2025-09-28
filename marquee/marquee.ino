@@ -6,7 +6,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.2.1"
+#define VERSION "3.3.0"
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -599,7 +599,9 @@ void loop() {
   SCHEDULE_INTERVAL(staticDisplayLastTime, staticDisplayTime, staticDisplayNext);
 
   if (loopState != lastState) {
-    Serial.printf_P(PSTR("[%u] loopstate %d -> %d\n"), millis()&0xFFFF, lastState, loopState);
+    #if DEBUG
+      Serial.printf_P(PSTR("[%u] loopstate %d -> %d\n"), millis()&0xFFFF, lastState, loopState);
+    #endif
     lastState = loopState;
   }
   switch (loopState) {
@@ -655,7 +657,9 @@ void loop() {
       break;
   }
   if (loopState != lastState) {
-    Serial.printf_P(PSTR("[%u] loopstate -> %d\n"), millis()&0xFFFF, loopState);
+    #if DEBUG
+      Serial.printf_P(PSTR("[%u] loopstate -> %d\n"), millis()&0xFFFF, loopState);
+    #endif
   }
 
 

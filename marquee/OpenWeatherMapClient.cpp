@@ -8,7 +8,7 @@
  * 20250628 rob040   Completely changed this OWM client API and OWM access API to use the Free Service
  * 20250712 rob040   Revised data invalidation and data get retry count until data invalid error. New API dataGetRetryCount(), removed API getCached().
  * 20250714 rob040   add more options for geo location; it is no longer centered around CityID, Class Ctor does not need CityID, new method setGeoLocation()
- *
+ * Further: See git log
  */
 
 #include "OpenWeatherMapClient.h"

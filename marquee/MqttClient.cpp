@@ -64,25 +64,27 @@ String MqttClient::getError() {
 void MqttClient::loop() {
   if (!client.connected()) {
     bool connectstatus;
+    char client_id[20];
+    // NOTE: the connect client-ID MUST be unique on the MQTT server
+    // Here we use the ESP Chip ID to make it unique
+    sprintf_P(client_id, PSTR("marquee-%08X"), ESP.getChipId());
     Serial.println(F("MQTT (Re-)connect"));
     if (strlen(authUser) > 0) {
-      connectstatus = client.connect("marquee", authUser, authPass);
+      connectstatus = client.connect(client_id, authUser, authPass);
     } else {
-      connectstatus = client.connect("marquee");
+      connectstatus = client.connect(client_id);
     }
     if (connectstatus) {
       failMessage[0] = 0;
       if (!client.subscribe(topic)) {
         sprintf_P(failMessage, PSTR("MQTT Failed to connect to topic: %s"), topic);
+        Serial.println(failMessage);
       } else {
-        // publish on topic + "/ready" the time to signal MQTT we are there
-        //String pubtopic = topic;
-        //pubtopic += "/ready";
-        //client.publish(pubtopic.c_str(), "ready");
         Serial.printf_P(PSTR("MQTT connected and subscribed to: %s\n"), topic);
       }
     } else {
       sprintf_P(failMessage, PSTR("MQTT Failed to connect to: %s:%d, reason: %d"), server, port, client.state());
+      Serial.println(failMessage);
     }
   }
   if (client.connected()) {

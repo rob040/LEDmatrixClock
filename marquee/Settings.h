@@ -41,6 +41,7 @@
 #if COMPILE_MQTT
 #include "MqttClient.h"
 #endif
+#include "Utf8toCP437.h"
 
 // For ESP_WiFiManager_Lite, the include sequence does matter!
 //#include <WiFiManager.h> // --> https://github.com/tzapu/WiFiManager

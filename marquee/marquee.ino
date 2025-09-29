@@ -106,7 +106,7 @@ unsigned long scrlPixelLastTime;
 String scrlMsg; // copy of scrolling message
 
 //Static data display
-String staticDisplay[8];
+String staticDisplay[8]; // allocate enough space for n messages, count # of staticDisplayIdx++ is code below. No runtime check!
 bool isStaticDisplayNew;
 bool isStaticDisplayBusy;
 int staticDisplayIdx;
@@ -1425,7 +1425,10 @@ void flashLED(int number, int delayTime) {
 
 String getTempSymbol(bool forWeb) {
   // Note: The forWeb degrees character is an UTF8 double byte character!
-  return String((forWeb) ? "°" : String(char(248))) + String((isMetric) ? 'C' : 'F');
+  //return String((forWeb) ? "°" : String(char(248))) + String((isMetric) ? 'C' : 'F');
+  // We now support UTF8 on the display, so always use the UTF8 degree symbol
+  (void)forWeb; // suppress unused warning
+  return String("°") + String((isMetric) ? 'C' : 'F');
 }
 
 String getSpeedSymbol() {
@@ -1788,9 +1791,10 @@ void readConfiguration() {
 }
 
 void scrollMessageSetup(const String &msg) {
-  scrlMsg = msg + " "; // add one more space at the end
+  scrlMsg = utf8ToCP437(msg); // convert UTF-8 to CP437
   scrlMsgLen = (int)msg.length();
-  scrlPixTotal = (font_width * (int)msg.length() + (matrix.width() - 1) - font_space);
+  //scrlPixTotal = (font_width * (int)msg.length() + (matrix.width() - 1) - font_space);
+  scrlPixTotal = font_width * scrlMsgLen + matrix.width();
   scrlPixY = (matrix.height() - 8) / 2; // center the text vertically
   scrlPixIdx = 0;
   scrlBusy = true;
@@ -1801,7 +1805,7 @@ void scrollMessageSetup(const String &msg) {
 void scrollMessageNext() {
   if (scrlBusy) {
     int msgIdx = scrlPixIdx / font_width;
-    int x = (matrix.width() - 1) - scrlPixIdx % font_width;
+    int x = (matrix.width() - 1) - (scrlPixIdx % font_width);
     matrix.fillScreen(CLEARSCREEN);
     while (((x + font_width - font_space) >= 0) && msgIdx >= 0) {
       if (msgIdx < scrlMsgLen) {
@@ -1818,7 +1822,9 @@ void scrollMessageNext() {
 }
 
 void scrollMessageWait(const String &msg) {
-  for (int i = 0; i < (font_width * (int)msg.length() + (matrix.width())); i++) {
+  int msgLen = (int)msg.length();
+  int pixTotal = font_width * msgLen + matrix.width();
+  for (int i = 0; i < pixTotal; i++) {
     if (isWebserverEnabled) {
       server.handleClient();
     }
@@ -1828,12 +1834,12 @@ void scrollMessageWait(const String &msg) {
     matrix.fillScreen(CLEARSCREEN);
 
     int letter = i / font_width;
-    int x = (matrix.width() - 1) - i % font_width;
+    int x = (matrix.width() - 1) - (i % font_width);
     int y = (matrix.height() - 8) / 2; // center the text vertically
 
     while (((x + font_width - font_space) >= 0) && letter >= 0) {
-      if (letter < (int)msg.length()) {
-        matrix.drawChar(x, y, msg[letter], HIGH, LOW, 1);
+      if (letter < msgLen) {
+        matrix.drawChar(x, y, msg[letter], 1/*FGcolor*/, 0/*BGcolor*/, 1/*sizefactor*/);
       }
 
       letter--;

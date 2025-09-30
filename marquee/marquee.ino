@@ -6,7 +6,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.3.0"
+#define VERSION "3.3.2"  // software version
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -314,7 +314,7 @@ static const char webChangeForm1[] PROGMEM =
   "<input class='w3-input w3-border' type='text' name='gloc' value='%GLOC%'>"
   "<label>%CTYNM%</label></p>"
   "</fieldset>\n"
-  "<fieldset><legend>LED Display weather data options</legend>"
+  "<fieldset><legend>Display weather data options</legend>"
   "<p><input name='showtemp' class='w3-check' type='checkbox' %TEMP_CB%> Display Temperature</p>"
   "<p><input name='showdate' class='w3-check' type='checkbox' %DATE_CB%> Display Date</p>"
   "<p><input name='showcity' class='w3-check' type='checkbox' %CITY_CB%> Display City Name</p>"
@@ -330,6 +330,7 @@ static const char webChangeForm1[] PROGMEM =
 
 static const char webChangeForm2[] PROGMEM =
   "<fieldset><legend>Data Display settings</legend>"
+  "<p><label>Display Language</label> <select class='w3-option w3-padding' name='lang'>%LANG_OPT%</select></p>"
   // title='Any selected Display Scrolling Data is shown in short form without movement (scroll) when fitting within display width.'
   "<p><input name='statdisp' class='w3-check' type='checkbox' %STATDISP_CB%> Do not scroll weather data display</p>"
   "<p><input name='metric' class='w3-check' type='checkbox' %METRIC_CB%> Use Metric units (Celsius,kmh,mBar); Unchecked: use Imperial units (Farenheid,mph,inHg)</p>"
@@ -547,7 +548,7 @@ void setup() {
     // Start NTP , although it can't do anything while in config mode or when no WiFi AP connected
     timeNTPsetup();
 
-  } else {
+  } else { // webserver disabled (not possible runtime; compiletime constant, see top of this file )
     String msg = F("Web Interface is Disabled");
     Serial.println(msg);
     scrollMessageWait(msg);
@@ -585,8 +586,8 @@ void loop() {
         }
       }
       else {
-        if (++scrlBusyCnt > 60) {
-          Serial.print(F("scroll busy too long, resetting\n"));
+        if ((++scrlBusyCnt % 60) == 0) { // every 60 seconds
+          Serial.printf_P(PSTR("scroll busy %d s\n"), scrlBusyCnt);
           scrlBusyCnt = 0;
         }
       }
@@ -729,6 +730,10 @@ void processEveryMinute()
       }
       if (showTemperature) {
         if (!isStaticDisplay) {
+          Serial.printf_P(PSTR("Temp: %s %s\n"), temperature.c_str(), getTempSymbol().c_str());
+
+          //msg += F("Temperature:") + temperature + getTempSymbol() + "  ";
+          msg += getTranslationStr(TR_TEMPERATURE) + ':';
           msg += temperature + getTempSymbol() + "  ";
         } else {
           staticDisplay[staticDisplayIdx] = temperature + getTempSymbol();
@@ -738,14 +743,19 @@ void processEveryMinute()
 
       // show high/low temperature
       if (showHighLow && !isStaticDisplay) {
-        msg += F("High/Low:") + String(weatherClient.getTemperatureHigh(),0) + "/" + String(weatherClient.getTemperatureLow(),0) + "  ";
+        //msg += F("High/Low:") + String(weatherClient.getTemperatureHigh(),0) + "/" + String(weatherClient.getTemperatureLow(),0) + "  ";
+        msg += getTranslationStr(TR_HIGHLOW) + ':';
+        msg += String(int(ceil(weatherClient.getTemperatureHigh())),DEC) + '/';
+        msg += String(int(weatherClient.getTemperatureLow()),DEC) + "  ";
       }
       if (showCondition && !isStaticDisplay) {
         msg += weatherDescription + "  ";
       }
       if (showHumidity) {
         if (!isStaticDisplay) {
-          msg += F("Humidity:") + String(weatherClient.getHumidity()) + "%  ";
+          //msg += F("Humidity:") + String(weatherClient.getHumidity()) + "%  ";
+          msg += getTranslationStr(TR_HUMIDITY) + ':';
+          msg += String(weatherClient.getHumidity()) + "%  ";
         } else {
           staticDisplay[staticDisplayIdx] = String(weatherClient.getHumidity()) + ((displayWidth>=6)?"%RH":"%");
           staticDisplayIdx++;
@@ -755,7 +765,10 @@ void processEveryMinute()
         String windspeed = String(weatherClient.getWindSpeed(),0);
         windspeed.trim();
         if (!isStaticDisplay) {
-          msg += F("Wind:") + weatherClient.getWindDirectionText() + " " + windspeed + getSpeedSymbol() + "  ";
+          //msg += F("Wind:")
+          msg += getTranslationStr(TR_WIND) + ':';
+          msg += weatherClient.getWindDirectionText() + " ";
+          msg += windspeed + getSpeedSymbol() + "  ";
         } else {
           // 4 tile display can fit up to "99kmh"
           staticDisplay[staticDisplayIdx] = windspeed + getSpeedSymbol();
@@ -764,7 +777,9 @@ void processEveryMinute()
       }
       if (showPressure) {
         if (!isStaticDisplay) {
-          msg += F("Pressure:") + String(weatherClient.getPressure()) + getPressureSymbol() + "  ";
+          //msg += F("Pressure:")
+          msg += getTranslationStr(TR_PRESSURE) + ':';
+          msg += String(weatherClient.getPressure()) + getPressureSymbol() + "  ";
         } else {
           // 4 tile display can just fit "999mb", ie. low pressure, Imperial inHg will only fit on 8 tiles
           staticDisplay[staticDisplayIdx] = String(weatherClient.getPressure()) + getPressureSymbol();
@@ -989,6 +1004,7 @@ void handleSaveConfig() {
     isStaticDisplay = server.hasArg(F("statdisp"));
     isSysLed = server.hasArg(F("sysled"));
     isMetric = server.hasArg(F("metric"));
+    language = server.arg(F("lang"));
     marqueeMessage = server.arg(F("marqueeMsg"));
     quietTimeMode = server.arg(F("qtmode")).toInt();
     quietTimeDimlevel = server.arg(F("qtlvl")).toInt();
@@ -1092,6 +1108,7 @@ void handleConfigure() {
   sendHeader();
 
   String form = FPSTR(webChangeForm1);
+  form.reserve(2400); // this form gets larger by about 440 with all replaces
   form.replace(F("%OWMKEY%"), owmApiKey);
   form.replace(F("%CTYNM%"), (weatherClient.getCity() != "") ?
       weatherClient.getCity() + ", " + weatherClient.getCountry() + " @ " + String(weatherClient.getLat(),6) + "," + String(weatherClient.getLon(),6)  : "");
@@ -1108,6 +1125,19 @@ void handleConfigure() {
   server.sendContent(form);
 
   form = FPSTR(webChangeForm2);
+  form.reserve(4000); // this form gets quite big with all replaces
+  // create language select list
+  String langOptions;
+  langOptions.reserve(400);
+  for (int l=0; l<NUM_LANGUAGES; l++) {
+    langOptions += F("<option value='");
+    langOptions += getLanguageCode(static_cast<lang_t>(l));
+    langOptions += F("'>");
+    langOptions += getLanguageName(static_cast<lang_t>(l));
+    langOptions += F("</option>");
+  }
+  langOptions.replace("'" + language + "'", "'" + language + "' selected");
+  form.replace(F("%LANG_OPT%"), langOptions);
   form.replace(F("%24HR_CB%"), (is24hour) ? "checked" : "");
   form.replace(F("%METRIC_CB%"), (isMetric) ? "checked" : "");
   form.replace(F("%PM_CB%"), (isPmIndicator) ? "checked" : "");
@@ -1147,6 +1177,7 @@ void handleConfigure() {
 
   form = FPSTR(webChangeForm3);
   String themeOptions = FPSTR(webColorThemes);
+  themeOptions.reserve(550);
   themeOptions.replace(">" + String(themeColor) + "<", " selected>" + String(themeColor) + "<");
   form.replace(F("%THEME_OPT%"), themeOptions);
   form.replace(F("%AUTH_CB%"), (isBasicAuth) ? "checked" : "");
@@ -1370,7 +1401,8 @@ void webDisplayWeatherData() {
       F("<br>"
         "<a href='https://www.google.com/maps/@") + weatherClient.getLat() + "," + weatherClient.getLon() + F(",10000m/data=!3m1!1e3' target='_BLANK'><i class='fas fa-map-marker' style='color:red'></i> Map It!</a><br>"
       "</p></div></div>"
-      "<div class='w3-cell-row' style='width:100%'><h3>") + dtstr  + F("</h3></div><hr>");
+      "<div class='w3-cell-row' style='width:100%'><h3>") + dtstr  + F("</h3></div>"
+      "<p>LED Display Language is set to ") + String(getLanguageName(getLanguage())) + F(" (") + String(getLanguageCode(getLanguage())) + F(")</p><hr>");
   }
 
 
@@ -1428,7 +1460,7 @@ String getTempSymbol(bool forWeb) {
   //return String((forWeb) ? "°" : String(char(248))) + String((isMetric) ? 'C' : 'F');
   // We now support UTF8 on the display, so always use the UTF8 degree symbol
   (void)forWeb; // suppress unused warning
-  return String("°") + String((isMetric) ? 'C' : 'F');
+  return String((isMetric) ? "°C" : "°F");
 }
 
 String getSpeedSymbol() {
@@ -1438,6 +1470,30 @@ String getSpeedSymbol() {
 String getPressureSymbol()
 {
   return String((isMetric) ? "mb" : "inHg");
+}
+
+String getWindDirectionString(int windDirectionDegrees) {
+  //static const char dirnames[] PROGMEM = "N,NNE,NE,ENE,E,ESE,SE,SSE,S,SSW,SW,WSW,W,WNW,NW,NNW";
+  //String dirstr = FPSTR(dirnames);
+  // TODO: get wind direction names from translation resource
+  String dirstr = getTranslation(TR_WINDDIRECTIONS);
+
+  // convert degrees 0..360 into 16 segments
+  // 16 segments: N, NNE, NE, ENE, E, ESE, SE, SSE, S, SSW, SW, WSW, W, WNW, NW, NNW ;
+  int val = ((windDirectionDegrees*16 + 180) / 360) % 16;
+
+  /*int begin = 0, end = 0;
+  // iterate through comma separated list
+  while (val > 0) {
+    end = dirstr.indexOf(',', begin);
+    if (end == -1) end = dirstr.length(); // at end of list
+    if (--val == 0) break;
+    begin = end + 1;
+  }
+  return dirstr.substring(begin, end);*/
+  String retv = findWordInCommaList(dirstr, val, 16);
+  Serial.printf_P(PSTR("WindDir: %d deg = seg %d = %s\n"), windDirectionDegrees,val, retv.c_str());
+  return retv;
 }
 
 // converts the dBm to a range between 0 and 100%
@@ -1564,6 +1620,7 @@ void writeConfiguration() {
     Serial.println(F("Saving settings now..."));
     f.println(F("APIKEY=") + owmApiKey);
     f.println(F("CityID=") + geoLocation); // using CityID for backwards compatibility
+    f.println(F("language=") + language);
     f.println(F("marqueeMessage=") + marqueeMessage);
     f.println(F("quietTimeStart=") + String(quietTimeStart));
     f.println(F("quietTimeEnd=") + String(quietTimeEnd));
@@ -1699,6 +1756,9 @@ void readConfiguration() {
         displayWidth = n;
       }
     }
+    if ((idx = line.indexOf(F("language="))) >= 0) {
+      language = line.substring(idx + 9);
+    }
     if ((idx = line.indexOf(F("marqueeMessage="))) >= 0) {
       marqueeMessage = line.substring(idx + 15);
     }
@@ -1788,6 +1848,7 @@ void readConfiguration() {
   #if COMPILE_MQTT
   mqttClient.updateMqttClient(MqttServer, MqttPort, MqttTopic, MqttAuthUser, MqttAuthPass);
   #endif
+  setLanguage(getLanguageFromCode(language.c_str()));
 }
 
 void scrollMessageSetup(const String &msg) {

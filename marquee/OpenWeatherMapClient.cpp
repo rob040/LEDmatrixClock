@@ -87,6 +87,15 @@ int OpenWeatherMapClient::setGeoLocation(const String &location) {
   return (myGeoLocationType <= LOC_UNKNOWN);
 }
 
+int OpenWeatherMapClient::setLanguage(const String &languageCode) {
+  // languageCode must be a two-letter code such as "en", "fr", "de", ...
+  // see https://openweathermap.org/current#multi
+  // return 0 on success, 1 on failure such as invalid code
+  if (languageCode.length() != 2) return 1;
+  myLanguage = languageCode;
+  return 0;
+}
+
 void OpenWeatherMapClient::updateWeather() {
   WiFiClient weatherClient;
   String apiGetData;
@@ -121,8 +130,12 @@ void OpenWeatherMapClient::updateWeather() {
     apiGetData += EncodeUrlSpecialChars(myGeoLocation.c_str());
     break;
   }
-
-  apiGetData += F("&units=") + String((isMetric) ? F("metric") : F("imperial")) + F("&APPID=") + myApiKey + F(" HTTP/1.1");
+  apiGetData += F("&lang=");
+  apiGetData += myLanguage;
+  apiGetData += F("&units=");
+  apiGetData += String((isMetric) ? F("metric") : F("imperial"));
+  apiGetData += F("&APPID=");
+  apiGetData += myApiKey + F(" HTTP/1.1");
   Serial.println(F("Getting Weather Data"));
   Serial.println(apiGetData);
   errorMsg = "";
@@ -262,9 +275,12 @@ void OpenWeatherMapClient::updateWeather() {
 
 
 String OpenWeatherMapClient::getWindDirectionText() {
-  int val = floor((weather.windDirection / 22.5) + 0.5);
-  String arr[] = {"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"};
-  return arr[(val % 16)];
+  //int val = floor((weather.windDirection / 22.5) + 0.5);
+  //int val =  int((weather.windDirection*16 + 180) / 360) % 16;
+  // N, NNE, NE, ENE, E, ESE, SE, SSE, S, SSW, SW, WSW, W, WNW, NW, NNW ;
+  //String arr[] = {"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"};
+  //return arr[(val % 16)];
+  return getWindDirectionString(weather.windDirection);
 }
 
 

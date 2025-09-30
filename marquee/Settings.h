@@ -42,6 +42,7 @@
 #include "MqttClient.h"
 #endif
 #include "Utf8toCP437.h"
+#include "Translations.h"
 
 // For ESP_WiFiManager_Lite, the include sequence does matter!
 //#include <WiFiManager.h> // --> https://github.com/tzapu/WiFiManager
@@ -87,6 +88,7 @@ String owmApiKey = ""; // Your free API Key from http://openweathermap.org/ (reg
 // Default GEO Location (use http://openweathermap.org/find to find location name being "cityname,countrycode" or "city ID" or GPS "latitude,longitude")
 String geoLocation = "Breda,NL";
 String marqueeMessage = "";
+String language = "en"; // Default language is English, other supported languages are nl,de,fr,it,es,pt,no,se,pl (see TranslationStrings.h for details)
 
 // Default Weather Settings
 bool showTemperature = true;

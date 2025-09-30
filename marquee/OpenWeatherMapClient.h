@@ -17,6 +17,7 @@ private:
   const char* servername = "api.openweathermap.org";  // remote server we will connect to
 
   String myGeoLocation;
+  String myLanguage = "en"; // default language is English
   enum locationtype_e {
     LOC_UNSET,
     LOC_UNKNOWN,
@@ -63,6 +64,7 @@ private:
 public:
   OpenWeatherMapClient(const String &ApiKey, bool isMetric);
   int setGeoLocation(const String &location);
+  int setLanguage(const String &languageCode); // set language for weather description (en, fr, de, ...)
   void updateWeather();
   inline void setWeatherApiKey(const String &ApiKey) {myApiKey = ApiKey;};
   inline void setMetric(bool isMetric) {this->isMetric = isMetric;};
@@ -96,3 +98,5 @@ public:
 };
 
 extern String EncodeUrlSpecialChars(const char *msg);
+extern String getWindDirectionString(int windDirectionDegrees);
+//extern String getTranslationStr(int msg_id);

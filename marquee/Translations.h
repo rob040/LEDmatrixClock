@@ -14,7 +14,7 @@
 
 /* enum of supported languages */
 #include "TranslationStrings.h"
-#define X(lang, code, name) lang,
+#define X(lang, code, name) LANG_##lang,
 typedef enum lang_e {
   LANGUAGELIST
   LANG_COUNT
@@ -33,9 +33,9 @@ typedef enum msgid_e {
 #define NUM_LANGUAGES LANG_COUNT
 
 /* Function prototypes */
-void setLanguage(lang_t lang);
-lang_t getLanguage();
-lang_t getLanguageFromCode(const char* code);
+void setCurrentLanguageId(lang_t lang);
+lang_t getCurrentLanguageId();
+lang_t getLanguageIdFromCode(const char* code);
 const char* getLanguageCode(lang_t lang);
 const char* getLanguageName(lang_t lang);
 const char* getTranslation(int msg_id);

@@ -86,9 +86,10 @@ const int ledRotation = 3;
 
 String owmApiKey = ""; // Your free API Key from http://openweathermap.org/ (registration required; use Free Access for everyone )
 // Default GEO Location (use http://openweathermap.org/find to find location name being "cityname,countrycode" or "city ID" or GPS "latitude,longitude")
-String geoLocation = "Breda,NL";
+String geoLocation = "Amsterdam,NL";
 String marqueeMessage = "";
 String language = "en"; // Default language is English, other supported languages are nl,de,fr,it,es,pt,no,se,pl (see TranslationStrings.h for details)
+lang_t language_id = LANG_EN; // default language is English
 
 // Default Weather Settings
 bool showTemperature = true;

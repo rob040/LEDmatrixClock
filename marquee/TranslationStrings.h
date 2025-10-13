@@ -11,6 +11,10 @@
  */
 
  // Supported language list
+// X(XX, "xx", "LanguageName")
+// XX is the language code,
+// "xx" is the language code string used in the Weather URL and in the language selection dropdown list
+// LanguageName is the name of the language in that language (it is used in the language selection dropdown list)
 #ifndef LANGUAGELIST
 #define LANGUAGELIST \
   X(EN, "en", "English") \
@@ -23,6 +27,9 @@
   X(NO, "no", "Norsk") \
   X(SE, "se", "Svenska") \
   X(PL, "pl", "Polski") \
+  X(MIN, "EN", "Minimal English")  // special entry for minimal language, no translation, only ASCII chars
+
+  // Other languages, not yet supported in this project:
   // Eastern european languages: (unlikely to show well with CP437 on 8x8 matrix)
   //X(CZ, "cz", "Čeština")
   //X(SL, "sl", "Slovenščina")
@@ -30,28 +37,26 @@
   //X(TR, "tr", "Türkçe")
 
   // Add more languages here
-  // X(XX, "xx", "LanguageName")
-  // XX is the language code,
-  // "xx" is the language code string used in the Weather URL and in the language selection dropdown list
-  // LanguageName is the name of the language in that language (it is used in the language selection dropdown list)
 #endif  // LANGUAGELIST
 
 
-
-// #ifndef TR
-// #define TR(lang, str) lang##_TR = str,
-// #undef TR
-// #endif // TR
-// Define enum of supported languages
-// #define X(lang, code, name) lang,
-// enum LanguageStrings {
-//   LANGUAGELIST
-//   LANG_COUNT
-// };
-// #undef X
-
 #ifdef TR
 // Messages to translate:
+
+// "hello" max 5 char to fit on 4-tile display
+TR(TR_HELLO,
+  "hello",
+  "hallo",
+  "hallo",
+  "bjour",
+  "ciao",
+  "hola",
+  "olá",
+  "hei",
+  "hej",
+  "cześć",
+  "hello" ) // minimal (English) language
+
 TR(TR_WMSTARTED,
   "Wifi Manager Started... Please Connect to AP: %s password: %s",
   "Wifi Manager gestart... Maak verbinding met AP: %s wachtwoord: %s",
@@ -62,7 +67,9 @@ TR(TR_WMSTARTED,
   "Gerenciador de Wifi iniciado... Por favor, conecte-se ao AP: %s senha: %s",
   "Wifi Manager startet... Vennligst koble til AP: %s passord: %s",
   "Wifi Manager startar... Vänligen anslut till AP: %s lösenord: %s",
-  "Menedżer Wifi uruchomiony... Połącz się z AP: %s hasło: %s" )
+  "Menedżer Wifi uruchomiony... Połącz się z AP: %s hasło: %s",
+  "Connect to AP: %s password: %s" ) // minimal (English) language
+
 TR(TR_WMCONFIGURED,
   "Wifi Manager Configured... Rebooting",
   "Wifi Manager geconfigureerd... Herstarten",
@@ -73,19 +80,11 @@ TR(TR_WMCONFIGURED,
   "Gerenciador de Wifi configurado... Reiniciando",
   "Wifi Manager konfigurert... Omstart",
   "Wifi Manager konfigurerat... Startar om",
-  "Menedżer Wifi skonfigurowany... Uruchamianie ponowne" )
-TR(TR_WEBDISABLED,
-  "Web Interface is Disabled",                // EN
-  "Webinterface is uitgeschakeld",            // NL
-  "Webschnittstelle ist deaktiviert",         // DE
-  "L'interface Web est désactivée",           // FR
-  "L'interfaccia Web è disabilitata",         // IT
-  "La interfaz web está deshabilitada",       // ES
-  "A interface web está desativada",          // PT
-  "Webgrensesnittet er deaktivert",           // NO
-  "Webbgränssnittet är inaktiverat",          // SE
-  "Interfejs sieci Web jest wyłączony" )      // PL
-TR(TR_TEMPERATURE,
+  "Menedżer Wifi skonfigurowany... Uruchamianie ponowne",
+  "Configured... Rebooting" ) // minimal (English) language
+
+
+  TR(TR_TEMPERATURE,
   "Temperature",
   "Temperatuur",
   "Temperatur" ,
@@ -95,7 +94,9 @@ TR(TR_TEMPERATURE,
   "Temperatur",
   "Temperatur",
   "Temperatur",
-  "Temperatura" )
+  "Temperatura",
+  "" ) // minimal (English) language
+
 TR(TR_HIGHLOW,
   "High/Low",
   "Hoog/Laag",
@@ -106,7 +107,9 @@ TR(TR_HIGHLOW,
   "Alta/Baixa",
   "Høy/Lav",
   "Hög/Låg",
-  "Wysoki/Niski")
+  "Wysoki/Niski",
+  "" ) // minimal (English) language
+
 TR(TR_HUMIDITY,
   "Humidity",
   "Vochtigheid",
@@ -117,7 +120,9 @@ TR(TR_HUMIDITY,
   "Umidade",
   "Luftfuktighet",
   "Luftfuktighet",
-  "Wilgotność" )
+  "Wilgotność",
+  "" ) // minimal (English) language
+
 TR(TR_WIND,
   "Wind",
   "Wind",
@@ -128,7 +133,9 @@ TR(TR_WIND,
   "Vento",
   "Vind",
   "Vind",
-  "Wiatr" )
+  "Wiatr",
+  "" ) // minimal (English) language
+
 TR(TR_PRESSURE,
   "Pressure",
   "Luchtdruk",
@@ -139,7 +146,8 @@ TR(TR_PRESSURE,
   "Pressão",
   "Trykk",
   "Tryck",
-  "Ciśnienie" )
+  "Ciśnienie",
+  "" ) // minimal (English) language
 
 //n.u. TR(TR_DAYNAMESHORT,
 //  "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
@@ -156,7 +164,8 @@ TR(TR_DAYNAMEFULL,
   "Domingo,Segunda-feira,Terça-feira,Quarta-feira,Quinta-feira,Sexta-feira,Sábado",
   "Søndag,Mandag,Tirsdag,Onsdag,Torsdag,Fredag,Lørdag",
   "Söndag,Måndag,Tisdag,Onsdag,Torsdag,Fredag,Lördag",
-  "Niedziela,Poniedziałek,Wtorek,Środa,Czwartek,Piątek,Sobota" )
+  "Niedziela,Poniedziałek,Wtorek,Środa,Czwartek,Piątek,Sobota",
+  "" ) // minimal (English) language
 
 TR(TR_MONTHNAMESHORT,
   "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec",
@@ -168,7 +177,8 @@ TR(TR_MONTHNAMESHORT,
   "Jan,Fev,Mar,Abr,Mai,Jun,Jul,Ago,Set,Out,Nov,Dez",
   "Jan,Feb,Mar,Apr,Mai,Jun,Jul,Aug,Sep,Okt,Nov,Des",
   "Jan,Feb,Mar,Apr,Maj,Jun,Jul,Aug,Sep,Okt,Nov,Dec",
-  "Sty,Lut,Mar,Kwi,Maj,Cze,Lip,Sie,Wrz,Paź,Lis,Gru" )
+  "Sty,Lut,Mar,Kwi,Maj,Cze,Lip,Sie,Wrz,Paź,Lis,Gru",
+  "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec" ) // minimal (English) language
 
 //n.u. TR(TR_MONTHNAMEFULL,
 //  "January,February,March,April,May,June,July,August,September,October,November,December",
@@ -185,7 +195,8 @@ TR(TR_WINDDIRECTIONS,
   "N,NNE,NE,ENE,E,ESE,SE,SSE,S,SSW,SW,WSW,W,WNW,NW,NNW",
   "N,NNE,NE,ENE,E,ESE,SE,SSE,S,SSW,SW,WSW,W,WNW,NW,NNW",
   "N,NNE,NE,ENE,E,ESE,SE,SSE,S,SSW,SW,WSW,W,WNW,NW,NNW",
-  "N,NNE,NE,ENE,E,ESE,SE,SSE,S,SSW,SW,WSW,W,WNW,NW,NNW" )
+  "N,NNE,NE,ENE,E,ESE,SE,SSE,S,SSW,SW,WSW,W,WNW,NW,NNW",
+  "N,NNE,NE,ENE,E,ESE,SE,SSE,S,SSW,SW,WSW,W,WNW,NW,NNW" ) // minimal (English) language
 
 TR(TR_PLEASESETOWMKEY,
   "Please provide an API key for weather.",
@@ -197,7 +208,8 @@ TR(TR_PLEASESETOWMKEY,
   "Forneça uma chave API para o clima.",
   "Vennligst oppgi en API-nøkkel for været.",
   "Vänligen ange en API-nyckel för vädret.",
-  "Proszę podać klucz API dla pogody." )
+  "Proszę podać klucz API dla pogody.",
+  "Set OWM API key." ) // minimal (English) language
 
 TR(TR_PLEASESETLOCATION,
   "Please set location for weather.",
@@ -209,7 +221,8 @@ TR(TR_PLEASESETLOCATION,
   "Defina a localização para o clima.",
   "Vennligst angi plassering for været.",
   "Vänligen ange plats för vädret.",
-  "Proszę ustawić lokalizację dla pogody." )
+  "Proszę ustawić lokalizację dla pogody.",
+  "Set location for weather." ) // minimal (English) language
 
 TR(TR_CONNECTIONFORWEATHERFAILED,
   "Connection for weather data failed",
@@ -221,7 +234,8 @@ TR(TR_CONNECTIONFORWEATHERFAILED,
   "Conexão para dados meteorológicos falhou",
   "Tilkobling for værdata mislyktes",
   "Anslutning för väderdata misslyckades",
-  "Połączenie z danymi pogodowymi nie powiodło się" )
+  "Połączenie z danymi pogodowymi nie powiodło się",
+  "Weather data connection failed" ) // minimal (English) language
 
 TR(TR_TIMEOUTONWEATHERCLIENTDATARECEIVE,
   "TIMEOUT on weatherClient data receive",
@@ -233,7 +247,8 @@ TR(TR_TIMEOUTONWEATHERCLIENTDATARECEIVE,
   "TIMEOUT ao receber dados do weatherClient",
   "TIMEOUT ved mottak av weatherClient-data",
   "TIMEOUT vid mottagning av weatherClient-data",
-  "TIMEOUT podczas odbierania danych weatherClient" )
+  "TIMEOUT podczas odbierania danych weatherClient",
+  "Timeout on weather data receive" ) // minimal (English) language
 
 
 #endif  // TR

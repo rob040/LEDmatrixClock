@@ -9,7 +9,7 @@
 // ESP Accesspoint hostname by ESP_WifiManager_Lite; The device MAC address will be added
 #define AP_HOSTNAME_BASE                          "CLOCK-"
 #define ESP_WM_LITE_DEBUG_OUTPUT                  Serial
-#define _ESP_WM_LITE_LOGLEVEL_                    -1
+#define _ESP_WM_LITE_LOGLEVEL_                    3   // 0-3
 #define USE_LED_BUILTIN                           true
 #define USE_DYNAMIC_PARAMETERS                    false
 #define USING_CUSTOM_STYLE                        false
@@ -68,11 +68,19 @@
 #define USE_SPIFFS                                false
 
 // For testing, create a default config
-#define WML_DEFAULT_CONFIG {  "ESP8266", \
+#define WML_DEFAULT_CONFIG_TEST {  "ESP8266", \
   "SSID1",  "password1",\
   "SSID2",  "password2",\
   "SSID3",  "password3",\
   "SSID4",  "password4",\
+  "LED matrix Clock", 0 };
+// For run-time use empty default config
+// Note: if LOAD_DEFAULT_CONFIG_DATA is true, this config will be loaded on every startup
+#define WML_DEFAULT_CONFIG {  "ESP8266", \
+  "",  "",\
+  "",  "",\
+  "",  "",\
+  "",  "",\
   "LED matrix Clock", 0 };
 
 //#include <ESP_WiFiManager_Lite.h> // --> https://github.com/khoih-prog/ESP_WiFiManager_Lite (Archived) --> ../lib/ESP_WiFiManager_Lite.h

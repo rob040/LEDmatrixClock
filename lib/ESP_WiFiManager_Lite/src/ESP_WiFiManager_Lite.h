@@ -1465,7 +1465,7 @@ class ESP_WiFiManager_Lite
     //////////////////////////////////////
 
 #define ESP_WM_LITE_BOARD_TYPE   "ESP_WM_LITE"
-#define WM_NO_CONFIG             "blank"
+#define WM_NO_CONFIG             ""//"blank"
 
     int calcChecksum()
     {

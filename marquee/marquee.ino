@@ -433,7 +433,8 @@ void setup() {
 
   Serial.println(F("matrix created"));
   matrix.fillScreen(CLEARSCREEN);
-  centerPrint(F("hello"));
+  String hello = getTranslation(TR_HELLO);
+  centerPrint(hello);
   // welcome continued later
 
 #ifdef BUZZER_PIN
@@ -488,7 +489,7 @@ void setup() {
 
   if (!ESP_WiFiManager->isConfigMode()) {
     // Continue welcome 'hello' for 4.5 to 6 seconds
-    centerPrint(F("hello"));
+    centerPrint(hello);
     for (int inx = 0; inx <= 15; inx++) {
       matrix.setIntensity(inx);
       delay(100);
@@ -540,7 +541,11 @@ void setup() {
     Serial.println(webAddress);
     scrollMessageWait(webAddress);
     if (ESP_WiFiManager->isConfigMode()) {
-      String msg = F("Wifi Manager Started... Please Connect to AP: ") + WiFi.softAPSSID() + F(" password: My") + WiFi.softAPSSID();
+      // Show the SSID and Password of the access point
+      //String msg = F("Wifi Manager Started... Please Connect to AP: ") + WiFi.softAPSSID() + F(" password: My") + WiFi.softAPSSID();
+      char msg[100];
+      // fmt = ("Wifi Manager Started... Please Connect to AP: %s password: My%s")
+      sprintf(msg, getTranslation(TR_WMSTARTED), WiFi.softAPSSID().c_str(), String("My"+WiFi.softAPSSID()).c_str());
       Serial.println(msg);
       scrollMessageWait(msg);
       centerPrint(F("wifi"));
@@ -548,15 +553,23 @@ void setup() {
     // Start NTP , although it can't do anything while in config mode or when no WiFi AP connected
     timeNTPsetup();
 
-  } else { // webserver disabled (not possible runtime; compiletime constant, see top of this file )
+  } else {
+    // webserver disabled (not possible runtime; compiletime constant, see top of this file )
+    #if 0 // for testing without webserver
     String msg = F("Web Interface is Disabled");
     Serial.println(msg);
     scrollMessageWait(msg);
+    #endif
   }
   SCHEDULE_INTERVAL_START(scrlPixelLastTime, 2000);
   flashLED(1, 500);
 }
 
+#ifdef DEBUG
+#define LOOP_DEBUG 1
+#else
+#define LOOP_DEBUG 0
+#endif
 //************************************************************
 // Main Loop
 //************************************************************
@@ -566,6 +579,7 @@ void loop() {
     lastSecond = second();
 
     if (!ESP_WiFiManager->isConfigMode()) {
+      #if LOOP_DEBUG
       static int scrlBusyCnt = 0;
       if (!scrlBusy) {
         uint32_t t = millis();
@@ -573,24 +587,32 @@ void loop() {
           Serial.printf_P(PSTR("scroll busy for %d s\n"), scrlBusyCnt);
         }
         scrlBusyCnt = 0;
+        #endif // LOOP_DEBUG
         processEverySecond();
+        #if LOOP_DEBUG
         t = millis() - t;
         if (t > 100) Serial.printf_P(PSTR("proc1s took %u ms\n"), t);
+        #endif // LOOP_DEBUG
 
         if (lastMinute != minute()) {
+          #if LOOP_DEBUG
           uint32_t t = millis();
           lastMinute = minute();
+          #endif // LOOP_DEBUG
           processEveryMinute();
+          #if LOOP_DEBUG
           t = millis() - t;
           if (t > 100) Serial.printf_P(PSTR("proc1m took %u ms\n"), t);
+          #endif // LOOP_DEBUG
         }
+      #if LOOP_DEBUG
       }
       else {
         if ((++scrlBusyCnt % 60) == 0) { // every 60 seconds
-          Serial.printf_P(PSTR("scroll busy %d s\n"), scrlBusyCnt);
-          scrlBusyCnt = 0;
+          Serial.printf_P(PSTR("scroll long busy %d s\n"), scrlBusyCnt);
         }
       }
+      #endif // LOOP_DEBUG
     }
   }
   //SCHEDULE_INTERVAL(proc1sLastTime, 1000, processEverySecond);
@@ -600,7 +622,7 @@ void loop() {
   SCHEDULE_INTERVAL(staticDisplayLastTime, staticDisplayTime, staticDisplayNext);
 
   if (loopState != lastState) {
-    #if DEBUG
+    #if LOOP_DEBUG
       Serial.printf_P(PSTR("[%u] loopstate %d -> %d\n"), millis()&0xFFFF, lastState, loopState);
     #endif
     lastState = loopState;
@@ -658,7 +680,7 @@ void loop() {
       break;
   }
   if (loopState != lastState) {
-    #if DEBUG
+    #if LOOP_DEBUG
       Serial.printf_P(PSTR("[%u] loopstate -> %d\n"), millis()&0xFFFF, loopState);
     #endif
   }
@@ -714,6 +736,7 @@ void processEveryMinute()
 
       if (showDate) {
         if (!isStaticDisplay) {
+          //TODO: add customized date formats
           msg += getDayName(weekday()) + ", ";
           msg += getMonthName(month()) + " " + day() + "  ";
         } else {
@@ -733,7 +756,8 @@ void processEveryMinute()
           Serial.printf_P(PSTR("Temp: %s %s\n"), temperature.c_str(), getTempSymbol().c_str());
 
           //msg += F("Temperature:") + temperature + getTempSymbol() + "  ";
-          msg += getTranslationStr(TR_TEMPERATURE) + ':';
+          if (language_id != LANG_MIN)
+            msg += getTranslationStr(TR_TEMPERATURE) + ':';
           msg += temperature + getTempSymbol() + "  ";
         } else {
           staticDisplay[staticDisplayIdx] = temperature + getTempSymbol();
@@ -744,7 +768,8 @@ void processEveryMinute()
       // show high/low temperature
       if (showHighLow && !isStaticDisplay) {
         //msg += F("High/Low:") + String(weatherClient.getTemperatureHigh(),0) + "/" + String(weatherClient.getTemperatureLow(),0) + "  ";
-        msg += getTranslationStr(TR_HIGHLOW) + ':';
+        if (language_id != LANG_MIN)
+          msg += getTranslationStr(TR_HIGHLOW) + ':';
         msg += String(int(ceil(weatherClient.getTemperatureHigh())),DEC) + '/';
         msg += String(int(weatherClient.getTemperatureLow()),DEC) + "  ";
       }
@@ -754,7 +779,8 @@ void processEveryMinute()
       if (showHumidity) {
         if (!isStaticDisplay) {
           //msg += F("Humidity:") + String(weatherClient.getHumidity()) + "%  ";
-          msg += getTranslationStr(TR_HUMIDITY) + ':';
+          if (language_id != LANG_MIN)
+            msg += getTranslationStr(TR_HUMIDITY) + ':';
           msg += String(weatherClient.getHumidity()) + "%  ";
         } else {
           staticDisplay[staticDisplayIdx] = String(weatherClient.getHumidity()) + ((displayWidth>=6)?"%RH":"%");
@@ -766,8 +792,9 @@ void processEveryMinute()
         windspeed.trim();
         if (!isStaticDisplay) {
           //msg += F("Wind:")
-          msg += getTranslationStr(TR_WIND) + ':';
-          msg += weatherClient.getWindDirectionText() + " ";
+          if (language_id != LANG_MIN)
+            msg += getTranslationStr(TR_WIND) + ':';
+          msg += weatherClient.getWindDirectionText() + ' ';
           msg += windspeed + getSpeedSymbol() + "  ";
         } else {
           // 4 tile display can fit up to "99kmh"
@@ -778,7 +805,8 @@ void processEveryMinute()
       if (showPressure) {
         if (!isStaticDisplay) {
           //msg += F("Pressure:")
-          msg += getTranslationStr(TR_PRESSURE) + ':';
+          if (language_id != LANG_MIN)
+            msg += getTranslationStr(TR_PRESSURE) + ':';
           msg += String(weatherClient.getPressure()) + getPressureSymbol() + "  ";
         } else {
           // 4 tile display can just fit "999mb", ie. low pressure, Imperial inHg will only fit on 8 tiles
@@ -1374,14 +1402,29 @@ void webDisplayWeatherData() {
     }
   } else {
     html.reserve(512);
-    html += F(
-      "<div class='w3-cell-row' style='width:100%'><h2>") + weatherClient.getCity() + ", " + weatherClient.getCountry() + F("</h2></div><div class='w3-cell-row'>"
+    html += F("<div class='w3-cell-row' style='width:100%'><h2>");
+    html += weatherClient.getCity();
+    html += ", " + weatherClient.getCountry();
+    html += F("</h2></div><div class='w3-cell-row'>"
       "<div class='w3-cell w3-left w3-medium' style='width:120px'>"
-      "<img src='http://openweathermap.org/img/wn/") + weatherClient.getIcon() + "@2x.png' alt='" + weatherClient.getWeatherDescription() + "'><br>" +
-      weatherClient.getHumidity() + F("% <span class='w3-tiny'>RH</span><br>") +
-      weatherClient.getPressure() + F(" <span class='w3-tiny'>") + getPressureSymbol() + F("</span><br>"
-      "Wind ") +
-      weatherClient.getWindDirectionText() + " /<br>&nbsp;&nbsp;" + String(weatherClient.getWindSpeed(),1) + F("&nbsp;<span class='w3-tiny'>") + getSpeedSymbol() + F("</span><br>"
+      "<img src='http://openweathermap.org/img/wn/");
+    html += weatherClient.getIcon();
+    html += F("@2x.png' alt='");
+    html += weatherClient.getWeatherDescription();
+    html += F("'><br>");
+    html += weatherClient.getHumidity();
+    html += F("% <span class='w3-tiny'>RH</span><br>");
+    html += weatherClient.getPressure();
+    html += F(" <span class='w3-tiny'>");
+    html += getPressureSymbol();
+    html += F("</span><br>"
+      "Wind ");
+    html += weatherClient.getWindDirectionText();
+    html += F(" /<br>&nbsp;&nbsp;");
+    html += String(weatherClient.getWindSpeed(), 1);
+    html += F("&nbsp;<span class='w3-tiny'>");
+    html += getSpeedSymbol();
+    html += F("</span><br>"
       "</div>"
       "<div class='w3-cell w3-container' style='width:100%'><p>");
     server.sendContent(html);
@@ -1391,10 +1434,11 @@ void webDisplayWeatherData() {
     }
     html.clear();
     html.reserve(1024);
-    html +=
-      weatherClient.getWeatherCondition() + " (" + weatherClient.getWeatherDescription() + ") " + clouds + "<br>" +
-      temperature + " " + getTempSymbol(true) + "<br>" +
-      String(weatherClient.getTemperatureHigh(),1) + "/" + String(weatherClient.getTemperatureLow(),1) + " " + getTempSymbol(true) + "<br>"
+    html += weatherClient.getWeatherCondition();
+    html += " (" + weatherClient.getWeatherDescription() + ") ";
+    html += clouds + "<br>";
+    html += temperature + ' ' + getTempSymbol(true) + "<br>";
+    html += String(weatherClient.getTemperatureHigh(),1) + "/" + String(weatherClient.getTemperatureLow(),1) + " " + getTempSymbol(true) + "<br>"
       "SunRise " + get24HrColonMin(weatherClient.getSunRise() + weatherClient.getTimeZoneSeconds()) + "<br>"
       "SunSet " + get24HrColonMin(weatherClient.getSunSet() + weatherClient.getTimeZoneSeconds()) + "<br>"
       "Updated " + get24HrColonMin(weatherClient.getReportTimestamp() + weatherClient.getTimeZoneSeconds()) +
@@ -1402,7 +1446,7 @@ void webDisplayWeatherData() {
         "<a href='https://www.google.com/maps/@") + weatherClient.getLat() + "," + weatherClient.getLon() + F(",10000m/data=!3m1!1e3' target='_BLANK'><i class='fas fa-map-marker' style='color:red'></i> Map It!</a><br>"
       "</p></div></div>"
       "<div class='w3-cell-row' style='width:100%'><h3>") + dtstr  + F("</h3></div>"
-      "<p>LED Display Language is set to ") + String(getLanguageName(getLanguage())) + F(" (") + String(getLanguageCode(getLanguage())) + F(")</p><hr>");
+      "<p>LED Display Language is set to ") + String(getLanguageName(getCurrentLanguageId())) + F(" (") + String(getLanguageCode(getCurrentLanguageId())) + F(")</p><hr>");
   }
 
 
@@ -1848,7 +1892,10 @@ void readConfiguration() {
   #if COMPILE_MQTT
   mqttClient.updateMqttClient(MqttServer, MqttPort, MqttTopic, MqttAuthUser, MqttAuthPass);
   #endif
-  setLanguage(getLanguageFromCode(language.c_str()));
+  language_id = getLanguageIdFromCode(language.c_str());
+  setCurrentLanguageId(language_id);
+  Serial.printf_P(PSTR("Language set to %s (%s)\n"), getLanguageName(language_id), getLanguageCode(language_id));
+  weatherClient.setLanguage(language);
 }
 
 void scrollMessageSetup(const String &msg) {

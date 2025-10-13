@@ -13,6 +13,7 @@
 
 #include "OpenWeatherMapClient.h"
 #include "TimeStr.h"
+#include "Translations.h"
 
 OpenWeatherMapClient::OpenWeatherMapClient(const String &ApiKey, bool isMetric) {
   myGeoLocation = "";
@@ -56,6 +57,11 @@ int OpenWeatherMapClient::setGeoLocation(const String &location) {
       Serial.println(ch,HEX);
     }
   }
+  //DEBUG
+  #if DEBUG
+  Serial.print(F("setGeoLocation: "));
+  Serial.println(location);
+  #endif
 
   // Find out what kind of GeoLocation has been passed
   myGeoLocationType = LOC_UNKNOWN;
@@ -73,7 +79,7 @@ int OpenWeatherMapClient::setGeoLocation(const String &location) {
     myGeoLocation_lon = location.substring(comma+1).toFloat();
     // USE http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={API-key}
   }
-  if ((ch_cnt_digits == 0) && (ch_cnt_letters >= len-2)) {
+  if ((ch_cnt_digits == 0) && (len > 2) && (ch_cnt_letters >= len-2)) {
     myGeoLocationType = LOC_NAME;    // city,state,countrycode OR city,countrycode OR city
     myGeoLocation = location;
     // USE http://api.openweathermap.org/data/2.5/weather?q={city-name}&appid={API-key}
@@ -81,9 +87,11 @@ int OpenWeatherMapClient::setGeoLocation(const String &location) {
     // USE http://api.openweathermap.org/data/2.5/weather?q={city-name},{state-code},{country-code}&appid={API-key}
     // those will also get the lat,lon
   }
-  if (myGeoLocationType == LOC_UNKNOWN) {
-    Serial.printf_P(PSTR("loc=%s,c=%d,c2=%d,len=%d,dec=%d,cd=%d,cl=%d,cn=%d\n"), location.c_str(),comma,comma2,len,decimal,ch_cnt_digits,ch_cnt_letters,ch_cnt_notallowed);
-  }
+  //if (myGeoLocationType == LOC_UNKNOWN) {
+    #if DEBUG
+    Serial.printf_P(PSTR("loc=%s,typ=%d,c=%d,c2=%d,len=%d,dec=%d,cd=%d,cl=%d,cn=%d\n"), location.c_str(),myGeoLocationType,comma,comma2,len,decimal,ch_cnt_digits,ch_cnt_letters,ch_cnt_notallowed);
+    #endif
+  //}
   return (myGeoLocationType <= LOC_UNKNOWN);
 }
 
@@ -102,7 +110,8 @@ void OpenWeatherMapClient::updateWeather() {
   apiGetData.reserve(260);
   apiGetData += F("GET /data/2.5/weather?");
   if (myApiKey == "") {
-    errorMsg = F("Please provide an API key for weather.");
+    //errorMsg = F("Please provide an API key for weather.");
+    errorMsg = getTranslationStr(TR_PLEASESETOWMKEY);
     Serial.println(errorMsg);
     weather.isValid = false;
     return;
@@ -111,7 +120,8 @@ void OpenWeatherMapClient::updateWeather() {
   default:
   case LOC_UNSET:
   case LOC_UNKNOWN:
-    errorMsg = F("Please set location for weather.");
+    //errorMsg = F("Please set location for weather.");
+    errorMsg = getTranslationStr(TR_PLEASESETLOCATION);
     Serial.println(errorMsg);
     weather.isValid = false;
     return;
@@ -147,7 +157,8 @@ void OpenWeatherMapClient::updateWeather() {
     weatherClient.println();
   }
   else {
-    errorMsg = F("Connection for weather data failed");
+    //errorMsg = F("Connection for weather data failed");
+    errorMsg = getTranslationStr(TR_CONNECTIONFORWEATHERFAILED);
     Serial.println(errorMsg);
     if (++dataGetRetryCount > dataGetRetryCountError) weather.isValid = false;
     return;
@@ -165,7 +176,8 @@ void OpenWeatherMapClient::updateWeather() {
           delay(1); //waits for data
   }
   if ((millis()-start) >= timeout_ms) {
-    errorMsg = F("TIMEOUT on weatherClient data receive");
+    //errorMsg = F("TIMEOUT on weatherClient data receive");
+    errorMsg = getTranslationStr(TR_TIMEOUTONWEATHERCLIENTDATARECEIVE);
     Serial.println(errorMsg);
     if (++dataGetRetryCount > dataGetRetryCountError) weather.isValid = false;
     return;
@@ -180,7 +192,7 @@ void OpenWeatherMapClient::updateWeather() {
   weatherClient.readBytesUntil('\r', status, sizeof(status));
   Serial.println(F("Response Header: ") + String(status));
   if (strcmp(status, "HTTP/1.1 200 OK") != 0) {
-    errorMsg = F("Unexpected response: ") + String(status);
+    errorMsg = F("Unexpected response: ") + String(status); // exceptional error, not translated
     Serial.println(errorMsg);
     if (++dataGetRetryCount > dataGetRetryCountError) weather.isValid = false;
     return;
@@ -189,7 +201,7 @@ void OpenWeatherMapClient::updateWeather() {
   // Skip HTTP headers
   char endOfHeaders[] = "\r\n\r\n";
   if (!weatherClient.find(endOfHeaders)) {
-    errorMsg = F("Invalid response endOfHeaders");
+    errorMsg = F("Invalid response endOfHeaders"); // exceptional error, not translated
     Serial.println(errorMsg);
     if (++dataGetRetryCount > dataGetRetryCountError) weather.isValid = false;
     return;
@@ -199,7 +211,7 @@ void OpenWeatherMapClient::updateWeather() {
   JsonDocument jdoc;
   DeserializationError error = deserializeJson(jdoc, weatherClient);
   if (error) {
-    errorMsg = F("Weather Data Parsing failed!");
+    errorMsg = F("Weather Data Parsing failed!"); // exceptional error, not translated
     Serial.println(errorMsg);
     if (++dataGetRetryCount > dataGetRetryCountError) weather.isValid = false;
     return;
@@ -210,7 +222,7 @@ void OpenWeatherMapClient::updateWeather() {
   // prudancy check: incomplete message ?
   if (int len = measureJson(jdoc) <= 150) {
     Serial.println(F("Error incomplete message, size ") + String(len));
-    errorMsg = F("Error: ") + jdoc[F("message")].as<String>();
+    errorMsg = F("Error: ") + jdoc[F("message")].as<String>(); // exceptional error, not translated
     Serial.println(errorMsg);
     if (++dataGetRetryCount > dataGetRetryCountError) weather.isValid = false;
     return;

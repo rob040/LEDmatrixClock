@@ -17,7 +17,7 @@
  * - Includes temporary buffer management for reading strings from PROGMEM.
  *
  * Usage:
- * - Use setLanguage() to change the current language.
+ * - Use setCurrentLanguageId() to change the current language.
  * - Use getTranslation() or getTranslationStr() to retrieve translated messages.
  * - Use getLanguageCode() and getLanguageName() for language metadata.
  *
@@ -31,11 +31,11 @@
 #include "Timestr.h"
 
 /* Global variables */
-static lang_t currentLanguage = EN; // default language is English
+static lang_t currentLanguage = LANG_EN; // default language is English
 
 // Translation strings in PROGMEM
 #define SP(lang, msg, str) const char tr_msg_##msg##_##lang[] PROGMEM = str;
-#define TR(msg, l1, l2, l3, l4, l5, l6, l7, l8, l9,l10) \
+#define TR(msg, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, l11) \
   SP(EN, msg, l1) \
   SP(NL, msg, l2) \
   SP(DE, msg, l3) \
@@ -45,14 +45,15 @@ static lang_t currentLanguage = EN; // default language is English
   SP(PT, msg, l7) \
   SP(NO, msg, l8) \
   SP(SE, msg, l9) \
-  SP(PL, msg, l10)
+  SP(PL, msg, l10) \
+  SP(MIN, msg, l11) // minimal (English) language
 #include "TranslationStrings.h"
 #undef TR
 #undef SP
 
 // Translation table of pointers to translation strings in PROGMEM
 const char* const translationTable[NUM_MESSAGES][LANG_COUNT] PROGMEM =  {
-#define TR(msg, ...) { tr_msg_##msg##_##EN, tr_msg_##msg##_##NL, tr_msg_##msg##_##DE, tr_msg_##msg##_##FR, tr_msg_##msg##_##IT, tr_msg_##msg##_##ES, tr_msg_##msg##_##PT, tr_msg_##msg##_##NO, tr_msg_##msg##_##SE, tr_msg_##msg##_##PL},
+#define TR(msg, ...) { tr_msg_##msg##_##EN, tr_msg_##msg##_##NL, tr_msg_##msg##_##DE, tr_msg_##msg##_##FR, tr_msg_##msg##_##IT, tr_msg_##msg##_##ES, tr_msg_##msg##_##PT, tr_msg_##msg##_##NO, tr_msg_##msg##_##SE, tr_msg_##msg##_##PL, tr_msg_##msg##_##MIN },
 #include "TranslationStrings.h"
 #undef TR
 }; // translationTable
@@ -81,38 +82,15 @@ static char translationBuffer[MAX_TRANSLATION_LEN];
 
 // Get two-letter language code string from lang_t enum
 const char* getLanguageCode(lang_t lang) {
-  /*if (lang >= 0 && lang < NUM_LANGUAGES) {
-    static char code[4];
-    memcpy_P(code, &languageCodeTable[lang], sizeof(code));
-    Serial.printf_P(PSTR("getLanguageCode lang=%d: %s\n"), lang, code);
-    return code;
-  }*/
   static char code[4];
-  /*String codestr = FPSTR(languageCodeTable);
-    Serial.printf_P(PSTR("getLanguageCode lang=%d: str=%s\n"), lang, codestr.c_str());
-  if (lang >= 0 && lang < NUM_LANGUAGES) {
-    codestr = codestr.substring(lang*3, lang*3+2).c_str();
-    strncpy(code, codestr.c_str(), sizeof(code));
-    code[sizeof(code)-1] = 0; // ensure null termination
-    Serial.printf_P(PSTR("getLanguageCode lang=%d: %s\n"), lang, code);
-    return code;
-  }*/
   strncpy(code, findWordInCommaList(languageCodeTable, lang, NUM_LANGUAGES).c_str(), sizeof(code));
-  //return (code[0] != 0) ? code : "en"; // default to "en" if not found
   code[sizeof(code)-1] = 0; // ensure null termination
   Serial.printf_P(PSTR("getLanguageCode lang=%d: %s\n"), lang, code);
   return (code[0] != 0) ? code : "en"; // default to "en" if not found
 }
 
 // Get lang_t enum from two-letter language code string
-lang_t getLanguageFromCode(const char* code) {
-  /*if (code != nullptr) {
-    for (int i = 0; i < NUM_LANGUAGES; i++) {
-      if (strcmp_P(code, (PGM_P)pgm_read_ptr(&languageCodeTable[i])) == 0) {
-        return static_cast<lang_t>(i);
-      }
-    }
-  }*/
+lang_t getLanguageIdFromCode(const char* code) {
   if (code != nullptr) {
     String codes = FPSTR(languageCodeTable);
     for (int i = 0; i < NUM_LANGUAGES; i++) {
@@ -122,17 +100,11 @@ lang_t getLanguageFromCode(const char* code) {
       }
     }
   }
-  return EN; // default to English if not found
+  return LANG_EN; // default to English if not found
 }
 
 // Get language name string from lang_t enum
 const char* getLanguageName(lang_t lang) {
-  /*if (lang >= 0 && lang < NUM_LANGUAGES) {
-    static char name[16];
-    memcpy_P(&name, &languageNameTable[lang], sizeof(name));
-    Serial.printf_P(PSTR("getLanguageName lang=%d: %s\n"), lang, name);
-    return name;
-  }*/
   static char name[16];
   String namestr = FPSTR(languageNameTable);
   namestr = findWordInCommaList(namestr, lang, NUM_LANGUAGES);
@@ -150,16 +122,10 @@ const char* getTranslation(int msg_id) {
 // Get translation string from message ID and specified language
 const char* getTranslation(int msg_id, lang_t lang) {
   translationBuffer[0] = 0; // clear buffer
-  Serial.printf_P(PSTR("getTranslation msg_id=%d lang=%d\n"), msg_id, lang);
-  /*if (msg_id == TR_TEMPERATURE) { //DEBUG
-    Serial.println(F("Special case TR_TEMPERATURE"));
-    Serial.printf_P(PSTR("ptr: %p\n"), tr_msg_TR_TEMPERATURE_EN);
-    Serial.printf_P(PSTR("ptr: %p\n"), translationTable[msg_id][lang]);
-    Serial.printf_P(PSTR("str: %s\n"), FPSTR(translationTable[msg_id][lang]));
-  }*/
-  if (msg_id >= 0 && msg_id < NUM_MESSAGES && lang >= 0 && lang < NUM_LANGUAGES) {
+  //Serial.printf_P(PSTR("getTranslation msg_id=%d lang=%d\n"), msg_id, lang);
+  if ((msg_id >= 0) && (msg_id < NUM_MESSAGES) && (lang >= 0) && (lang < NUM_LANGUAGES)) {
     memcpy_P(translationBuffer, translationTable[msg_id][lang], MAX_TRANSLATION_LEN);
-    Serial.println(translationBuffer);
+    //Serial.println(translationBuffer);
     return translationBuffer;
   }
   return "unknown";
@@ -192,7 +158,6 @@ String getTranslationStr(int msg_id, lang_t lang) {
   return String(getTranslation(msg_id, lang));
 }
 
-
 /**
  * @brief Sets the current language for the application.
  *
@@ -201,7 +166,7 @@ String getTranslationStr(int msg_id, lang_t lang) {
  *
  * @param lang The language identifier to set (must be between 0 and NUM_LANGUAGES - 1).
  */
-void setLanguage(lang_t lang) {
+void setCurrentLanguageId(lang_t lang) {
   if (lang >= 0 && lang < NUM_LANGUAGES) {
     currentLanguage = lang;
   }
@@ -212,7 +177,7 @@ void setLanguage(lang_t lang) {
  *
  * @return lang_t The current language setting.
  */
-lang_t getLanguage() {
+lang_t getCurrentLanguageId() {
   return currentLanguage;
 }
 

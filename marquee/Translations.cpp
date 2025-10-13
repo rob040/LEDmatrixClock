@@ -35,7 +35,7 @@ static lang_t currentLanguage = LANG_EN; // default language is English
 
 // Translation strings in PROGMEM
 #define SP(lang, msg, str) const char tr_msg_##msg##_##lang[] PROGMEM = str;
-#define TR(msg, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, l11) \
+#define TR(msg, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, l11, l12) \
   SP(EN, msg, l1) \
   SP(NL, msg, l2) \
   SP(DE, msg, l3) \
@@ -43,17 +43,18 @@ static lang_t currentLanguage = LANG_EN; // default language is English
   SP(IT, msg, l5) \
   SP(ES, msg, l6) \
   SP(PT, msg, l7) \
-  SP(NO, msg, l8) \
-  SP(SE, msg, l9) \
-  SP(PL, msg, l10) \
-  SP(MIN, msg, l11) // minimal (English) language
+  SP(DK, msg, l8) \
+  SP(NO, msg, l9) \
+  SP(SE, msg, l10) \
+  SP(PL, msg, l11) \
+  SP(MIN, msg, l12) // minimal (English) language
 #include "TranslationStrings.h"
 #undef TR
 #undef SP
 
 // Translation table of pointers to translation strings in PROGMEM
 const char* const translationTable[NUM_MESSAGES][LANG_COUNT] PROGMEM =  {
-#define TR(msg, ...) { tr_msg_##msg##_##EN, tr_msg_##msg##_##NL, tr_msg_##msg##_##DE, tr_msg_##msg##_##FR, tr_msg_##msg##_##IT, tr_msg_##msg##_##ES, tr_msg_##msg##_##PT, tr_msg_##msg##_##NO, tr_msg_##msg##_##SE, tr_msg_##msg##_##PL, tr_msg_##msg##_##MIN },
+#define TR(msg, ...) { tr_msg_##msg##_##EN, tr_msg_##msg##_##NL, tr_msg_##msg##_##DE, tr_msg_##msg##_##FR, tr_msg_##msg##_##IT, tr_msg_##msg##_##ES, tr_msg_##msg##_##PT, tr_msg_##msg##_##DK, tr_msg_##msg##_##NO, tr_msg_##msg##_##SE, tr_msg_##msg##_##PL, tr_msg_##msg##_##MIN },
 #include "TranslationStrings.h"
 #undef TR
 }; // translationTable

@@ -4,14 +4,24 @@
   "authors":
   {
     "name":  "rob040",
-    "email": "rob040@user.github.com"
+    "email": "rob040@user.github.com",
+    "url":  "https://github.com/rob040"
   },
   "repository":
   {
     "type": "git",
-    "url":  "https://github.com/rob040/LEDmatrixClock/lib/arduino-Max72xxPanel"
+    "url":  "https://github.com/rob040/LEDmatrixClock/tree/master/lib/arduino-Max72xxPanel"
   },
   "version": "1.1.0",
+  "license": "BSD",
   "frameworks": "arduino",
-  "platforms":  "*"
+  "platforms":  "*",
+  "dependencies": {
+    "Adafruit BusIO": "*",
+    "Adafruit GFX Library": "*"
+  },
+  "keywords": "Max72xxPanel, LEDmatrix, LEDmatrixClock, LED matrix, LED matrix clock, MAX7219, Adafruit GFX",
+  "headers": "Max72xxPanel.h",
+  "src": ["Max72xxPanel.cpp", "Max72xxPanel.h"],
+  "readme": "README.md"
 }

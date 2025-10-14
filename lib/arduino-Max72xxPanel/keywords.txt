@@ -12,6 +12,7 @@ Max72xxPanel	KEYWORD1
 # Methods and Functions (KEYWORD2)
 #######################################
 
+reset	KEYWORD2
 shutdown	KEYWORD2
 setIntensity	KEYWORD2
 invertDisplay	KEYWORD2

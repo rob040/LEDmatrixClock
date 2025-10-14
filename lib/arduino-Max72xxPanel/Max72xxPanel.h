@@ -29,6 +29,17 @@
   #include "pins_arduino.h"
 #endif
 
+/**
+ * Matrix rotations enum
+ */
+enum Rotation : uint8_t {
+    NO = (0U),  // 	 *   0: no rotation
+    CW90,       //   *   1: 90 degrees clockwise
+    CW180,      //   *   2: 180 degrees
+    CCW90       //   *   3: 90 degrees counter clockwise
+};
+
+
 class Max72xxPanel : public Adafruit_GFX {
 
 public:
@@ -55,8 +66,10 @@ public:
    *   1: 90 degrees clockwise
    *   2: 180 degrees
    *   3: 90 degrees counter clockwise
+   * Or you can use the Rotation enum.
    */
   void setRotation(uint8_t display, uint8_t rotation);
+  void setRotation(uint8_t display, Rotation rotation);
 
   /*
    * Implementation of Adafruit's setRotation(). Probably, you don't
@@ -64,6 +77,7 @@ public:
    * the previous two functions.
    */
   void setRotation(uint8_t rotation);
+  void setRotation(Rotation rotation);
 
   /*
    * Draw a pixel on your canvas. Note that for performance reasons,
@@ -99,6 +113,13 @@ public:
    * send it to the display(s).
    */
   void write();
+
+  /*
+   * Reset the matrix modules to a default state,
+   * performed during initialization.
+   * This allows matrix reinitialization.
+   */
+  void reset();
 
 private:
   uint8_t SPI_CS; /* SPI chip selection */

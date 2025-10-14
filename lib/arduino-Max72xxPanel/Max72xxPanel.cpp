@@ -57,6 +57,11 @@ Max72xxPanel::Max72xxPanel(uint8_t csPin, uint8_t hDisplays, uint8_t vDisplays) 
 //SPI.setDataMode(SPI_MODE0);
   pinMode(SPI_CS, OUTPUT);
 
+  reset();
+}
+
+void Max72xxPanel::reset() {
+
   // Clear the screen
   fillScreen(0);
 
@@ -84,8 +89,16 @@ void Max72xxPanel::setRotation(uint8_t display, uint8_t rotation) {
   matrixRotation[display] = rotation;
 }
 
+void Max72xxPanel::setRotation(uint8_t display, Rotation rotation) {
+  matrixRotation[display] = static_cast<uint8_t>(rotation);
+}
+
 void Max72xxPanel::setRotation(uint8_t rotation) {
   Adafruit_GFX::setRotation(rotation);
+}
+
+void Max72xxPanel::setRotation(Rotation rotation) {
+  Adafruit_GFX::setRotation(static_cast<uint8_t>(rotation));
 }
 
 void Max72xxPanel::shutdown(bool b) {
@@ -100,14 +113,10 @@ void Max72xxPanel::fillScreen(uint16_t color) {
   memset(bitmap, color ? 0xff : 0, bitmapSize);
 }
 
-void Max72xxPanel::drawPixel(int16_t xx, int16_t yy, uint16_t color) {
-  // Operating in bytes is faster and takes less code to run. We don't
-  // need values above 200, so switch from 16 bit ints to 8 bit unsigned
-  // ints (bytes).
-  // Keep xx as int16_t so fix 16 panel limit
-  int16_t x = xx;
-  int16_t y = yy;
-  int16_t tmp;
+void Max72xxPanel::drawPixel(int16_t x, int16_t y, uint16_t color) {
+  // The x and y args and calculations need to be 16-bit ints to not limit the display
+  // size to 31 tiles of 8x8 or 248 pixels.
+   // [rob040] fix 32 display limit
 
   if ( rotation ) {
     // Implement Adafruit's rotation.
@@ -120,7 +129,7 @@ void Max72xxPanel::drawPixel(int16_t xx, int16_t yy, uint16_t color) {
     }
 
     if ( rotation & 1 ) {                     // rotation == 1 || rotation == 3
-      tmp = x; x = y; y = tmp;
+      int16_t tmp = x; x = y; y = tmp;
     }
   }
 
@@ -144,7 +153,7 @@ void Max72xxPanel::drawPixel(int16_t xx, int16_t yy, uint16_t color) {
     y = 7 - y;
   }
   if ( r & 1 ) {                       // 90 or 270 degrees
-    tmp = x; x = y; y = tmp;
+    int16_t tmp = x; x = y; y = tmp;
   }
 
   uint8_t d = display / hDisplays;

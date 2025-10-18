@@ -4,9 +4,10 @@
  * This code is licensed under MIT license (see LICENSE.txt for details)
  */
 
+
 #include "Settings.h"
 
-#define VERSION "3.3.2"  // software version
+#define VERSION "3.3.3"  // software version
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -68,7 +69,7 @@ void centerPrint(const String &msg, bool extraStuff = false);
 String EncodeHtmlSpecialChars(const char *msg);
 String EncodeUrlSpecialChars(const char *msg);
 
-// LED font constants; the font is a 5x7 pixels in a 6x8 space
+// LED font constants; the font is a 5x7 (actually 5x8) pixels in a 6x8 space
 const int font_space = 1;  // dots between letters
 const int font_width = 5 + font_space; // The font width is 5 pixels + font_space
 
@@ -565,11 +566,7 @@ void setup() {
   flashLED(1, 500);
 }
 
-#ifdef DEBUG
-#define LOOP_DEBUG 1
-#else
-#define LOOP_DEBUG 0
-#endif
+#define LOOP_DEBUG 1//DEBUG
 //************************************************************
 // Main Loop
 //************************************************************
@@ -1900,7 +1897,7 @@ void readConfiguration() {
 
 void scrollMessageSetup(const String &msg) {
   scrlMsg = utf8ToCP437(msg); // convert UTF-8 to CP437
-  scrlMsgLen = (int)msg.length();
+  scrlMsgLen = (int)scrlMsg.length();
   //scrlPixTotal = (font_width * (int)msg.length() + (matrix.width() - 1) - font_space);
   scrlPixTotal = font_width * scrlMsgLen + matrix.width();
   scrlPixY = (matrix.height() - 8) / 2; // center the text vertically

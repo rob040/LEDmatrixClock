@@ -49,7 +49,7 @@ TR(TR_HELLO,
   "hello",      // English
   "hallo",      // Dutch
   "hallo",      // German
-  "bonjour",    // French
+  "salut",      // French
   "ciao",       // Italian
   "hola",       // Spanish
   "olá",        // Portuguese

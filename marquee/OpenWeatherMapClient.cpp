@@ -15,13 +15,11 @@
 #include "TimeStr.h"
 #include "Translations.h"
 
-OpenWeatherMapClient::OpenWeatherMapClient(const String &ApiKey, bool isMetric) {
+OpenWeatherMapClient::OpenWeatherMapClient() {
   myGeoLocation = "";
   myGeoLocation_CityID = 0;
   myGeoLocationType = LOC_UNSET;
-  myApiKey = ApiKey;
-  //this->isMetric = isMetric; // Deprecated!
-  (void)isMetric; // suppress unused parameter warning
+  myApiKey = "";
   dataGetRetryCount = 0;
   weather.isValid = false;
 }
@@ -144,8 +142,6 @@ void OpenWeatherMapClient::updateWeather() {
   }
   apiGetData += F("&units=metric&lang=");
   apiGetData += myLanguage;
-  //apiGetData += F("&units=");
-  //apiGetData += String((isMetric) ? F("metric") : F("imperial"));
   apiGetData += F("&APPID=");
   apiGetData += myApiKey + F(" HTTP/1.1");
   Serial.println(F("Getting Weather Data"));
@@ -275,30 +271,6 @@ void OpenWeatherMapClient::updateWeather() {
   Serial.println();
 #endif
 }
-
-/* deprecated; shall be language specific
-String OpenWeatherMapClient::getWindDirectionText() {
-  //int val = floor((weather.windDirection / 22.5) + 0.5);
-  //int val =  int((weather.windDirection*16 + 180) / 360) % 16;
-  // N, NNE, NE, ENE, E, ESE, SE, SSE, S, SSW, SW, WSW, W, WNW, NW, NNW ;
-  //String arr[] = {"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"};
-  //return arr[(val % 16)];
-  return getWindDirectionString(weather.windDirection);
-}*/
-
-/* deprecated; shall be language specific
-String OpenWeatherMapClient::getWeekDay() {
-  String rtnValue = "";
-  long timestamp = weather.reportTimestamp;
-  long day = 0;
-  if (timestamp != 0) {
-    // Add timezone from OWM
-    timestamp += weather.timeZone;
-    day = ((timestamp / 86400) + 4) % 7;
-    rtnValue = getDayName(day);
-  }
-  return rtnValue;
-}*/
 
 String OpenWeatherMapClient::getWeatherIcon() {
   // match weather condition codes to OLED icon in the weatherstation font

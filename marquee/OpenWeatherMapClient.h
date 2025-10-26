@@ -84,19 +84,17 @@ private:
     bool isValid;       // Weather report is valid
   } weather;
 
-  //bool isMetric;   // Weather request format Metric or Imperial
   const int dataGetRetryCountError = 10; // Amount of data get timeouts until we invalidate all data
   int dataGetRetryCount;
   String errorMsg; // Weather request error message
 
 
 public:
-  OpenWeatherMapClient(const String &ApiKey, bool isMetric);
+  OpenWeatherMapClient();
   int setGeoLocation(const String &location);
   int setLanguage(const String &languageCode); // set language for weather description (en, fr, de, ...)
   void updateWeather();
   inline void setWeatherApiKey(const String &ApiKey) {myApiKey = ApiKey;};
-  inline void setMetric(bool isMetric) {};//{this->isMetric = isMetric;};  // DEPRECATED!
 
   inline float getLat() {return weather.lat;};
   inline float getLon() {return weather.lon;};
@@ -127,8 +125,6 @@ public:
   inline int getTimeZoneSeconds() {return weather.timeZone;};
   inline uint32_t getSunRise() {return weather.sunRise;};
   inline uint32_t getSunSet() {return weather.sunSet;};
-  //String getWeekDay(); // deprecated
-  //String getWindDirectionText(); //deprecated
   String getWeatherIcon();
 
   float convTemperature(float temp_celcius, temperatureUnits_t tu);
@@ -138,5 +134,3 @@ public:
 };
 
 extern String EncodeUrlSpecialChars(const char *msg);
-extern String getWindDirectionString(int windDirectionDegrees);
-//extern String getTranslationStr(int msg_id);

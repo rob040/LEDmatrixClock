@@ -151,7 +151,7 @@ enum loopState_e loopState, lastState;
 #define SCHEDULE_INTERVAL_START(_var,_delay) {_var=millis()-(_delay);}
 
 // Weather Client
-OpenWeatherMapClient weatherClient(owmApiKey, true);
+OpenWeatherMapClient weatherClient;
 
 #if COMPILE_MQTT
 // Mqtt Client
@@ -2025,7 +2025,6 @@ void readConfiguration() {
   Serial.println(F("ReadConfigFile EOF"));
   matrix.setIntensity(displayIntensity);
   weatherClient.setWeatherApiKey(owmApiKey);
-  //weatherClient.setMetric(isMetric);
   weatherClient.setGeoLocation(geoLocation);
   #if COMPILE_MQTT
   mqttClient.updateMqttClient(MqttServer, MqttPort, MqttTopic, MqttAuthUser, MqttAuthPass);

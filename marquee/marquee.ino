@@ -7,7 +7,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.3.4"  // software version
+#define VERSION "3.3.5"  // software version
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -47,17 +47,25 @@ void sendFooter();
 void webDisplayWeatherData();
 void onBoardLed(bool on);
 void flashLED(int number, int delayTime);
-String getTempSymbol(bool forWeb = false);
-String getSpeedSymbol();
-String getPressureSymbol();
 String getTimeTillUpdate();
+String getWindDirectionString(int windDirectionDegrees);
 
-String getAirPressureUnitString(airPressureUnits_t apu);
-String getAirPressureNameString(airPressureUnits_t apu);
-String getWindSpeedUnitString(windSpeedUnits_t wsu);
-String getWindSpeedNameString(windSpeedUnits_t wsu);
-String getTemperatureUnitString(temperatureUnits_t tu);
-String getTemperatureNameString(temperatureUnits_t tu);
+String getAirPressure();
+String getAirPressureUnit();
+String getAirPressureUnit(airPressureUnits_t apu);
+String getAirPressureName(airPressureUnits_t apu);
+
+String getWindSpeed(int decimals = 0);
+String getWindSpeedUnit();
+String getWindSpeedUnit(windSpeedUnits_t wsu);
+String getWindSpeedName(windSpeedUnits_t wsu);
+
+String getTemperature(int decimals = 0);
+String getTemperatureLow(int decimals = 0);
+String getTemperatureHigh(int decimals = 0);
+String getTemperatureUnit();
+String getTemperatureUnit(temperatureUnits_t tu);
+String getTemperatureName(temperatureUnits_t tu);
 
 int8_t getWifiQuality();
 int getMinutesFromLastRefresh();
@@ -80,7 +88,10 @@ String EncodeUrlSpecialChars(const char *msg);
 // LED font constants; the font is a 5x7 (actually 5x8) pixels in a 6x8 space
 const int font_space = 1;  // dots between letters
 const int font_width = 5 + font_space; // The font width is 5 pixels + font_space
+int displayWidthChars; // number of characters that fit on display; will be set later according to number of cascaded modules
+bool isUsImperial; // USA Imperial date format is determined from configuration: lang=EN & clock=12h & temp=F
 
+// Matrix display object
 Max72xxPanel matrix = Max72xxPanel(pinCS, 0, 0); // will be re-instantiated later in setup()
 
 // Time
@@ -140,7 +151,7 @@ enum loopState_e loopState, lastState;
 #define SCHEDULE_INTERVAL_START(_var,_delay) {_var=millis()-(_delay);}
 
 // Weather Client
-OpenWeatherMapClient weatherClient(owmApiKey, isMetric);
+OpenWeatherMapClient weatherClient(owmApiKey, true);
 
 #if COMPILE_MQTT
 // Mqtt Client
@@ -739,19 +750,16 @@ void processEveryMinute()
     // Check to see if we need to Scroll some weather Data
     if ((getMinutesFromLastDisplayScroll() >= displayScrollingInterval) && weatherClient.getWeatherDataValid() && (weatherClient.getErrorMessage().length() == 0)) {
       String msg = " ";
-      String temperature = String(weatherClient.getTemperature(),0);
+      String temperature = getTemperature();
       String weatherDescription = weatherClient.getWeatherDescription();
       weatherDescription.toUpperCase();
       staticDisplayIdx = 0;
 
       if (showDate) {
         if (!isStaticDisplay) {
-          //TODO: add customized date formats -> locale dependent
-          //msg += getDayName(weekday()) + ", ";
-          //msg += getMonthName(month()) + " " + day() + "  ";
-          msg += getLocaleLongDateStr(now(), language_id, false, true, !isMetric) + "  ";
+          msg += getLocaleLongDateStr(now(), language_id, true, true, isUsImperial) + "  ";
         } else {
-          if (isMetric) {
+          if (!isUsImperial) {
             staticDisplay[staticDisplayIdx] = zeroPad(month()) + "-" + zeroPad(day());
           } else {
             staticDisplay[staticDisplayIdx] = zeroPad(day()) + "," + zeroPad(month());
@@ -764,30 +772,24 @@ void processEveryMinute()
       }
       if (showTemperature) {
         if (!isStaticDisplay) {
-          Serial.printf_P(PSTR("Temp: %s %s\n"), temperature.c_str(), getTempSymbol().c_str());
+          Serial.printf_P(PSTR("Temp: %s %s\n"), temperature.c_str(), getTemperatureUnit().c_str());
 
-          //msg += F("Temperature:") + temperature + getTempSymbol() + "  ";
           if (language_id != LANG_MIN)
             msg += getTranslationStr(TR_TEMPERATURE) + ':';
-          msg += temperature + getTempSymbol() + "  ";
+          msg += temperature + getTemperatureUnit() + "  ";
         } else {
-          staticDisplay[staticDisplayIdx] = temperature + getTempSymbol();
+          staticDisplay[staticDisplayIdx] = temperature + getTemperatureUnit();
           staticDisplayIdx++;
         }
       }
 
       // show high/low temperature
       if (showHighLow && !isStaticDisplay) {
-        //msg += F("High/Low:") + String(weatherClient.getTemperatureHigh(),0) + "/" + String(weatherClient.getTemperatureLow(),0) + "  ";
         if (language_id != LANG_MIN)
           msg += getTranslationStr(TR_HIGHLOW) + ':';
-        String t = String(ceil(weatherClient.getTemperatureHigh()),0);
-        t.trim();
-        msg += t;
+        msg += getTemperatureHigh();
         msg += '/';
-        t = String(floor(weatherClient.getTemperatureLow()),0);
-        t.trim();
-        msg += t;
+        msg += getTemperatureLow();
         msg += "  ";
       }
       if (showCondition && !isStaticDisplay) {
@@ -795,7 +797,6 @@ void processEveryMinute()
       }
       if (showHumidity) {
         if (!isStaticDisplay) {
-          //msg += F("Humidity:") + String(weatherClient.getHumidity()) + "%  ";
           if (language_id != LANG_MIN)
             msg += getTranslationStr(TR_HUMIDITY) + ':';
           msg += String(weatherClient.getHumidity()) + "%  ";
@@ -805,17 +806,15 @@ void processEveryMinute()
         }
       }
       if (showWind) {
-        String windspeed = String(weatherClient.getWindSpeed(),0);
-        windspeed.trim();
         if (!isStaticDisplay) {
           //msg += F("Wind:")
           if (language_id != LANG_MIN)
             msg += getTranslationStr(TR_WIND) + ':';
-          msg += weatherClient.getWindDirectionText() + ' ';
-          msg += windspeed + getSpeedSymbol() + "  ";
+          msg += getWindDirectionString(weatherClient.getWindDirection()) + ' ';
+          msg += getWindSpeed() + getWindSpeedUnit() + "  ";
         } else {
           // 4 tile display can fit up to "99kmh"
-          staticDisplay[staticDisplayIdx] = windspeed + getSpeedSymbol();
+          staticDisplay[staticDisplayIdx] = getWindSpeed() + getWindSpeedUnit();
           staticDisplayIdx++;
         }
       }
@@ -824,10 +823,16 @@ void processEveryMinute()
           //msg += F("Pressure:")
           if (language_id != LANG_MIN)
             msg += getTranslationStr(TR_PRESSURE) + ':';
-          msg += String(weatherClient.getPressure()) + getPressureSymbol() + "  ";
+          msg += getAirPressure();
+          msg += getAirPressureUnit();
+          msg += "  ";
         } else {
           // 4 tile display can just fit "999mb", ie. low pressure, Imperial inHg will only fit on 8 tiles
-          staticDisplay[staticDisplayIdx] = String(weatherClient.getPressure()) + getPressureSymbol();
+          staticDisplay[staticDisplayIdx] = getAirPressure() + getAirPressureUnit();
+          if ((int)staticDisplay[staticDisplayIdx].length() > displayWidthChars) {
+            // does not fit on screen: try the value without unit
+            staticDisplay[staticDisplayIdx] = getAirPressure();
+          }
           staticDisplayIdx++;
         }
       }
@@ -841,7 +846,7 @@ void processEveryMinute()
         if (strlen(mqttmsg)> 0) {
           if (isStaticDisplay)
           {
-            if ((int)strlen(mqttmsg) <= ((displayWidth * 8) / font_width)) {
+            if ((int)strlen(mqttmsg) <= displayWidthChars) {
               // only show mqtt message in static display mode when it fits on screen
               staticDisplay[staticDisplayIdx] = mqttmsg;
               staticDisplayIdx++;
@@ -883,7 +888,7 @@ void processEverySecond()
     // this is useful for home automation systems to identify the device
     if (mqttClient.connected() && !isMqttStatusPublishDone && (now() > TIME_VALID_MIN) && weatherClient.getWeatherDataValid()) {
         // Post to unique status topic, containing hostname with value IP address
-      char msg[128];
+      char msg[256];
       String datetime = String(year()) + zeroPad(month()) + zeroPad(day()) + "T" + zeroPad(hour()) + zeroPad(minute()) + zeroPad(second());
       String pubtopic(MqttTopic);
       if (pubtopic.lastIndexOf('/') > 0)
@@ -892,12 +897,15 @@ void processEverySecond()
       pubtopic += WiFi.getHostname();
       pubtopic += "/status";
       // {"device":"ESP123456","ip":"
-      snprintf(msg, sizeof(msg), "{\"device\":\"%s\",\"ip\":\"%s\",\"time\":\"%s\",\"temp\":%.1f,\"hum\":%d,\"cond\":\"%s\"}",
+      snprintf(msg, sizeof(msg), "{\"device\":\"%s\",\"ip\":\"%s\",\"time\":\"%s\",\"temp\":\"%s %s\",\"hum\":%d,\"wind\":\"%s %s\",\"cond\":\"%s\"}",
         WiFi.getHostname(),
         WiFi.localIP().toString().c_str(),
         datetime.c_str(),
-        weatherClient.getTemperature(),
+        getTemperature().c_str(),
+        getTemperatureUnit().c_str(),
         weatherClient.getHumidity(),
+        getWindSpeed().c_str(),
+        getWindSpeedUnit().c_str(),
         weatherClient.getWeatherDescription().c_str() );
 
       if (mqttClient.publish(pubtopic.c_str(), msg)) {
@@ -930,8 +938,8 @@ void processEverySecond()
         break;
     case WIDE_CLOCK_STYLE_HHMM_CF:
         // On Wide Display -- show the current temperature as well
-        add = String(weatherClient.getTemperature(),0);
-        displayTime += " " + add + getTempSymbol();
+        add = getTemperature(0);
+        displayTime += " " + add + getTemperatureUnit();
         break;
     case WIDE_CLOCK_STYLE_HHMM_RH:
         displayTime += " " + String(weatherClient.getHumidity()) + "%";
@@ -1023,7 +1031,6 @@ void handleSaveConfig() {
       server.hasArg(F("gloc")) &&
       server.hasArg(F("marqueeMsg")) &&
       server.hasArg(F("displaywidth")) &&
-      //server.hasArg(F("startTime")) &&
       server.hasArg(F("userid")) &&
       server.hasArg(F("stationpassword")) &&
       server.hasArg(F("theme")) &&
@@ -1048,7 +1055,6 @@ void handleSaveConfig() {
     showHighLow = server.hasArg(F("showhighlow"));
     isStaticDisplay = server.hasArg(F("statdisp"));
     isSysLed = server.hasArg(F("sysled"));
-    isMetric = server.hasArg(F("metric"));
     language = server.arg(F("lang"));
     airPressureUnitCfg = server.arg(F("presfmt")).toInt();
     windSpeedUnitCfg = server.arg(F("windfmt")).toInt();
@@ -1079,7 +1085,6 @@ void handleSaveConfig() {
     temp = server.arg(F("stationpassword"));
     temp.trim();
     temp.toCharArray(www_password, sizeof(www_password));
-    weatherClient.setMetric(isMetric);
     weatherClient.setGeoLocation(geoLocation);
     matrix.fillScreen(CLEARSCREEN);
     writeConfiguration();
@@ -1188,7 +1193,6 @@ void handleConfigure() {
     langOptions += getLanguageName(static_cast<lang_t>(l));
     langOptions += F("</option>");
   }
-  //langOptions.replace("'" + language + "'", "'" + language + "' selected");
   form.replace(F("%LANG_OPT%"), langOptions);
 
   String temperatureFormatOptions;
@@ -1200,7 +1204,7 @@ void handleConfigure() {
     } else {
       temperatureFormatOptions += F("'>");
     }
-    temperatureFormatOptions += getTemperatureNameString(static_cast<temperatureUnits_t>(i));
+    temperatureFormatOptions += getTemperatureName(static_cast<temperatureUnits_t>(i));
     temperatureFormatOptions += F("</option>");
   }
   form.replace(F("%TF_OPT%"), temperatureFormatOptions);
@@ -1214,7 +1218,7 @@ void handleConfigure() {
     } else {
       windspeedFormatOptions += F("'>");
     }
-    windspeedFormatOptions += getWindSpeedNameString(static_cast<windSpeedUnits_t>(i));
+    windspeedFormatOptions += getWindSpeedName(static_cast<windSpeedUnits_t>(i));
     windspeedFormatOptions += F("</option>");
   }
   form.replace(F("%WF_OPT%"), windspeedFormatOptions);
@@ -1228,13 +1232,12 @@ void handleConfigure() {
     } else {
       airPressuleFormatOptions += F("'>");
     }
-    airPressuleFormatOptions += getAirPressureNameString(static_cast<airPressureUnits_t>(i));
+    airPressuleFormatOptions += getAirPressureName(static_cast<airPressureUnits_t>(i));
     airPressuleFormatOptions += F("</option>");
   }
   form.replace(F("%PF_OPT%"), airPressuleFormatOptions);
 
   form.replace(F("%24HR_CB%"), (is24hour) ? "checked" : "");
-  form.replace(F("%METRIC_CB%"), (isMetric) ? "checked" : "");
   form.replace(F("%PM_CB%"), (isPmIndicator) ? "checked" : "");
   form.replace(F("%FLASH_CB%"), (flashOnSeconds) ? "checked" : "");
   form.replace(F("%STATDISP_CB%"), (isStaticDisplay) ? "checked" : "");
@@ -1260,7 +1263,7 @@ void handleConfigure() {
   form.replace(F("%SYSLED_CB%"), (isSysLed) ? "checked" : "");
   // Wide display options: 1=HH:MM, 2=HH:MM:SS, 3=HH:MM *CF, 4=HH:MM %RH, 5=mm dd HH:MM, 6=HH:MM mmdd, 7=HH:MM ddmm, 8=HH:MM WwwDD,
   String clockOptions = F("<option value=1>HH:MM</option><option value=2>HH:MM:SS</option><option value=3>HH:MM *CF</option><option value=4>HH:MM %RH</option><option value=5>mmdd HH:MM</option><option value=6>HH:MM mmdd</option><option value=7>HH:MM ddmm</option><option value=8>HH:MMWwwDD</option>");
-  clockOptions.replace(String(wideClockStyle) + ">", String(wideClockStyle) + F(" selected>"));
+  clockOptions.replace(String(wideClockStyle) + '>', String(wideClockStyle) + F(" selected>"));
   form.replace(F("%WCLK_OPT%"), clockOptions);
   if (displayWidth < 8) {
     form.replace(F("$WCLKDIS$"),F("disabled"));
@@ -1434,20 +1437,18 @@ void webDisplayWeatherData() {
 
   sendHeader(true);
 
-  String temperature = String(weatherClient.getTemperature(),1);
+  // Display current date and time in preferred format
+  String dtstr = getLocaleLongDateStr(now(), language_id, true, true, isUsImperial) + ", ";
 
-  String dtstr;
   if (is24hour) {
-    // UK date+time presentation: MSB to LSB
-    dtstr = getDayName(weekday()) + ", " + String(year()) + " " + getMonthName(month()) + " " + day() + " " + zeroPad(hour()) + ":" + zeroPad(minute());
+    dtstr += zeroPad(hour()) + ":" + zeroPad(minute());
   } else {
-    // US date+time presentation
-    dtstr = getDayName(weekday()) + ", " + getMonthName(month()) + " " + day() + ", " + hourFormat12() + ":" + zeroPad(minute()) + ", " + getAmPm(isPM());
+    dtstr += hourFormat12() + ":" + zeroPad(minute()) + ", " + getAmPm(isPM());
   }
 
   Serial.print(F("Main page update "));
   Serial.println(dtstr);
-  //Serial.println(temperature);
+  Serial.println(getTemperature(1) + getTemperatureUnit());
   //Serial.println(weatherClient.getCity());
   //Serial.println(weatherClient.getWeatherCondition());
   //Serial.println(weatherClient.getWeatherDescription());
@@ -1481,16 +1482,16 @@ void webDisplayWeatherData() {
     html += F("'><br>");
     html += weatherClient.getHumidity();
     html += F("% <span class='w3-tiny'>RH</span><br>");
-    html += weatherClient.getPressure();
+    html += getAirPressure();
     html += F(" <span class='w3-tiny'>");
-    html += getPressureSymbol();
+    html += getAirPressureUnit();
     html += F("</span><br>"
       "Wind ");
-    html += weatherClient.getWindDirectionText();
+    html += getWindDirectionString(weatherClient.getWindDirection());
     html += F(" /<br>&nbsp;&nbsp;");
-    html += String(weatherClient.getWindSpeed(), 1);
+    html += getWindSpeed(1);
     html += F("&nbsp;<span class='w3-tiny'>");
-    html += getSpeedSymbol();
+    html += getWindSpeedUnit();
     html += F("</span><br>"
       "</div>"
       "<div class='w3-cell w3-container' style='width:100%'><p>");
@@ -1504,8 +1505,8 @@ void webDisplayWeatherData() {
     html += weatherClient.getWeatherCondition();
     html += " (" + weatherClient.getWeatherDescription() + ") ";
     html += clouds + "<br>";
-    html += temperature + ' ' + getTempSymbol(true) + "<br>";
-    html += String(weatherClient.getTemperatureHigh(),1) + "/" + String(weatherClient.getTemperatureLow(),1) + " " + getTempSymbol(true) + "<br>"
+    html += getTemperature(1) + ' ' + getTemperatureUnit() + "<br>";
+    html += getTemperatureHigh(1) + "/" + getTemperatureLow(1) + " " + getTemperatureUnit() + "<br>"
       "SunRise " + get24HrColonMin(weatherClient.getSunRise() + weatherClient.getTimeZoneSeconds()) + "<br>"
       "SunSet " + get24HrColonMin(weatherClient.getSunSet() + weatherClient.getTimeZoneSeconds()) + "<br>"
       "Updated " + get24HrColonMin(weatherClient.getReportTimestamp() + weatherClient.getTimeZoneSeconds()) +
@@ -1566,83 +1567,98 @@ void flashLED(int number, int delayTime) {
 #endif
 }
 
-//TODO: replace these functions with getTempearatureUnitString() etc that use the enums below
-String getTempSymbol(bool forWeb) {
-  // Note: The forWeb degrees character is an UTF8 double byte character!
-  //return String((forWeb) ? "°" : String(char(248))) + String((isMetric) ? 'C' : 'F');
-  // We now support UTF8 on the display, so always use the UTF8 degree symbol
-  (void)forWeb; // suppress unused warning
-  return String((isMetric) ? "°C" : "°F");
-}
 
-String getSpeedSymbol() {
-  return String((isMetric) ? "kmh" : "mph");
-}
-
-String getPressureSymbol()
-{
-  return String((isMetric) ? "mb" : "inHg");
-}
-//---------------------------------------------------------------
 
 String getWindDirectionString(int windDirectionDegrees) {
-  //static const char dirnames[] PROGMEM = "N,NNE,NE,ENE,E,ESE,SE,SSE,S,SSW,SW,WSW,W,WNW,NW,NNW";
-  //String dirstr = FPSTR(dirnames);
-  // TODO: get wind direction names from translation resource
+  // get wind direction names from translation resource
   String dirstr = getTranslation(TR_WINDDIRECTIONS);
 
   // convert degrees 0..360 into 16 segments
   // 16 segments: N, NNE, NE, ENE, E, ESE, SE, SSE, S, SSW, SW, WSW, W, WNW, NW, NNW ;
   int val = ((windDirectionDegrees*16 + 180) / 360) % 16;
 
-  /*int begin = 0, end = 0;
-  // iterate through comma separated list
-  while (val > 0) {
-    end = dirstr.indexOf(',', begin);
-    if (end == -1) end = dirstr.length(); // at end of list
-    if (--val == 0) break;
-    begin = end + 1;
-  }
-  return dirstr.substring(begin, end);*/
   String retv = findWordInCommaList(dirstr, val, 16);
   Serial.printf_P(PSTR("WindDir: %d deg = seg %d = %s\n"), windDirectionDegrees,val, retv.c_str());
   return retv;
 }
 
-/* Air pressure uints */
-const char airPressureStr[] PROGMEM = "mb,hPa,inHg,psi";
-const char airPressureNameStr[] PROGMEM = "millibar,hectopascal,inches of mercury,pounds/inch²";
-String getAirPressureUnitString(airPressureUnits_t apu) {
+/* Air pressure units */
+const char airPressureStr[] PROGMEM = "mb,hPa,mmHg,inHg,psi,atm";
+const char airPressureNameStr[] PROGMEM = "millibar,hectopascal,mm of mercury,inches of mercury,pounds/sq inch (psi),Atmosphere";
+String getAirPressureUnit(airPressureUnits_t apu) {
   String dirstr = FPSTR(airPressureStr);
-  return findWordInCommaList(dirstr, (int)apu, 5);
+  return findWordInCommaList(dirstr, (int)apu, APU_MAX);
 }
-String getAirPressureNameString(airPressureUnits_t apu) {
+String getAirPressureName(airPressureUnits_t apu) {
   String dirstr = FPSTR(airPressureNameStr);
-  return findWordInCommaList(dirstr, (int)apu, 5);
+  return findWordInCommaList(dirstr, (int)apu, APU_MAX);
+}
+String getAirPressureUnit() {
+  return getAirPressureUnit(static_cast<airPressureUnits_t>(airPressureUnitCfg));
+}
+String getAirPressure() {
+  String rv;
+  int decimals = 0;
+  if (airPressureUnitCfg == APU_INHG) {
+    decimals = 1; // inches of mercury with 1 decimals (value is around 30 for sea level)
+  } else if (airPressureUnitCfg == APU_PSI) {
+    decimals = 1; // psi with 1 decimals (value is around 14 for sea level)
+  } else if (airPressureUnitCfg == APU_ATM) {
+    decimals = 3; // Atmosphere with 3 decimals (value is around 1 for sea level)
+  }
+  rv = String(weatherClient.getPressure(static_cast<airPressureUnits_t>(airPressureUnitCfg)), decimals);
+  rv.trim();
+  return rv;
 }
 
 // Wind speed units
 const char windSpeedUnitStr[] PROGMEM = "ms,kmh,mph,kn,Bft";
-const char windSpeedNameStr[] PROGMEM = "m/s,km/h,mph,knots,Baufort";
-String getWindSpeedUnitString(windSpeedUnits_t wsu) {
+const char windSpeedNameStr[] PROGMEM = "m/s,km/h,mph,knots,Beaufort";
+String getWindSpeedUnit(windSpeedUnits_t wsu) {
   String dirstr = FPSTR(windSpeedUnitStr);
-  return findWordInCommaList(dirstr, (int)wsu, 5);
+  return findWordInCommaList(dirstr, (int)wsu, WSU_MAX);
 }
-String getWindSpeedNameString(windSpeedUnits_t wsu) {
+String getWindSpeedName(windSpeedUnits_t wsu) {
   String dirstr = FPSTR(windSpeedNameStr);
-  return findWordInCommaList(dirstr, (int)wsu, 5);
+  return findWordInCommaList(dirstr, (int)wsu, WSU_MAX);
+}
+String getWindSpeedUnit() {
+  return getWindSpeedUnit(static_cast<windSpeedUnits_t>(windSpeedUnitCfg));
+}
+String getWindSpeed(int decimals) {
+  String rv = String(weatherClient.getWindSpeed(static_cast<windSpeedUnits_t>(windSpeedUnitCfg)), decimals);
+  rv.trim();
+  return rv;
 }
 
 // temperature units
 const char temperatureUnitsStr[] PROGMEM = "°C,°F,K";
 const char temperatureNameStr[] PROGMEM = "Celsius,Fahrenheit,Kelvin";
-String getTemperatureUnitString(temperatureUnits_t tu) {
+String getTemperatureUnit(temperatureUnits_t tu) {
   String dirstr = FPSTR(temperatureUnitsStr);
-  return findWordInCommaList(dirstr, (int)tu, 3);
+  return findWordInCommaList(dirstr, (int)tu, TU_MAX);
 }
-String getTemperatureNameString(temperatureUnits_t tu) {
+String getTemperatureName(temperatureUnits_t tu) {
   String dirstr = FPSTR(temperatureNameStr);
-  return findWordInCommaList(dirstr, (int)tu, 3);
+  return findWordInCommaList(dirstr, (int)tu, TU_MAX);
+}
+String getTemperatureUnit() {
+  return getTemperatureUnit(static_cast<temperatureUnits_t>(temperatureUnitCfg));
+}
+String getTemperature(int decimals) {
+  String rv = String(weatherClient.getTemperature(static_cast<temperatureUnits_t>(temperatureUnitCfg)), decimals);
+  rv.trim();
+  return rv;
+}
+String getTemperatureLow(int decimals) {
+  String rv = String(weatherClient.getTemperatureLow(static_cast<temperatureUnits_t>(temperatureUnitCfg)), decimals);
+  rv.trim();
+  return rv;
+}
+String getTemperatureHigh(int decimals) {
+  String rv = String(weatherClient.getTemperatureHigh(static_cast<temperatureUnits_t>(temperatureUnitCfg)), decimals);
+  rv.trim();
+  return rv;
 }
 
 
@@ -1781,7 +1797,7 @@ void writeConfiguration() {
     f.println(F("isFlash=") + String(flashOnSeconds));
     f.println(F("is24hour=") + String(is24hour));
     f.println(F("isPM=") + String(isPmIndicator));
-    f.println(F("isMetric=") + String(isMetric));
+    //f.println(F("isMetric=") + String(isMetric));
     f.println(F("isStatDisp=") + String(isStaticDisplay));
     f.println(F("isSysLed=") + String(isSysLed));
     f.println(F("refreshRate=") + String(refreshDataInterval));
@@ -1880,9 +1896,9 @@ void readConfiguration() {
         wideClockStyle = n;
       }
     }
-    if ((idx = line.indexOf(F("isMetric="))) >= 0) {
-      isMetric = line.substring(idx + 9).toInt();
-    }
+    //if ((idx = line.indexOf(F("isMetric="))) >= 0) {
+    //  isMetric = line.substring(idx + 9).toInt();
+    //}
     if ((idx = line.indexOf(F("isStatDisp="))) >= 0) {
       isStaticDisplay = line.substring(idx + 11).toInt();
     }
@@ -1910,6 +1926,8 @@ void readConfiguration() {
         Serial.printf_P(PSTR("displayWidth changed %d->%d\n"), displayWidth, n);
         displayWidth = n;
       }
+      // recalculate number of characters that fit on display
+      displayWidthChars = (displayWidth * 8) / font_width;
     }
     if ((idx = line.indexOf(F("language="))) >= 0) {
       language = line.substring(idx + 9);
@@ -2007,7 +2025,7 @@ void readConfiguration() {
   Serial.println(F("ReadConfigFile EOF"));
   matrix.setIntensity(displayIntensity);
   weatherClient.setWeatherApiKey(owmApiKey);
-  weatherClient.setMetric(isMetric);
+  //weatherClient.setMetric(isMetric);
   weatherClient.setGeoLocation(geoLocation);
   #if COMPILE_MQTT
   mqttClient.updateMqttClient(MqttServer, MqttPort, MqttTopic, MqttAuthUser, MqttAuthPass);
@@ -2016,6 +2034,8 @@ void readConfiguration() {
   setCurrentLanguageId(language_id);
   Serial.printf_P(PSTR("Language set to %s (%s)\n"), getLanguageName(language_id), getLanguageCode(language_id));
   weatherClient.setLanguage(language);
+  // USA Imperial date format is determined from configuration: lang=EN & clock=12h & temp=F
+  isUsImperial = (language_id == LANG_EN) && !is24hour && (temperatureUnitCfg == TU_FAHRENHEIT);
 }
 
 void scrollMessageSetup(const String &msg) {
@@ -2083,7 +2103,7 @@ void scrollMessageWait(const String &msg) {
 bool staticDisplaySetupSingle(char * message) {
   if (isStaticDisplay &&
       ((int)strlen(message) > 0) &&
-      ((int)strlen(message) <= ((displayWidth * 8) / font_width)))
+      ((int)strlen(message) <= displayWidthChars))
   {
     // msg fits on one screen : no scroll necessary
     matrix.fillScreen(CLEARSCREEN);
@@ -2107,11 +2127,10 @@ void staticDisplaySetup(void) {
 
 void staticDisplayNext(void) {
   if (isStaticDisplayBusy) {
-    int maxMsgLen = (displayWidth * 8) / font_width;
     // find (next) fitting message (too long messages will not be shown)
     while (staticDisplayIdxOut < staticDisplayIdx) {
       int len = staticDisplay[staticDisplayIdxOut].length();
-      if (len > 0 && len <= maxMsgLen) break;
+      if (len > 0 && len <= displayWidthChars) break;
       staticDisplayIdxOut++;
     }
 

@@ -60,7 +60,7 @@
 // DIN -> D7 (MOSI) GPIO13 on ESP8266
 const int pinCS = D6; // Attach CS to this pin, DIN to MOSI and CLK to SCK (cf http://arduino.cc/en/Reference/SPI )
 int displayIntensity = 1;  //(This can be set from 0 - 15)
-int displayWidth = 4; // default 4 for standard 4 x 1 display Max size of 16
+int displayWidth = 4; // number of display tiles; default 4 for standard 4 x 1 display module; Max size of 32 tiles.
 const int displayHeight = 1; // default 1 for a single row height (do not change, this SW does not support multiple lines, nor double hight chars)
 // set ledRotation for LED Display panels, 0: no rotation, 1: 90 degrees clockwise, 2: 180 degrees, 3: 90 degrees counter clockwise (default)
 const int ledRotation = 3;
@@ -104,7 +104,7 @@ bool showHighLow = true;
 
 const int staticDisplayTime = 5000;  // static display time per item, in ms
 bool isStaticDisplay = false; // static display above SHOW_* items
-bool isMetric = true; // false = Imperial and true = Metric
+//bool isMetric = true; // false = Imperial and true = Metric
 bool is24hour = true; // 24 hour clock is displayed, false = 12 hour clock (for configuration, 24h time is always used)
 bool isPmIndicator = true; // Show PM indicator on Clock when in AM/PM mode
 bool isSysLed = true; // flash onboard LED on system actions

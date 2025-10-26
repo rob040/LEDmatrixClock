@@ -39,7 +39,7 @@ const CP437Entry cp437_sorted_table[] PROGMEM = {
 {0x00B7,0xFA}, // '·' U+00B7 MIDDLE DOT
 {0x00BA,0xA7}, // 'ª' U+00BA MASCULINE ORDINAL INDICATOR
 {0x00BB,0xAF}, // '»' U+00BB RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
-{0x00BC,0xAC}, // '¼' U+00BC VULGAR FRACTION ONE QUARTER|[[Fracti
+{0x00BC,0xAC}, // '¼' U+00BC VULGAR FRACTION ONE QUARTER
 {0x00BD,0xAB}, // '½' U+00BD VULGAR FRACTION ONE HALF
 {0x00BF,0xA8}, // '¿' U+00BF INVERTED QUESTION MARK
 {0x00C0, 'A'}, // À → A
@@ -48,7 +48,7 @@ const CP437Entry cp437_sorted_table[] PROGMEM = {
 {0x00C3, 'A'}, // Ã → A
 {0x00C4,0x8E}, // 'Ä' U+00C4 LATIN CAPITAL LETTER A WITH DIAERESIS
 {0x00C5,0x8F}, // 'Å' U+00C5 LATIN CAPITAL LETTER A WITH RING ABOVE
-{0x00C6,0x92}, // 'Æ' U+00C6 LATIN CAPITAL LETTER AE
+{0x00C6,0x92}, // 'Æ' U+00C6 LATIN CAPITAL LIGATURE AE
 {0x00C7,0x80}, // 'Ç' U+00C7 LATIN CAPITAL LETTER C WITH CEDILLA
 {0x00C8, 'E'}, // È → E
 {0x00C9,0x90}, // 'É' U+00C9 LATIN CAPITAL LETTER E WITH ACUTE
@@ -80,7 +80,7 @@ const CP437Entry cp437_sorted_table[] PROGMEM = {
 {0x00E3, 'a'}, // ã → a
 {0x00E4,0x84}, // 'ä' U+00E4 LATIN SMALL LETTER A WITH DIAERESIS
 {0x00E5,0x86}, // 'å' U+00E5 LATIN SMALL LETTER A WITH RING ABOVE
-{0x00E6,0x91}, // 'æ' U+00E6 LATIN SMALL LETTER AE
+{0x00E6,0x91}, // 'æ' U+00E6 LATIN SMALL LIGATURE AE
 {0x00E7,0x87}, // 'ç' U+00E7 LATIN SMALL LETTER C WITH CEDILLA
 {0x00E8,0x8A}, // 'è' U+00E8 LATIN SMALL LETTER E WITH GRAVE
 {0x00E9,0x82}, // 'é' U+00E9 LATIN SMALL LETTER E WITH ACUTE
@@ -198,9 +198,8 @@ const CP437Entry cp437_sorted_table[] PROGMEM = {
 {0x203A, '>'},  // › → >
 {0x203C,0x13}, // '‼' U+203C DOUBLE EXCLAMATION MARK
 {0x207F,0xFC}, // 'ⁿ' U+207F SUPERSCRIPT LATIN SMALL LETTER N
-//{0x20A7,0x9E}, // '₧' U+20A7 PESETA SIGN (TODO TO BE replaced with euro sign €)
+//{0x20A7,0x9E}, // '₧' U+20A7 PESETA SIGN (is replaced with euro sign €)
 {0x20AC,0x9E},  // '€' U+20AC euro sign (with double stroke) (on updated font)
-//{0x20AC,0xEE}, // 'ε' U+20AC often used as the euro sign '€', but with single stroke
 {0x2122, 'T'}, // ™ → T ; Trademark sign
 {0x2126,0xEA}, // 'Ω' U+2126 Ohm unit
 {0x2190,0x1B}, // '←' U+2190 LEFTWARDS ARROW

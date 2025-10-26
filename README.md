@@ -44,11 +44,30 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 * Weather Location lookup has been made simpler; there is no longer the need to lookup the City-ID code; just enter a (valid) city name with optional 2-letter country code. Also GPS coordinates are now allowed as location input.
 * Added a display QUIET time config option, where the display can be Off or Dimmed or Dimmed with no Motion (ie. no scrolling, no blinking)
 * Replaced Wifi_manager with ESP_WiFiManager_Lite library, which allows multiple WiFi Accesspoints (SSID's) to be (pre-)configured, which is handy for a portable device. It also provides a fallback if one WiFi station goes down.
+* Added user configurable temperature, wind speed and air pressure unit and conversions.
+* Removed the Imperial / Metric choice , with more customization freedom to the user.
+* The LED Display character font has been overhauled for more consistency and readability.
+
+**NEW**
+* As of version 3.4.0, there is **multiple language support** for text on the LED Matrix display. The configuration web page remains English.
+* There is Language support for following 12 languages:
+* => English
+* => Nederlands
+* => Deutsch
+* => Français
+* => Italiano
+* => Español
+* => Português
+* => Dansk
+* => Norsk
+* => Svenska
+* => Polski
+
 
 ### known issues
-* Webpage update does halt the scrolling display for a moment. See [issue #8](https://github.com/rob040/LEDmatrixClock/issues/8) for more details.
-* Scrolling text appears to have some 'flex' in it. See [issue #9](https://github.com/rob040/LEDmatrixClock/issues/9) for more details.
-* When using the LED display at lowest intensity, some pixel flicker might be visible. See [issue #10](https://github.com/rob040/LEDmatrixClock/issues/10) for more details.
+* Webpage update does halt the scrolling display for a moment. See [discussion #34](https://github.com/rob040/LEDmatrixClock/discussions/34) for more details.
+* Scrolling text appears to have some 'flex' in it. See [discussion #35](https://github.com/rob040/LEDmatrixClock/discussions/35) for more details.
+* When using the LED display at lowest intensity, some pixel flicker might be visible. See [discussion #36](https://github.com/rob040/LEDmatrixClock/discussions/36) for more details.
 
 
 ## Required Parts:
@@ -141,7 +160,7 @@ Use the Arduino guide for details on how to install and manage libraries https:/
 **Local libraries** --
 This project has local libraries in the lib directory.
 Having project local libraries is not supported by Arduino IDE.
-Therefore you must copy these manually to your Arduino sketchbook library directory. 
+Therefore you must copy these manually to your Arduino sketchbook library directory.
 This is the directory where all libraries managed by the Arduino library manager are located.<br>
 By default this is `C:\Users\<userName>\Documents\Arduino\libraries` on Windows machines.
 

@@ -42,4 +42,6 @@ const char* getTranslation(int msg_id);
 const char* getTranslation(int msg_id, lang_t lang);
 String getTranslationStr(int msg_id);
 String getTranslationStr(int msg_id, lang_t lang);
+String getLocaleLongDateStr(time_t t, lang_t lang, bool addweekday, bool addyear, bool imperial_US);
+
 // EOF

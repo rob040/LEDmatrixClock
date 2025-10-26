@@ -7,7 +7,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.3.3"  // software version
+#define VERSION "3.3.4"  // software version
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -51,6 +51,14 @@ String getTempSymbol(bool forWeb = false);
 String getSpeedSymbol();
 String getPressureSymbol();
 String getTimeTillUpdate();
+
+String getAirPressureUnitString(airPressureUnits_t apu);
+String getAirPressureNameString(airPressureUnits_t apu);
+String getWindSpeedUnitString(windSpeedUnits_t wsu);
+String getWindSpeedNameString(windSpeedUnits_t wsu);
+String getTemperatureUnitString(temperatureUnits_t tu);
+String getTemperatureNameString(temperatureUnits_t tu);
+
 int8_t getWifiQuality();
 int getMinutesFromLastRefresh();
 int getMinutesFromLastDisplay();
@@ -332,11 +340,16 @@ static const char webChangeForm1[] PROGMEM =
 static const char webChangeForm2[] PROGMEM =
   "<fieldset><legend>Data Display settings</legend>"
   "<p><label>Display Language</label> <select class='w3-option w3-padding' name='lang'>%LANG_OPT%</select></p>"
+  //"<p><label>Date format</label> <select class='w3-option w3-padding' name='datefmt'>%DF_OPT%</select></p>"
+  "<p><label>Temperature unit</label> <select class='w3-option w3-padding' name='tempfmt'>%TF_OPT%</select></p>"
+  "<p><label>Wind Speed unit</label> <select class='w3-option w3-padding' name='windfmt'>%WF_OPT%</select></p>"
+  "<p><label>Air pressure unit</label> <select class='w3-option w3-padding' name='presfmt'>%PF_OPT%</select></p>"
   // title='Any selected Display Scrolling Data is shown in short form without movement (scroll) when fitting within display width.'
   "<p><input name='statdisp' class='w3-check' type='checkbox' %STATDISP_CB%> Do not scroll weather data display</p>"
-  "<p><input name='metric' class='w3-check' type='checkbox' %METRIC_CB%> Use Metric units (Celsius,kmh,mBar); Unchecked: use Imperial units (Farenheid,mph,inHg)</p>"
+  //"<p><input name='metric' class='w3-check' type='checkbox' %METRIC_CB%> Use Metric units (Celsius,kmh,mBar); Unchecked: use Imperial units (Farenheid,mph,inHg)</p>"
+
   "<p><input name='is24hour' class='w3-check' type='checkbox' %24HR_CB%> Use 24 Hour Clock; Unchecked: use 12 Hour clock</p>"
-  "<p><input name='isPM' class='w3-check' type='checkbox' %PM_CB%> Show PM indicator (only on 12 Hour clock)</p>"
+  "<p><input name='isPM' class='w3-check' type='checkbox' %PM_CB%> Show PM indicator on 12 Hour clock</p>"
   "<p><input name='flashseconds' class='w3-check' type='checkbox' %FLASH_CB%> Blink \":\" in the time</p>"
   "</fieldset>\n"
   "<fieldset><legend>LED Display Quiet Times</legend>"
@@ -733,9 +746,10 @@ void processEveryMinute()
 
       if (showDate) {
         if (!isStaticDisplay) {
-          //TODO: add customized date formats
-          msg += getDayName(weekday()) + ", ";
-          msg += getMonthName(month()) + " " + day() + "  ";
+          //TODO: add customized date formats -> locale dependent
+          //msg += getDayName(weekday()) + ", ";
+          //msg += getMonthName(month()) + " " + day() + "  ";
+          msg += getLocaleLongDateStr(now(), language_id, false, true, !isMetric) + "  ";
         } else {
           if (isMetric) {
             staticDisplay[staticDisplayIdx] = zeroPad(month()) + "-" + zeroPad(day());
@@ -767,8 +781,14 @@ void processEveryMinute()
         //msg += F("High/Low:") + String(weatherClient.getTemperatureHigh(),0) + "/" + String(weatherClient.getTemperatureLow(),0) + "  ";
         if (language_id != LANG_MIN)
           msg += getTranslationStr(TR_HIGHLOW) + ':';
-        msg += String(int(ceil(weatherClient.getTemperatureHigh())),DEC) + '/';
-        msg += String(int(weatherClient.getTemperatureLow()),DEC) + "  ";
+        String t = String(ceil(weatherClient.getTemperatureHigh()),0);
+        t.trim();
+        msg += t;
+        msg += '/';
+        t = String(floor(weatherClient.getTemperatureLow()),0);
+        t.trim();
+        msg += t;
+        msg += "  ";
       }
       if (showCondition && !isStaticDisplay) {
         msg += weatherDescription + "  ";
@@ -1030,6 +1050,9 @@ void handleSaveConfig() {
     isSysLed = server.hasArg(F("sysled"));
     isMetric = server.hasArg(F("metric"));
     language = server.arg(F("lang"));
+    airPressureUnitCfg = server.arg(F("presfmt")).toInt();
+    windSpeedUnitCfg = server.arg(F("windfmt")).toInt();
+    temperatureUnitCfg = server.arg(F("tempfmt")).toInt();
     marqueeMessage = server.arg(F("marqueeMsg"));
     quietTimeMode = server.arg(F("qtmode")).toInt();
     quietTimeDimlevel = server.arg(F("qtlvl")).toInt();
@@ -1157,12 +1180,59 @@ void handleConfigure() {
   for (int l=0; l<NUM_LANGUAGES; l++) {
     langOptions += F("<option value='");
     langOptions += getLanguageCode(static_cast<lang_t>(l));
-    langOptions += F("'>");
+    if (l == (int)language_id) {
+      langOptions += F("' selected>");
+    } else {
+      langOptions += F("'>");
+    }
     langOptions += getLanguageName(static_cast<lang_t>(l));
     langOptions += F("</option>");
   }
-  langOptions.replace("'" + language + "'", "'" + language + "' selected");
+  //langOptions.replace("'" + language + "'", "'" + language + "' selected");
   form.replace(F("%LANG_OPT%"), langOptions);
+
+  String temperatureFormatOptions;
+  for (int i=0; i<TU_MAX; i++) {
+    temperatureFormatOptions += F("<option value='");
+    temperatureFormatOptions += String(i);
+    if (i == temperatureUnitCfg) {
+      temperatureFormatOptions += F("' selected>");
+    } else {
+      temperatureFormatOptions += F("'>");
+    }
+    temperatureFormatOptions += getTemperatureNameString(static_cast<temperatureUnits_t>(i));
+    temperatureFormatOptions += F("</option>");
+  }
+  form.replace(F("%TF_OPT%"), temperatureFormatOptions);
+
+  String windspeedFormatOptions;
+  for (int i=0; i<WSU_MAX; i++) {
+    windspeedFormatOptions += F("<option value='");;
+    windspeedFormatOptions += String(i);
+    if (i == windSpeedUnitCfg) {
+      windspeedFormatOptions += F("' selected>");
+    } else {
+      windspeedFormatOptions += F("'>");
+    }
+    windspeedFormatOptions += getWindSpeedNameString(static_cast<windSpeedUnits_t>(i));
+    windspeedFormatOptions += F("</option>");
+  }
+  form.replace(F("%WF_OPT%"), windspeedFormatOptions);
+
+  String airPressuleFormatOptions;
+  for (int i=0; i<APU_MAX; i++) {
+    airPressuleFormatOptions += F("<option value='");;
+    airPressuleFormatOptions += String(i);
+    if (i == airPressureUnitCfg) {
+      airPressuleFormatOptions += F("' selected>");
+    } else {
+      airPressuleFormatOptions += F("'>");
+    }
+    airPressuleFormatOptions += getAirPressureNameString(static_cast<airPressureUnits_t>(i));
+    airPressuleFormatOptions += F("</option>");
+  }
+  form.replace(F("%PF_OPT%"), airPressuleFormatOptions);
+
   form.replace(F("%24HR_CB%"), (is24hour) ? "checked" : "");
   form.replace(F("%METRIC_CB%"), (isMetric) ? "checked" : "");
   form.replace(F("%PM_CB%"), (isPmIndicator) ? "checked" : "");
@@ -1496,6 +1566,7 @@ void flashLED(int number, int delayTime) {
 #endif
 }
 
+//TODO: replace these functions with getTempearatureUnitString() etc that use the enums below
 String getTempSymbol(bool forWeb) {
   // Note: The forWeb degrees character is an UTF8 double byte character!
   //return String((forWeb) ? "°" : String(char(248))) + String((isMetric) ? 'C' : 'F');
@@ -1512,6 +1583,7 @@ String getPressureSymbol()
 {
   return String((isMetric) ? "mb" : "inHg");
 }
+//---------------------------------------------------------------
 
 String getWindDirectionString(int windDirectionDegrees) {
   //static const char dirnames[] PROGMEM = "N,NNE,NE,ENE,E,ESE,SE,SSE,S,SSW,SW,WSW,W,WNW,NW,NNW";
@@ -1536,6 +1608,43 @@ String getWindDirectionString(int windDirectionDegrees) {
   Serial.printf_P(PSTR("WindDir: %d deg = seg %d = %s\n"), windDirectionDegrees,val, retv.c_str());
   return retv;
 }
+
+/* Air pressure uints */
+const char airPressureStr[] PROGMEM = "mb,hPa,inHg,psi";
+const char airPressureNameStr[] PROGMEM = "millibar,hectopascal,inches of mercury,pounds/inch²";
+String getAirPressureUnitString(airPressureUnits_t apu) {
+  String dirstr = FPSTR(airPressureStr);
+  return findWordInCommaList(dirstr, (int)apu, 5);
+}
+String getAirPressureNameString(airPressureUnits_t apu) {
+  String dirstr = FPSTR(airPressureNameStr);
+  return findWordInCommaList(dirstr, (int)apu, 5);
+}
+
+// Wind speed units
+const char windSpeedUnitStr[] PROGMEM = "ms,kmh,mph,kn,Bft";
+const char windSpeedNameStr[] PROGMEM = "m/s,km/h,mph,knots,Baufort";
+String getWindSpeedUnitString(windSpeedUnits_t wsu) {
+  String dirstr = FPSTR(windSpeedUnitStr);
+  return findWordInCommaList(dirstr, (int)wsu, 5);
+}
+String getWindSpeedNameString(windSpeedUnits_t wsu) {
+  String dirstr = FPSTR(windSpeedNameStr);
+  return findWordInCommaList(dirstr, (int)wsu, 5);
+}
+
+// temperature units
+const char temperatureUnitsStr[] PROGMEM = "°C,°F,K";
+const char temperatureNameStr[] PROGMEM = "Celsius,Fahrenheit,Kelvin";
+String getTemperatureUnitString(temperatureUnits_t tu) {
+  String dirstr = FPSTR(temperatureUnitsStr);
+  return findWordInCommaList(dirstr, (int)tu, 3);
+}
+String getTemperatureNameString(temperatureUnits_t tu) {
+  String dirstr = FPSTR(temperatureNameStr);
+  return findWordInCommaList(dirstr, (int)tu, 3);
+}
+
 
 // converts the dBm to a range between 0 and 100%
 int8_t getWifiQuality() {
@@ -1699,6 +1808,11 @@ void writeConfiguration() {
     f.println(F("MqttPass=") + MqttAuthPass);
     #endif
     f.println(F("themeColor=") + themeColor);
+    f.println(F("presfmt=") + String(airPressureUnitCfg));
+    f.println(F("windfmt=") + String(windSpeedUnitCfg));
+    f.println(F("tempfmt=") + String(temperatureUnitCfg));
+
+    Serial.println(F("Settings saved."));
   }
   f.close();
 
@@ -1878,6 +1992,15 @@ void readConfiguration() {
     #endif
     if ((idx = line.indexOf(F("themeColor="))) >= 0) {
       themeColor = line.substring(idx + 11);
+    }
+    if ((idx = line.indexOf(F("presfmt="))) >= 0) {
+      airPressureUnitCfg = line.substring(idx + 8).toInt();
+    }
+    if ((idx = line.indexOf(F("windfmt="))) >= 0) {
+      windSpeedUnitCfg = line.substring(idx + 8).toInt();
+    }
+    if ((idx = line.indexOf(F("tempfmt="))) >= 0) {
+      temperatureUnitCfg = line.substring(idx + 8).toInt();
     }
   }
   fr.close();

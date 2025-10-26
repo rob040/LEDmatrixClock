@@ -182,6 +182,31 @@ lang_t getCurrentLanguageId() {
   return currentLanguage;
 }
 
+String getLocaleLongDateStr(time_t t, lang_t lang, bool addweekday, bool addyear, bool imperial_US) {
+  String dateStr;
+  if (addweekday) {
+    dateStr = getDayName(weekday(t)) + ", ";
+  }
+  if (imperial_US && ((lang == LANG_EN)||(lang == LANG_MIN))) {
+    dateStr += getMonthName(month(t)) + " " + String(day(t), DEC) + ",";
+  } else {
+    dateStr += String(day(t), DEC);
+    if ((LANG_DE == lang)||(LANG_DK == lang)||(LANG_NO == lang)) {
+      dateStr += ".";
+    }
+    if ((LANG_ES == lang)||(LANG_PT == lang)) {
+      dateStr += " de";
+    }
+     dateStr += " " + getMonthName(month(t)) ;
+  }
+  if (addyear) {
+    if ((LANG_ES == lang)||(LANG_PT == lang)) {
+      dateStr += " de";
+    }
+    dateStr += " " + String(year(t), DEC);
+  }
+  return dateStr;
+}
 
 
 // EOF

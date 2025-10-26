@@ -9,6 +9,33 @@
 #include <ESP8266WiFi.h>
 #include <ArduinoJson.h>
 
+  // temperature units
+  typedef enum temperatureUnits_e {
+    TU_CELSIUS,
+    TU_FAHRENHEIT,
+    TU_KELVIN,
+    TU_MAX
+  } temperatureUnits_t;
+
+  /* Air pressure uints */
+  typedef enum airPressureUnits_e {
+    APU_MBAR,
+    APU_HPA,
+    APU_INHG,
+    APU_PSI,
+    APU_MAX
+  } airPressureUnits_t;
+
+  /* Wind speed units */
+  typedef enum windSpeedUnits_e {
+    WSU_MPS,
+    WSU_KMH,
+    WSU_MPH,
+    WSU_KNOTS,
+    WSU_BFT,
+    WSU_MAX
+  } windSpeedUnits_t;
+
 class OpenWeatherMapClient {
 
 private:
@@ -33,16 +60,16 @@ private:
   {
     // Weather report content
     String city;        // City name
-    String country;     // Country code (GB, JP etc.)
+    String country;     // Country code (GB, FR etc.)
     String condition;   // Group of weather parameters (Rain, Snow, Extreme etc.)
     String description; // Weather condition within the group. (language translated)
     String icon;        // Weather icon id
     float lat;          // City geo Location coordinate Latitude
     float lon;          // City geo Location coordinate Longitude
-    float temperature;  // Temperature. Unit Default: Kelvin, Metric: Celsius, Imperial: Fahrenheit
+    float temperature;  // Temperature, Celsius
     float tempHigh;     // Temperature Highs
     float tempLow;      // Temperature Lows
-    float windSpeed;    // Unit Default: meter/sec, Metric: meter/sec, Imperial: miles/hour
+    float windSpeed;    // Wind Speed, meter/sec
     int weatherId;      // Weather condition id
     int pressure;       // Atmospheric pressure at ground level, hPa
     int humidity;       // Humidity in %, 0..100
@@ -67,23 +94,29 @@ public:
   int setLanguage(const String &languageCode); // set language for weather description (en, fr, de, ...)
   void updateWeather();
   inline void setWeatherApiKey(const String &ApiKey) {myApiKey = ApiKey;};
-  inline void setMetric(bool isMetric) {this->isMetric = isMetric;};
+  inline void setMetric(bool isMetric) {this->isMetric = isMetric;};  // DEPRECATED!
 
   inline float getLat() {return weather.lat;};
   inline float getLon() {return weather.lon;};
   inline uint32_t getReportTimestamp() {return weather.reportTimestamp;};
   inline String getCity() {return weather.city;};
   inline String getCountry() {return weather.country;};
-  inline float getTemperature() {return weather.temperature;};
-  inline int getHumidity() {return weather.humidity;};
-  inline String getWeatherCondition() {return weather.condition;};
-  inline float getWindSpeed() {return weather.windSpeed;};
-  inline int getWindDirection() {return weather.windDirection;};
-  inline int getCloudCoverage() {return weather.cloudCoverage;};
-  inline int getPressure() {return weather.pressure;};
+  inline float getTemperature() {return weather.temperature;}; // in Celsius
   inline float getTemperatureHigh() {return weather.tempHigh;};
   inline float getTemperatureLow() {return weather.tempLow;};
+  inline float getTemperature(temperatureUnits_t tu) {return convTemperature(weather.temperature, tu);};
+  inline float getTemperatureHigh(temperatureUnits_t tu) {return convTemperature(weather.tempHigh, tu);};
+  inline float getTemperatureLow(temperatureUnits_t tu) {return convTemperature(weather.tempLow, tu);};
+  inline int getHumidity() {return weather.humidity;};
+  inline int getPressure() {return weather.pressure;}; // hPa
+  inline int getPressure(airPressureUnits_t apu) {return convAirPressure(weather.pressure, apu);};
+  inline float getWindSpeed() {return weather.windSpeed;}; // in meter/sec
+  inline float getWindSpeed(windSpeedUnits_t wsu) {return convWindSpeed(weather.windSpeed, wsu);};
+
+  inline int getWindDirection() {return weather.windDirection;};
+  inline int getCloudCoverage() {return weather.cloudCoverage;};
   inline int getWeatherId() {return weather.weatherId;};
+  inline String getWeatherCondition() {return weather.condition;};
   inline String getWeatherDescription() {return weather.description;};
   inline String getIcon() {return weather.icon;};
   inline bool getWeatherDataValid() {return weather.isValid;};
@@ -95,6 +128,11 @@ public:
   String getWeekDay();
   String getWindDirectionText();
   String getWeatherIcon();
+
+  float convTemperature(float temp_celcius, temperatureUnits_t tu);
+  float convAirPressure(int pressure_hpa, airPressureUnits_t apu);
+  float convWindSpeed(float speed_mps, windSpeedUnits_t wsu);
+
 };
 
 extern String EncodeUrlSpecialChars(const char *msg);

@@ -20,7 +20,7 @@ OpenWeatherMapClient::OpenWeatherMapClient(const String &ApiKey, bool isMetric) 
   myGeoLocation_CityID = 0;
   myGeoLocationType = LOC_UNSET;
   myApiKey = ApiKey;
-  this->isMetric = isMetric;
+  this->isMetric = isMetric; // Deprecated!
   weather.isValid = false;
 }
 
@@ -140,10 +140,10 @@ void OpenWeatherMapClient::updateWeather() {
     apiGetData += EncodeUrlSpecialChars(myGeoLocation.c_str());
     break;
   }
-  apiGetData += F("&lang=");
+  apiGetData += F("&units=metric&lang=");
   apiGetData += myLanguage;
-  apiGetData += F("&units=");
-  apiGetData += String((isMetric) ? F("metric") : F("imperial"));
+  //apiGetData += F("&units=");
+  //apiGetData += String((isMetric) ? F("metric") : F("imperial"));
   apiGetData += F("&APPID=");
   apiGetData += myApiKey + F(" HTTP/1.1");
   Serial.println(F("Getting Weather Data"));
@@ -253,17 +253,17 @@ void OpenWeatherMapClient::updateWeather() {
   weather.sunSet = jdoc["sys"]["sunset"];
   weather.isValid = true;
 
-  if (isMetric) {
+  //if (isMetric) {
     // convert m/s to kmh
-    weather.windSpeed *= 3.6;
-  } else {
+  //  weather.windSpeed *= 3.6;
+  //} else {
     // Imperial mode
     // windspeed is already in mph
     //convert millibars (hPa) to Inches mercury (inHg)
-    weather.pressure = (int)((float)weather.pressure * 0.0295300586 + 0.5);
+  //  weather.pressure = (int)((float)weather.pressure * 0.0295300586 + 0.5);
     //convert millibars (hPa) to PSI
     //pressure = (int)((float)pressure * 0.0145037738 + 0.5);
-  }
+  //}
 
 #if 1 //DEBUG
   Serial.println(F("Weather data:"));
@@ -338,3 +338,62 @@ String OpenWeatherMapClient::getWeatherIcon() {
   }
   return String(lookuptable[i].w);
 }
+
+float OpenWeatherMapClient::convTemperature(float temp_celcius, temperatureUnits_t tu) {
+  switch (tu) {
+    default:
+    case TU_CELSIUS:
+      return temp_celcius;
+    case TU_FAHRENHEIT:
+      return (temp_celcius * 9.0 / 5.0) + 32.0;
+    case TU_KELVIN:
+      return temp_celcius + 273.15;
+  }
+}
+
+float OpenWeatherMapClient::convAirPressure(int pressure_hpa, airPressureUnits_t apu) {
+  switch (apu) {
+    default:
+    case APU_MBAR:
+    case APU_HPA:
+      return (float)pressure_hpa;
+    case APU_INHG:
+      return (float)pressure_hpa * 0.0295300586;
+    case APU_PSI:
+      return (float)pressure_hpa * 0.0145037738;
+  }
+}
+
+float OpenWeatherMapClient::convWindSpeed(float speed_mps, windSpeedUnits_t wsu) {
+  switch (wsu) {
+    default:
+    case WSU_MPS: // m/s
+      return round(speed_mps * 100) / 100; // two decimals
+    case WSU_KMH: // km/h
+      return round(speed_mps * 3.6f);
+    case WSU_MPH: // miles per hour
+      return round((speed_mps * 2.23694f) * 100) / 100; // two decimals
+    case WSU_KNOTS: // nautical miles per hour
+      return round((speed_mps * 1.94384f) * 100) / 100; // two decimals
+    case WSU_BFT: // Beaufort scale
+      {
+        // Beaufort scale
+        int speedKmh = round(speed_mps * 3.6f);
+        if (speedKmh < 1) return 0;
+        else if (speedKmh < 6) return 1;
+        else if (speedKmh < 12) return 2;
+        else if (speedKmh < 20) return 3;
+        else if (speedKmh < 29) return 4;
+        else if (speedKmh < 39) return 5;
+        else if (speedKmh < 50) return 6;
+        else if (speedKmh < 62) return 7;
+        else if (speedKmh < 75) return 8;
+        else if (speedKmh < 89) return 9;
+        else if (speedKmh < 103) return 10;
+        else if (speedKmh < 118) return 11;
+        else return 12;
+      }
+  }
+}
+
+// End of File

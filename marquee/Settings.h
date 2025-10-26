@@ -144,6 +144,11 @@ int quietTimeEnd = TIME_HHMM(06,30);   // 24 Hour Format HH:MM -- make negative 
 int quietTimeMode = QTM_DIMMED_NOSCROLL;
 int quietTimeDimlevel = 0;
 
+int temperatureUnitCfg; // temperatureUnits_t
+int airPressureUnitCfg; // airPressureUnits_t
+int windSpeedUnitCfg; // windSpeedUnits_t
+
+
 #if COMPILE_MQTT
 // Mqtt add scrolling messages with Mqtt
 bool isMqttEnabled = false;             // Set true to display mqtt messages

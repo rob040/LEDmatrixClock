@@ -21,8 +21,10 @@
   typedef enum airPressureUnits_e {
     APU_MBAR,
     APU_HPA,
+    APU_MMHG,
     APU_INHG,
     APU_PSI,
+    APU_ATM,
     APU_MAX
   } airPressureUnits_t;
 
@@ -82,7 +84,7 @@ private:
     bool isValid;       // Weather report is valid
   } weather;
 
-  bool isMetric;   // Weather request format Metric or Imperial
+  //bool isMetric;   // Weather request format Metric or Imperial
   const int dataGetRetryCountError = 10; // Amount of data get timeouts until we invalidate all data
   int dataGetRetryCount;
   String errorMsg; // Weather request error message
@@ -94,7 +96,7 @@ public:
   int setLanguage(const String &languageCode); // set language for weather description (en, fr, de, ...)
   void updateWeather();
   inline void setWeatherApiKey(const String &ApiKey) {myApiKey = ApiKey;};
-  inline void setMetric(bool isMetric) {this->isMetric = isMetric;};  // DEPRECATED!
+  inline void setMetric(bool isMetric) {};//{this->isMetric = isMetric;};  // DEPRECATED!
 
   inline float getLat() {return weather.lat;};
   inline float getLon() {return weather.lon;};
@@ -109,7 +111,7 @@ public:
   inline float getTemperatureLow(temperatureUnits_t tu) {return convTemperature(weather.tempLow, tu);};
   inline int getHumidity() {return weather.humidity;};
   inline int getPressure() {return weather.pressure;}; // hPa
-  inline int getPressure(airPressureUnits_t apu) {return convAirPressure(weather.pressure, apu);};
+  inline float getPressure(airPressureUnits_t apu) {return convAirPressure(weather.pressure, apu);};
   inline float getWindSpeed() {return weather.windSpeed;}; // in meter/sec
   inline float getWindSpeed(windSpeedUnits_t wsu) {return convWindSpeed(weather.windSpeed, wsu);};
 
@@ -125,8 +127,8 @@ public:
   inline int getTimeZoneSeconds() {return weather.timeZone;};
   inline uint32_t getSunRise() {return weather.sunRise;};
   inline uint32_t getSunSet() {return weather.sunSet;};
-  String getWeekDay();
-  String getWindDirectionText();
+  //String getWeekDay(); // deprecated
+  //String getWindDirectionText(); //deprecated
   String getWeatherIcon();
 
   float convTemperature(float temp_celcius, temperatureUnits_t tu);

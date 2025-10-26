@@ -20,7 +20,9 @@ OpenWeatherMapClient::OpenWeatherMapClient(const String &ApiKey, bool isMetric) 
   myGeoLocation_CityID = 0;
   myGeoLocationType = LOC_UNSET;
   myApiKey = ApiKey;
-  this->isMetric = isMetric; // Deprecated!
+  //this->isMetric = isMetric; // Deprecated!
+  (void)isMetric; // suppress unused parameter warning
+  dataGetRetryCount = 0;
   weather.isValid = false;
 }
 
@@ -253,17 +255,6 @@ void OpenWeatherMapClient::updateWeather() {
   weather.sunSet = jdoc["sys"]["sunset"];
   weather.isValid = true;
 
-  //if (isMetric) {
-    // convert m/s to kmh
-  //  weather.windSpeed *= 3.6;
-  //} else {
-    // Imperial mode
-    // windspeed is already in mph
-    //convert millibars (hPa) to Inches mercury (inHg)
-  //  weather.pressure = (int)((float)weather.pressure * 0.0295300586 + 0.5);
-    //convert millibars (hPa) to PSI
-    //pressure = (int)((float)pressure * 0.0145037738 + 0.5);
-  //}
 
 #if 1 //DEBUG
   Serial.println(F("Weather data:"));
@@ -285,7 +276,7 @@ void OpenWeatherMapClient::updateWeather() {
 #endif
 }
 
-
+/* deprecated; shall be language specific
 String OpenWeatherMapClient::getWindDirectionText() {
   //int val = floor((weather.windDirection / 22.5) + 0.5);
   //int val =  int((weather.windDirection*16 + 180) / 360) % 16;
@@ -293,9 +284,9 @@ String OpenWeatherMapClient::getWindDirectionText() {
   //String arr[] = {"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"};
   //return arr[(val % 16)];
   return getWindDirectionString(weather.windDirection);
-}
+}*/
 
-
+/* deprecated; shall be language specific
 String OpenWeatherMapClient::getWeekDay() {
   String rtnValue = "";
   long timestamp = weather.reportTimestamp;
@@ -307,7 +298,7 @@ String OpenWeatherMapClient::getWeekDay() {
     rtnValue = getDayName(day);
   }
   return rtnValue;
-}
+}*/
 
 String OpenWeatherMapClient::getWeatherIcon() {
   // match weather condition codes to OLED icon in the weatherstation font
@@ -341,58 +332,62 @@ String OpenWeatherMapClient::getWeatherIcon() {
 
 float OpenWeatherMapClient::convTemperature(float temp_celcius, temperatureUnits_t tu) {
   switch (tu) {
-    default:
-    case TU_CELSIUS:
-      return temp_celcius;
-    case TU_FAHRENHEIT:
-      return (temp_celcius * 9.0 / 5.0) + 32.0;
-    case TU_KELVIN:
-      return temp_celcius + 273.15;
+  default:
+  case TU_CELSIUS:
+    return temp_celcius;
+  case TU_FAHRENHEIT:
+    return (temp_celcius * 9.0 / 5.0) + 32.0;
+  case TU_KELVIN:
+    return temp_celcius + 273.15;
   }
 }
 
 float OpenWeatherMapClient::convAirPressure(int pressure_hpa, airPressureUnits_t apu) {
   switch (apu) {
-    default:
-    case APU_MBAR:
-    case APU_HPA:
-      return (float)pressure_hpa;
-    case APU_INHG:
-      return (float)pressure_hpa * 0.0295300586;
-    case APU_PSI:
-      return (float)pressure_hpa * 0.0145037738;
+  default:
+  case APU_MBAR:
+  case APU_HPA:
+    return (float)pressure_hpa;
+  case APU_MMHG:
+    return (float)pressure_hpa * 0.750061561;
+  case APU_INHG:
+    return (float)pressure_hpa * 0.0295300586;
+  case APU_PSI:
+    return (float)pressure_hpa * 0.0145037738;
+  case APU_ATM:
+    return (float)pressure_hpa / 1013.25;
   }
 }
 
 float OpenWeatherMapClient::convWindSpeed(float speed_mps, windSpeedUnits_t wsu) {
   switch (wsu) {
-    default:
-    case WSU_MPS: // m/s
-      return round(speed_mps * 100) / 100; // two decimals
-    case WSU_KMH: // km/h
-      return round(speed_mps * 3.6f);
-    case WSU_MPH: // miles per hour
-      return round((speed_mps * 2.23694f) * 100) / 100; // two decimals
-    case WSU_KNOTS: // nautical miles per hour
-      return round((speed_mps * 1.94384f) * 100) / 100; // two decimals
-    case WSU_BFT: // Beaufort scale
-      {
-        // Beaufort scale
-        int speedKmh = round(speed_mps * 3.6f);
-        if (speedKmh < 1) return 0;
-        else if (speedKmh < 6) return 1;
-        else if (speedKmh < 12) return 2;
-        else if (speedKmh < 20) return 3;
-        else if (speedKmh < 29) return 4;
-        else if (speedKmh < 39) return 5;
-        else if (speedKmh < 50) return 6;
-        else if (speedKmh < 62) return 7;
-        else if (speedKmh < 75) return 8;
-        else if (speedKmh < 89) return 9;
-        else if (speedKmh < 103) return 10;
-        else if (speedKmh < 118) return 11;
-        else return 12;
-      }
+  default:
+  case WSU_MPS: // m/s
+    return round(speed_mps * 100) / 100; // two decimals
+  case WSU_KMH: // km/h
+    return round(speed_mps * 3.6f);
+  case WSU_MPH: // miles per hour
+    return round((speed_mps * 2.23694f) * 100) / 100; // two decimals
+  case WSU_KNOTS: // nautical miles per hour
+    return round((speed_mps * 1.94384f) * 100) / 100; // two decimals
+  case WSU_BFT: // Beaufort scale
+    {
+      // Beaufort scale
+      int speedKmh = round(speed_mps * 3.6f);
+      if (speedKmh < 1) return 0;
+      else if (speedKmh < 6) return 1;
+      else if (speedKmh < 12) return 2;
+      else if (speedKmh < 20) return 3;
+      else if (speedKmh < 29) return 4;
+      else if (speedKmh < 39) return 5;
+      else if (speedKmh < 50) return 6;
+      else if (speedKmh < 62) return 7;
+      else if (speedKmh < 75) return 8;
+      else if (speedKmh < 89) return 9;
+      else if (speedKmh < 103) return 10;
+      else if (speedKmh < 118) return 11;
+      else return 12;
+    }
   }
 }
 

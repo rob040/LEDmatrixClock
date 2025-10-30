@@ -939,7 +939,7 @@ void processEverySecond()
     case WIDE_CLOCK_STYLE_HHMM_CF:
         // On Wide Display -- show the current temperature as well
         add = getTemperature(0);
-        displayTime += " " + add + getTemperatureUnit();
+        displayTime += " " + add + utf8ToCP437(getTemperatureUnit());
         break;
     case WIDE_CLOCK_STYLE_HHMM_RH:
         displayTime += " " + String(weatherClient.getHumidity()) + "%";
@@ -1612,7 +1612,7 @@ String getAirPressure() {
 }
 
 // Wind speed units
-const char windSpeedUnitStr[] PROGMEM = "ms,kmh,mph,kn,Bft";
+const char windSpeedUnitStr[] PROGMEM = "m/s,kmh,mph,kn,Bft";
 const char windSpeedNameStr[] PROGMEM = "m/s,km/h,mph,knots,Beaufort";
 String getWindSpeedUnit(windSpeedUnits_t wsu) {
   String dirstr = FPSTR(windSpeedUnitStr);

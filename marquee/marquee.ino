@@ -1,13 +1,14 @@
 /**
  * Copyright (c) 2018 David Payne
  * Copyright (c) 2025 rob040@users.github.com
+ * retrodroid32
  * This code is licensed under MIT license (see LICENSE.txt for details)
  */
 
 
 #include "Settings.h"
 
-#define VERSION "3.4.0"  // software version
+#define VERSION "3.4.1"  // software version
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -762,7 +763,7 @@ void processEveryMinute()
           if (!isUsImperial) {
             staticDisplay[staticDisplayIdx] = zeroPad(month()) + "-" + zeroPad(day());
           } else {
-            staticDisplay[staticDisplayIdx] = zeroPad(day()) + "," + zeroPad(month());
+            staticDisplay[staticDisplayIdx] = zeroPad(month()) + "/" + zeroPad(day());
           }
           staticDisplayIdx++;
         }
@@ -1632,33 +1633,52 @@ String getWindSpeed(int decimals) {
 }
 
 // temperature units
-const char temperatureUnitsStr[] PROGMEM = "°C,°F,K";
+// Explicitly define the string with the CP437 degree symbol (byte 248), 
+// which is the most reliable way to display it on Max72xxPanel with cp437(true).
+const char temperatureUnitsStr[] PROGMEM = {
+    // String 1: "°C" -> (char)248, 'C'
+    (char)248, 'C', 
+    ',', 
+    // String 2: "°F" -> (char)248, 'F'
+    (char)248, 'F', 
+    ',', 
+    // String 3: "K"
+    'K', 
+    '\0' // Null terminator for the whole list
+};
+
 const char temperatureNameStr[] PROGMEM = "Celsius,Fahrenheit,Kelvin";
+
 String getTemperatureUnit(temperatureUnits_t tu) {
-  String dirstr = FPSTR(temperatureUnitsStr);
-  return findWordInCommaList(dirstr, (int)tu, TU_MAX);
+    String dirstr = FPSTR(temperatureUnitsStr);
+    return findWordInCommaList(dirstr, (int)tu, TU_MAX);
 }
+
 String getTemperatureName(temperatureUnits_t tu) {
-  String dirstr = FPSTR(temperatureNameStr);
-  return findWordInCommaList(dirstr, (int)tu, TU_MAX);
+    String dirstr = FPSTR(temperatureNameStr);
+    return findWordInCommaList(dirstr, (int)tu, TU_MAX);
 }
+
 String getTemperatureUnit() {
-  return getTemperatureUnit(static_cast<temperatureUnits_t>(temperatureUnitCfg));
+    return getTemperatureUnit(static_cast<temperatureUnits_t>(temperatureUnitCfg));
 }
+
 String getTemperature(int decimals) {
-  String rv = String(weatherClient.getTemperature(static_cast<temperatureUnits_t>(temperatureUnitCfg)), decimals);
-  rv.trim();
-  return rv;
+    String rv = String(weatherClient.getTemperature(static_cast<temperatureUnits_t>(temperatureUnitCfg)), decimals);
+    rv.trim();
+    return rv; 
 }
+
 String getTemperatureLow(int decimals) {
-  String rv = String(weatherClient.getTemperatureLow(static_cast<temperatureUnits_t>(temperatureUnitCfg)), decimals);
-  rv.trim();
-  return rv;
+    String rv = String(weatherClient.getTemperatureLow(static_cast<temperatureUnits_t>(temperatureUnitCfg)), decimals);
+    rv.trim();
+    return rv;
 }
+
 String getTemperatureHigh(int decimals) {
-  String rv = String(weatherClient.getTemperatureHigh(static_cast<temperatureUnits_t>(temperatureUnitCfg)), decimals);
-  rv.trim();
-  return rv;
+    String rv = String(weatherClient.getTemperatureHigh(static_cast<temperatureUnits_t>(temperatureUnitCfg)), decimals);
+    rv.trim();
+    return rv;
 }
 
 

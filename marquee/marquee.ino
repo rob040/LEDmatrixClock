@@ -759,10 +759,10 @@ void processEveryMinute()
         if (!isStaticDisplay) {
           msg += getLocaleLongDateStr(now(), language_id, true, true, isUsImperial) + "  ";
         } else {
-          if (!isUsImperial) {
-            staticDisplay[staticDisplayIdx] = zeroPad(month()) + "-" + zeroPad(day());
+          if (isUsImperial) {
+            staticDisplay[staticDisplayIdx] = zeroPad(month()) + "/" + zeroPad(day());
           } else {
-            staticDisplay[staticDisplayIdx] = zeroPad(day()) + "," + zeroPad(month());
+            staticDisplay[staticDisplayIdx] = zeroPad(day()) + "/" + zeroPad(month());
           }
           staticDisplayIdx++;
         }

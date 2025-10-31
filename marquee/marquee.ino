@@ -778,7 +778,7 @@ void processEveryMinute()
             msg += getTranslationStr(TR_TEMPERATURE) + ':';
           msg += temperature + getTemperatureUnit() + "  ";
         } else {
-          staticDisplay[staticDisplayIdx] = temperature + getTemperatureUnit();
+          staticDisplay[staticDisplayIdx] = temperature + utf8ToCP437(getTemperatureUnit());
           staticDisplayIdx++;
         }
       }

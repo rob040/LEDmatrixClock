@@ -183,7 +183,7 @@ TR(TR_DAYNAMEFULL,
   "Søndag,Mandag,Tirsdag,Onsdag,Torsdag,Fredag,Lørdag",                               // Danish
   "Søndag,Mandag,Tirsdag,Onsdag,Torsdag,Fredag,Lørdag",                               // Norwegian
   "Söndag,Måndag,Tisdag,Onsdag,Torsdag,Fredag,Lördag",                                // Swedish
-  "Nedeľa,Pondelok,Utorok,Streda,Štvrtok,Piatok,Sobota",                              // Slovak
+  "Nedela,Pondelok,Utorok,Streda,Štvrtok,Piatok,Sobota",                              // Slovak
   "Niedziela,Poniedziałek,Wtorek,Środa,Czwartek,Piątek,Sobota",                       // Polish
   "" )                                                                                // minimal (English) language
 

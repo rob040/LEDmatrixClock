@@ -906,40 +906,6 @@ void processEverySecond()
   if (isMqttEnabled) {
     mqttClient.loop();
     newMqttMessage = mqttClient.getNewMqttMessage();
-#if 0
-    // after first connection (and every 60 minutes), when time and weather are also connected, publish one time
-    // the current values of hostname and IP address
-    // this is useful for home automation systems to identify the device
-    if (mqttClient.connected() && !isMqttStatusPublishDone && (now() > TIME_VALID_MIN) && weatherClient.getWeatherDataValid()) {
-        // Post to unique status topic, containing hostname with value IP address
-      char msg[256];
-      String datetime = String(year()) + zeroPad(month()) + zeroPad(day()) + "T" + zeroPad(hour()) + zeroPad(minute()) + zeroPad(second());
-      String pubtopic(MqttTopic);
-      if (pubtopic.lastIndexOf('/') > 0)
-        pubtopic = pubtopic.substring(0, pubtopic.lastIndexOf('/'));
-      pubtopic += "/";
-      pubtopic += WiFi.getHostname();
-      pubtopic += "/status";
-      // {"device":"CLOCK-123456","ip":"...","time":"20250101T123456","temp":"23.5 °C","hum":56,"wind":"15 kmh","cond":"Clear sky"}
-      snprintf(msg, sizeof(msg), "{\"device\":\"%s\",\"ip\":\"%s\",\"time\":\"%s\",\"temp\":\"%s %s\",\"hum\":%d,\"wind\":\"%s %s\",\"cond\":\"%s\"}",
-        WiFi.getHostname(),
-        WiFi.localIP().toString().c_str(),
-        datetime.c_str(),
-        getTemperature().c_str(),
-        getTemperatureUnit().c_str(),
-        weatherClient.getHumidity(),
-        getWindSpeed().c_str(),
-        getWindSpeedUnit().c_str(),
-        weatherClient.getWeatherDescription().c_str() );
-
-      if (mqttClient.publish(pubtopic.c_str(), msg)) {
-        Serial.printf_P(PSTR("MQTT publish to %s: %s\n"), pubtopic.c_str(), msg);
-        isMqttStatusPublishDone = true;
-      } else {
-        Serial.printf_P(PSTR("MQTT publish to %s FAILED\n"), pubtopic.c_str());
-      }
-    }
-    #endif
   }
   #endif
 
@@ -1413,18 +1379,20 @@ bool publishMqttStatus() {
     // this is useful for home automation systems to identify the device
     // Post to unique status topic, containing hostname with value IP address
     char msg[256];
-    String datetime = String(year()) + zeroPad(month()) + zeroPad(day()) + "T" + zeroPad(hour()) + zeroPad(minute()) + zeroPad(second());
+    String datestr = String(year()) + zeroPad(month()) + zeroPad(day());
+    String timestr = zeroPad(hour()) + zeroPad(minute()) + zeroPad(second());
     String pubtopic(MqttTopic);
     if (pubtopic.lastIndexOf('/') > 0)
       pubtopic = pubtopic.substring(0, pubtopic.lastIndexOf('/'));
     pubtopic += "/";
     pubtopic += WiFi.getHostname();
     pubtopic += "/status";
-    // {"device":"CLOCK-123456","ip":"...","time":"20250101T123456","temp":"23.5 °C","hum":56,"wind":"15 kmh","cond":"Clear sky"}
-    snprintf(msg, sizeof(msg), "{\"device\":\"%s\",\"ip\":\"%s\",\"time\":\"%s\",\"temp\":\"%s %s\",\"hum\":%d,\"wind\":\"%s %s\",\"cond\":\"%s\"}",
+    // {"device":"CLOCK-123456","ip":"...","date":"20250101","time":"123456","temp":"23.5 °C","hum":"56 %","wind":"15 kmh","cond":"Clear sky"}
+    snprintf(msg, sizeof(msg), "{\"device\":\"%s\",\"ip\":\"%s\",\"date\":\"%s\",\"time\":\"%s\",\"temp\":\"%s %s\",\"hum\":\"%d %%\",\"wind\":\"%s %s\",\"cond\":\"%s\"}",
       WiFi.getHostname(),
       WiFi.localIP().toString().c_str(),
-      datetime.c_str(),
+      datestr.c_str(),
+      timestr.c_str(),
       getTemperature().c_str(),
       getTemperatureUnit().c_str(),
       weatherClient.getHumidity(),

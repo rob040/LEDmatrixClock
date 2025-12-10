@@ -28,6 +28,8 @@
   X(NO, "no", "Norsk") \
   X(SE, "se", "Svenska") \
   X(PL, "pl", "Polski") \
+  X(CZ, "cz", "Čeština") \
+  X(SK, "sk", "Slovenčina") \
   X(MIN, "EN", "Minimal English")  // special entry for minimal language, no translation, only ASCII chars
 
   // Other languages, not yet supported in this project:
@@ -57,6 +59,8 @@ TR(TR_HELLO,
   "hei",        // Norwegian
   "hej",        // Swedish
   "cześć",      // Polish
+  "ahoj",       // Czech
+  "ahoj",       // Slovak
   "hello" )     // minimal (English) language
 
 TR(TR_WMSTARTED,
@@ -71,7 +75,9 @@ TR(TR_WMSTARTED,
   "Wifi Manager startet... Vennligst koble til AP: %s passord: %s",                    // Norwegian
   "Wifi Manager startar... Vänligen anslut till AP: %s lösenord: %s",                  // Swedish
   "Menedżer Wifi uruchomiony... Połącz się z AP: %s hasło: %s",                        // Polish
-  "Connect to AP: %s password: %s" ) // minimal (English) language
+  "Správce WiFi spuštěn... Připojte se prosím k AP: %s heslo: %s",                     // Czech
+  "Správca WiFi spustený... Pripojte sa prosím k AP: %s heslo: %s",                    // Slovak
+  "Connect to AP: %s password: %s" )                                                   // minimal (English) language
 
 TR(TR_WMCONFIGURED,
   "Wifi Manager Configured... Rebooting",                     // English
@@ -85,6 +91,8 @@ TR(TR_WMCONFIGURED,
   "Wifi Manager konfigurert... Omstart",                      // Norwegian
   "Wifi Manager konfigurerat... Startar om",                  // Swedish
   "Menedżer Wifi skonfigurowany... Uruchamianie ponowne",     // Polish
+  "Správce WiFi nakonfigurován... Restartuji",                // Czech
+  "Správca WiFi nakonfigurovaný... Reštartujem",              // Slovak
   "Configured... Rebooting" )                                 // minimal (English) language
 
 
@@ -100,6 +108,8 @@ TR(TR_WMCONFIGURED,
   "Temperatur",             // Norwegian
   "Temperatur",             // Swedish
   "Temperatura",            // Polish
+  "Teplota",                // Czech
+  "Teplota",                // Slovak
   "" )                      // minimal (English) language
 
 TR(TR_HIGHLOW,
@@ -114,6 +124,8 @@ TR(TR_HIGHLOW,
   "Høy/Lav",                // Norwegian
   "Hög/Låg",                // Swedish
   "Wysoki/Niski",           // Polish
+  "Vysoká/Nízká",           // Czech
+  "Vysoká/Nízka",           // Slovak
   "" )                      // minimal (English) language
 
 TR(TR_HUMIDITY,
@@ -128,6 +140,8 @@ TR(TR_HUMIDITY,
   "Luftfuktighet",          // Norwegian
   "Luftfuktighet",          // Swedish
   "Wilgotność",             // Polish
+  "Vlhkost",                // Czech
+  "Vlhkosť",                // Slovak
   "" )                      // minimal (English) language
 
 TR(TR_WIND,
@@ -142,6 +156,8 @@ TR(TR_WIND,
   "Vind",                   // Norwegian
   "Vind",                   // Swedish
   "Wiatr",                  // Polish
+  "Vítr",                   // Czech
+  "Vietor",                 // Slovak
   "" )                      // minimal (English) language
 
 TR(TR_PRESSURE,
@@ -156,6 +172,8 @@ TR(TR_PRESSURE,
   "Trykk",                  // Norwegian
   "Tryck",                  // Swedish
   "Ciśnienie",              // Polish
+  "Tlak",                   // Czech
+  "Tlak",                   // Slovak
   "" )                      // minimal (English) language
 
 //n.u. TR(TR_DAYNAMESHORT,
@@ -175,6 +193,8 @@ TR(TR_DAYNAMEFULL,
   "Søndag,Mandag,Tirsdag,Onsdag,Torsdag,Fredag,Lørdag",                               // Norwegian
   "Söndag,Måndag,Tisdag,Onsdag,Torsdag,Fredag,Lördag",                                // Swedish
   "Niedziela,Poniedziałek,Wtorek,Środa,Czwartek,Piątek,Sobota",                       // Polish
+  "Neděle,Pondělí,Úterý,Středa,Čtvrtek,Pátek,Sobota",                                 // Czech
+  "Nedeľa,Pondelok,Utorok,Streda,Štvrtok,Piatok,Sobota",                              // Slovak
   "" )                                                                                // minimal (English) language
 
 TR(TR_MONTHNAMESHORT,
@@ -189,6 +209,8 @@ TR(TR_MONTHNAMESHORT,
   "Jan,Feb,Mar,Apr,Mai,Jun,Jul,Aug,Sep,Okt,Nov,Des",       // Norwegian
   "Jan,Feb,Mar,Apr,Maj,Jun,Jul,Aug,Sep,Okt,Nov,Dec",       // Swedish
   "Sty,Lut,Mar,Kwi,Maj,Cze,Lip,Sie,Wrz,Paź,Lis,Gru",       // Polish
+  "Led,Úno,Bře,Dub,Kvě,Čvn,Čvc,Srp,Zář,Říj,Lis,Pro",       // Czech
+  "Jan,Feb,Mar,Apr,Máj,Jún,Júl,Aug,Sep,Okt,Nov,Dec",       // Slovak
   "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec" )      // minimal (English) language
 
 TR(TR_WINDDIRECTIONS,
@@ -203,6 +225,8 @@ TR(TR_WINDDIRECTIONS,
   "N,NNO,NO,ONO,O,OSO,SO,SSO,S,SSV,SV,VSV,V,VNV,NV,NNV",   // Norwegian
   "N,NNO,NO,ONO,O,OSO,SO,SSO,S,SSV,SV,VSV,V,VNV,NV,NNV",   // Swedish
   "N,NNE,NE,ENE,E,ESE,SE,SSE,S,SSW,SW,WSW,W,WNW,NW,NNW",   // Polish (use EN; Polish uses 'P' for North AND south: "Północ,Wschód,Południe,Zachód")
+  "S,SSV,SV,VSV,V,VJV,JV,JJV,J,JZJ,JZ,ZJZ,Z,ZSZ,SZ,SSZ",   // Czech
+  "S,SSV,SV,VSV,V,VJV,JV,JJV,J,JZJ,JZ,ZJZ,Z,ZSZ,SZ,SSZ",   // Slovak
   "N,NNE,NE,ENE,E,ESE,SE,SSE,S,SSW,SW,WSW,W,WNW,NW,NNW" )  // minimal (English) language
 
 TR(TR_PLEASESETOWMKEY,
@@ -217,6 +241,8 @@ TR(TR_PLEASESETOWMKEY,
   "Vennligst oppgi en API-nøkkel for været.",               // Norwegian
   "Vänligen ange en API-nyckel för vädret.",                // Swedish
   "Proszę podać klucz API dla pogody.",                     // Polish
+  "Zadejte prosím API klíč pro počasí.",                    // Czech
+  "Zadajte prosím API kľúč pre počasie.",                   // Slovak
   "Set OWM API key." )                                      // minimal (English) language
 
 TR(TR_PLEASESETLOCATION,
@@ -231,6 +257,8 @@ TR(TR_PLEASESETLOCATION,
   "Vennligst angi plassering for været.",                   // Norwegian
   "Vänligen ange plats för vädret.",                        // Swedish
   "Proszę ustawić lokalizację dla pogody.",                 // Polish
+  "Nastavte prosím umístění pro počasí.",                   // Czech
+  "Nastavte prosím umiestnenie pre počasie.",               // Slovak
   "Set location for weather." )                             // minimal (English) language
 
 TR(TR_CONNECTIONFORWEATHERFAILED,
@@ -245,21 +273,25 @@ TR(TR_CONNECTIONFORWEATHERFAILED,
   "Tilkobling for værdata mislyktes",                       // Norwegian
   "Anslutning för väderdata misslyckades",                  // Swedish
   "Połączenie z danymi pogodowymi nie powiodło się",        // Polish
+  "Selhání připojení k datům o počasí",                     // Czech
+  "Zlyhanie pripojenia k údajom o počasí",                  // Slovak  ️
   "Weather data connection failed" )                        // minimal (English) language
 
 TR(TR_TIMEOUTONWEATHERCLIENTDATARECEIVE,
-  "TIMEOUT on weatherClient data receive",                  // English
-  "TIMEOUT bij ontvangst van weatherClient-gegevens",       // Dutch
-  "TIMEOUT beim Empfang von weatherClient-Daten",           // German
-  "TIMEOUT lors de la réception des données weatherClient", // French
-  "TIMEOUT durante la ricezione dei dati weatherClient",    // Italian
-  "TIMEOUT al recibir datos de weatherClient",              // Spanish
-  "TIMEOUT ao receber dados do weatherClient",              // Portuguese
-  "TIMEOUT ved modtagelse af weatherClient-data",           // Danish
-  "TIMEOUT ved mottak av weatherClient-data",               // Norwegian
-  "TIMEOUT vid mottagning av weatherClient-data",           // Swedish
-  "TIMEOUT podczas odbierania danych weatherClient",        // Polish
-  "Timeout on weather data receive" )                       // minimal (English) language
+  "TIMEOUT on weather data receive",                  // English
+  "TIMEOUT bij ontvangst van weergegevens",           // Dutch
+  "TIMEOUT beim Empfang von Wetterdaten",             // German
+  "TIMEOUT lors de la réception des données météo",   // French
+  "TIMEOUT durante la ricezione dei dati meteo",      // Italian
+  "TIMEOUT al recibir datos meteorológicos",          // Spanish
+  "TIMEOUT ao receber dados meteorológicos",          // Portuguese
+  "TIMEOUT ved modtagelse af vejrdata",               // Danish
+  "TIMEOUT ved mottak av værdata",                    // Norwegian
+  "TIMEOUT vid mottagning av väderdata",              // Swedish
+  "TIMEOUT podczas odbierania danych pogodowych",     // Polish
+  "ČASOVÝ LIMIT při přijímání dat o počasí",          // Czech
+  "ČASOVÝ LIMIT pri prijímaní údajov o počasí",       // Slovak
+  "Timeout on weather data receive" )                 // minimal (English) language
 
 
 #endif  // TR

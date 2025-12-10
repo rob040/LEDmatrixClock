@@ -90,6 +90,7 @@ String geoLocation = "Amsterdam,NL";
 String marqueeMessage = "";
 String language = "en"; // Default language is English, other supported languages are nl,de,fr,it,es,pt,no,se,pl (see TranslationStrings.h for details)
 lang_t language_id = LANG_EN; // default language is English
+String hostname;
 
 // Default Weather Settings
 bool showTemperature = true;
@@ -106,9 +107,9 @@ const int staticDisplayTime = 5000;  // static display time per item, in ms
 bool isStaticDisplay = false; // static display above SHOW_* items
 //bool isMetric = true; // false = Imperial and true = Metric
 bool is24hour = true; // 24 hour clock is displayed, false = 12 hour clock (for configuration, 24h time is always used)
-bool isPmIndicator = true; // Show PM indicator on Clock when in AM/PM mode
+bool isPmIndicator = true; // Show PM indicator on clock when in AM/PM mode
 bool isSysLed = true; // flash onboard LED on system actions
-const int WEBSERVER_PORT = 80; // The port you can access this device on over HTTP
+const int WEBSERVER_PORT = 80; // The port you can access this device on over HTTP, where 80 is the standard port for http web traffic and can be omitted in the URL
 const bool isWebserverEnabled = true;  // Device will provide a web interface via http://[ip]:[port]/
 bool isBasicAuth = false;  // Use Basic Authorization for Configuration security on Web Interface
 char www_username[32] = {"admin"};  // User account for the Web Interface

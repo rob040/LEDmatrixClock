@@ -385,6 +385,8 @@ static const char webChangeForm3[] PROGMEM =
   "<p><input name='isBasicAuth' class='w3-check' type='checkbox' %AUTH_CB%> Use Security Credentials for Configuration Changes</p>"
   "<p><label>Configure User ID (for this web interface)</label><input class='w3-input w3-border' type='text' name='userid' value='%CFGUID%' maxlength='20'></p>"
   "<p><label>Configure Password </label><input class='w3-input w3-border' type='password' name='stationpassword' value='%CFGPW%'></p>"
+  // mDNS hostname; change will cause reboot, zerolength returns to default hostname, XXXXXX will be replaced by last 6 digits of MAC, max 24 chars
+  "<p><label>mDNS hostname (http://&lt;hostname&gt;.local/)</label><input class='w3-input w3-border' type='text' value='%CFGHN%' maxlength='24' name='hostname'></p>"
   "</fieldset>\n"
   "<br><button class='w3-button w3-block w3-green w3-section w3-padding' type='submit'>Save</button></form>"
   "<script>function isNumberKey(e){var h=e.which?e.which:event.keyCode;return!(h>31&&(h<48||h>57))}</script>";
@@ -474,12 +476,18 @@ void setup() {
 
   // WiFiManager
   // ESP_WiFiManager_Lite (multiWifi, Activation on multi reset detect):
-
   ESP_WiFiManager = new ESP_WiFiManager_Lite();
-  // Setup Config Portal hostname, without access password
-  String hostname(AP_HOSTNAME_BASE);
-  hostname += String(ESP.getChipId(), HEX);
+
+  // default hostname for mDNS web access is http://CLOCK-XXXXXX.local, Where XXXXXX is last 3 bytes of MAC address
+  if (hostname == "") hostname = AP_HOSTNAME_BASE "-XXXXXX";
+  if (hostname.endsWith(F("XXXXXX"))) hostname.replace(F("XXXXXX"), String(ESP.getChipId(), HEX));
   hostname.toUpperCase();
+  // hostname shall not be longer than 24 chars
+  hostname.remove(24);
+  Serial.printf_P(PSTR("Device Hostname: %s\n"), hostname.c_str());
+  WiFi.hostname(hostname.c_str());
+
+  // Setup Config Portal hostname, without access password
   ESP_WiFiManager->setConfigPortal(hostname);
   // Set customized DHCP HostName
   ESP_WiFiManager->begin(hostname.c_str());
@@ -560,11 +568,14 @@ void setup() {
       Serial.print(F("Server started but NO WIFI "));
     }
     // Print the IP address
-    char webAddress[32];
-    sprintf_P(webAddress, PSTR("v" VERSION "  IP: %s  "),
-      (ESP_WiFiManager->isConfigMode()) ? WiFi.softAPIP().toString().c_str() : WiFi.localIP().toString().c_str());
-    Serial.println(webAddress);
-    scrollMessageWait(webAddress);
+    {
+      char webAddress[64];
+      sprintf_P(webAddress, PSTR("v" VERSION "  IP: %s  %s.local  "),
+        (ESP_WiFiManager->isConfigMode()) ? WiFi.softAPIP().toString().c_str() : WiFi.localIP().toString().c_str(),
+        hostname.c_str());
+      Serial.println(webAddress);
+      scrollMessageWait(webAddress);
+    }
     if (ESP_WiFiManager->isConfigMode()) {
       // Show the SSID and Password of the access point
       //String msg = F("Wifi Manager Started... Please Connect to AP: ") + WiFi.softAPSSID() + F(" password: My") + WiFi.softAPSSID();
@@ -1034,6 +1045,7 @@ void handleSaveConfig() {
       server.hasArg(F("userid")) &&
       server.hasArg(F("stationpassword")) &&
       server.hasArg(F("theme")) &&
+      server.hasArg(F("hostname")) &&
       server.hasArg(F("scrollspeed"))
       ) {
 
@@ -1085,6 +1097,13 @@ void handleSaveConfig() {
     temp = server.arg(F("stationpassword"));
     temp.trim();
     temp.toCharArray(www_password, sizeof(www_password));
+    String host = server.arg(F("hostname"));
+    host.trim();
+    host.toUpperCase();
+    if (hostname != host) {
+      hostname = host;
+      configChangedMustRestart = true;
+    }
     weatherClient.setGeoLocation(geoLocation);
     matrix.fillScreen(CLEARSCREEN);
     writeConfiguration();
@@ -1281,6 +1300,7 @@ void handleConfigure() {
   form.replace(F("%AUTH_CB%"), (isBasicAuth) ? "checked" : "");
   form.replace(F("%CFGUID%"), String(www_username));
   form.replace(F("%CFGPW%"), String(www_password));
+  form.replace(F("%CFGHN%"), String(hostname));
   server.sendContent(form); // Send the second chunk of Data
 
   sendFooter();
@@ -1806,6 +1826,7 @@ void writeConfiguration() {
     f.println(F("wideClockStyle=") + String(wideClockStyle));
     f.println(F("www_username=") + String(www_username));
     f.println(F("www_password=") + String(www_password));
+    f.println(F("hostname=") + String(hostname));
     f.println(F("IS_BASIC_AUTH=") + String(isBasicAuth));
     f.println(F("SHOW_CITY=") + String(showCity));
     f.println(F("SHOW_CONDITION=") + String(showCondition));
@@ -1960,6 +1981,9 @@ void readConfiguration() {
     if ((idx = line.indexOf(F("www_password="))) >= 0) {
       String temp = line.substring(idx + 13);
       temp.toCharArray(www_password, sizeof(www_password));
+    }
+    if ((idx = line.indexOf(F("hostname="))) >= 0) {
+      hostname = line.substring(idx + 9);
     }
     if ((idx = line.indexOf(F("IS_BASIC_AUTH="))) >= 0) {
       isBasicAuth = line.substring(idx + 14).toInt();

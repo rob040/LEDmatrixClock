@@ -73,6 +73,7 @@ int getMinutesFromLastDisplay();
 int getMinutesFromLastDisplayScroll();
 void enableDisplay(bool enable);
 void checkDisplay();
+bool publishMqttStatus();
 void writeConfiguration();
 void readConfiguration();
 void scrollMessageSetup(const String &msg);
@@ -100,6 +101,7 @@ int lastSecond;
 //uint32_t proc1sLastTime;
 uint32_t lastDisplayScrollTimestamp;
 uint32_t lastRefreshDataTimestamp;
+uint32_t lastMqttStatusPubTimestamp;
 uint32_t firstTimeSync;
 uint32_t displayOffTimestamp;
 bool displayOn = true;
@@ -109,7 +111,7 @@ bool isDisplayScrollErrorMsgNew;
 bool isDisplayScrollErrorMsgOnce;
 bool isQuietPeriod;
 bool isQuietPeriodNoBlinkNoscroll;
-bool isMqttStatusPublishDone;
+//bool isMqttStatusPublishDone;
 String displayTime;
 char * newMqttMessage;
 String displayScrollMessageStr;
@@ -750,13 +752,24 @@ void processEveryMinute()
     if ((getMinutesFromLastRefresh() >= refreshDataInterval) || lastRefreshDataTimestamp == 0) {
       getWeatherData();
       lastRefreshDataTimestamp = now();
+      if (weatherClient.getErrorMessage() != "") {
+        displayScrollErrorMessage(weatherClient.getErrorMessage(), true);
+        lastMqttStatusPubTimestamp = 0; // publish mqtt status after weather data recovery
+        return;
+      }
     }
 
-    if (weatherClient.getErrorMessage() != "") {
-      displayScrollErrorMessage(weatherClient.getErrorMessage(), true);
-      return;
+    if (weatherClient.getWeatherDataValid() &&
+       (weatherClient.getErrorMessage().length() == 0) &&
+       ((uint32_t)now() > TIME_VALID_MIN) &&
+       ((uint32_t)now() - lastMqttStatusPubTimestamp) >= 60*60 )
+    {
+      // publish status at least every hour, when everything else is stable
+      if (publishMqttStatus()) {
+        Serial.println(F("MQTT status published"));
+        lastMqttStatusPubTimestamp = now();
+      }
     }
-    isMqttStatusPublishDone = false; // allow mqtt status publish again next minute
 
     // Check to see if we need to Scroll some weather Data
     if ((getMinutesFromLastDisplayScroll() >= displayScrollingInterval) && weatherClient.getWeatherDataValid() && (weatherClient.getErrorMessage().length() == 0)) {
@@ -893,8 +906,8 @@ void processEverySecond()
   if (isMqttEnabled) {
     mqttClient.loop();
     newMqttMessage = mqttClient.getNewMqttMessage();
-
-    // after first connection (and every minute), when time and weather are also connected, publish one time
+#if 0
+    // after first connection (and every 60 minutes), when time and weather are also connected, publish one time
     // the current values of hostname and IP address
     // this is useful for home automation systems to identify the device
     if (mqttClient.connected() && !isMqttStatusPublishDone && (now() > TIME_VALID_MIN) && weatherClient.getWeatherDataValid()) {
@@ -907,7 +920,7 @@ void processEverySecond()
       pubtopic += "/";
       pubtopic += WiFi.getHostname();
       pubtopic += "/status";
-      // {"device":"ESP123456","ip":"
+      // {"device":"CLOCK-123456","ip":"...","time":"20250101T123456","temp":"23.5 °C","hum":56,"wind":"15 kmh","cond":"Clear sky"}
       snprintf(msg, sizeof(msg), "{\"device\":\"%s\",\"ip\":\"%s\",\"time\":\"%s\",\"temp\":\"%s %s\",\"hum\":%d,\"wind\":\"%s %s\",\"cond\":\"%s\"}",
         WiFi.getHostname(),
         WiFi.localIP().toString().c_str(),
@@ -926,6 +939,7 @@ void processEverySecond()
         Serial.printf_P(PSTR("MQTT publish to %s FAILED\n"), pubtopic.c_str());
       }
     }
+    #endif
   }
   #endif
 
@@ -1388,6 +1402,46 @@ Serial.printf_P(PSTR("Timestatus=%d\n"), timeStatus());  // status timeNeedsSync
   Serial.println(F("Version: " VERSION));
   Serial.println();
   onBoardLed(LED_OFF);
+}
+
+bool publishMqttStatus() {
+  bool retval = false;
+  #if COMPILE_MQTT
+  if (isMqttEnabled && mqttClient.connected()) {
+    // after first connection (and every 60 minutes), when time and weather are also connected, publish one time
+    // the current values of hostname and IP address
+    // this is useful for home automation systems to identify the device
+    // Post to unique status topic, containing hostname with value IP address
+    char msg[256];
+    String datetime = String(year()) + zeroPad(month()) + zeroPad(day()) + "T" + zeroPad(hour()) + zeroPad(minute()) + zeroPad(second());
+    String pubtopic(MqttTopic);
+    if (pubtopic.lastIndexOf('/') > 0)
+      pubtopic = pubtopic.substring(0, pubtopic.lastIndexOf('/'));
+    pubtopic += "/";
+    pubtopic += WiFi.getHostname();
+    pubtopic += "/status";
+    // {"device":"CLOCK-123456","ip":"...","time":"20250101T123456","temp":"23.5 °C","hum":56,"wind":"15 kmh","cond":"Clear sky"}
+    snprintf(msg, sizeof(msg), "{\"device\":\"%s\",\"ip\":\"%s\",\"time\":\"%s\",\"temp\":\"%s %s\",\"hum\":%d,\"wind\":\"%s %s\",\"cond\":\"%s\"}",
+      WiFi.getHostname(),
+      WiFi.localIP().toString().c_str(),
+      datetime.c_str(),
+      getTemperature().c_str(),
+      getTemperatureUnit().c_str(),
+      weatherClient.getHumidity(),
+      getWindSpeed().c_str(),
+      getWindSpeedUnit().c_str(),
+      weatherClient.getWeatherDescription().c_str() );
+
+    if (mqttClient.publish(pubtopic.c_str(), msg)) {
+      Serial.printf_P(PSTR("MQTT publish to %s: %s\n"), pubtopic.c_str(), msg);
+      retval = true;
+    } else {
+      Serial.printf_P(PSTR("MQTT publish to %s FAILED\n"), pubtopic.c_str());
+      retval = false;
+    }
+  }
+  #endif
+  return retval;
 }
 
 void webDisplayMessage(const String &message) {

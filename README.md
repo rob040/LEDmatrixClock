@@ -47,21 +47,26 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 * Added user configurable temperature, wind speed and air pressure unit and conversions.
 * Removed the Imperial / Metric choice , with more customization freedom to the user.
 * The LED Display character font has been overhauled for more consistency and readability.
+* The hostname is now configurable. This hostname was "CLOCK-XXXXXX", where "XXXXXX" are device specific hex characters, which is still the default. A change will cause reboot, an empty entry will return to the default hostname.
+* The hostname is used for mDNS to access the webpage at <br>`  http://hostname.local`
+* The MQTT status message was changed and the publish frequency was reduced to once every hour, and after startup and after connection error recovery.
 
 **NEW**
-* As of version 3.4.0, there is **multiple language support** for text on the LED Matrix display. The configuration web page remains English.
-* There is Language support for following 12 languages:
+* As of version 3.4.0, there is **multiple language support** for texts on the LED Matrix display. The web server pages will remain in English.
+* There is Language support for following 14 languages:
 * => English
-* => Nederlands
-* => Deutsch
-* => Français
-* => Italiano
-* => Español
-* => Português
-* => Dansk
-* => Norsk
-* => Svenska
-* => Polski
+* => Nederlands  (Dutch)
+* => Deutsch  (German)
+* => Français  (French)
+* => Italiano  (Italian)
+* => Español  (Spanish)
+* => Português  (Portuguese)
+* => Dansk  (Danish)
+* => Norsk  (Norwegian)
+* => Svenska  (Swedish)
+* => Polski  (Polish)
+* => Čeština   (Czech)
+* => Slovenčina  (Slovak)
 
 
 ### known issues
@@ -153,7 +158,7 @@ Use the Arduino guide for details on how to install and manage libraries https:/
 
 **Packages** -- the following packages and libraries are used (download and install):
 * <TimeLib.h> --> https://github.com/PaulStoffregen/Time v1.6.1+
-* <Adafruit_GFX.h> --> https://github.com/adafruit/Adafruit-GFX-Library v1.12.1+ (and Adafruit BusIO at version 1.17.2+)
+* <Adafruit_BusIO_Register.h> --> https://github.com/adafruit/Adafruit_BusIO  version 1.17.2
 * <ArduinoJson.h> -->  https://github.com/bblanchon/ArduinoJson v7.4.2+
 * <PubSubClient.h> --> https://github.com/hmueller01/pubsubclient3 v3.2.0+
 
@@ -162,7 +167,8 @@ This project has local libraries in the lib directory.
 Having project local libraries is not supported by Arduino IDE.
 Therefore you must copy these manually to your Arduino sketchbook library directory.
 This is the directory where all libraries managed by the Arduino library manager are located.<br>
-By default this is `C:\Users\<userName>\Documents\Arduino\libraries` on Windows machines.
+By default this is `C:\Users\<userName>\Documents\Arduino\libraries` on Windows machines.<br>
+Be aware that the `lib/Arduino GFX Library` contains a modified glcdfont.c for this project, that is required for proper operation.
 
 Copy local libraries:
 * in command terminal, change to marquee directory,
@@ -170,7 +176,7 @@ Copy local libraries:
 
 After copy do restart the Arduino IDE.
 
-Assure there are no similarly named libaries (/packages) with higher version numbers.
+Assure there are no similarly named libaries (/packages) with higher version numbers.<br>
 Use library manager to check. At end of compilation in the IDE, a list of used libraries is shown. Check these.
 
 

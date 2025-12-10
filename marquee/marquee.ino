@@ -7,7 +7,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.4.1"  // software version
+#define VERSION "3.5.0"  // software version
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -603,7 +603,7 @@ void setup() {
   flashLED(1, 500);
 }
 
-#define LOOP_DEBUG 1//DEBUG
+#define LOOP_DEBUG DEBUG
 //************************************************************
 // Main Loop
 //************************************************************

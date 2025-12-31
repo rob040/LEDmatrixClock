@@ -1485,7 +1485,7 @@ void webDisplayWeatherData() {
   if (is24hour) {
     dtstr += zeroPad(hour()) + ":" + zeroPad(minute());
   } else {
-    dtstr += hourFormat12() + ":" + zeroPad(minute()) + ", " + getAmPm(isPM());
+    dtstr += String(hourFormat12()) + ":" + zeroPad(minute()) + ", " + getAmPm(isPM());
   }
 
   Serial.print(F("Main page update "));

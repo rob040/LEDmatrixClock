@@ -481,7 +481,7 @@ void setup() {
   ESP_WiFiManager = new ESP_WiFiManager_Lite();
 
   // default hostname for mDNS web access is http://CLOCK-XXXXXX.local, Where XXXXXX is last 3 bytes of MAC address
-  if (hostname == "") hostname = AP_HOSTNAME_BASE "-XXXXXX";
+  if (hostname == "") hostname = AP_HOSTNAME_BASE "XXXXXX";
   if (hostname.endsWith(F("XXXXXX"))) hostname.replace(F("XXXXXX"), String(ESP.getChipId(), HEX));
   hostname.toUpperCase();
   // hostname shall not be longer than 24 chars

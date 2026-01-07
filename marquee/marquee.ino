@@ -603,6 +603,9 @@ void setup() {
   flashLED(1, 500);
 }
 
+#ifndef DEBUG
+#define DEBUG 0
+#endif
 #define LOOP_DEBUG DEBUG
 //************************************************************
 // Main Loop
@@ -1555,7 +1558,34 @@ void webDisplayWeatherData() {
         "<a href='https://www.google.com/maps/@") + weatherClient.getLat() + "," + weatherClient.getLon() + F(",10000m/data=!3m1!1e3' target='_BLANK'><i class='fas fa-map-marker' style='color:red'></i> Map It!</a><br>"
       "</p></div></div>"
       "<div class='w3-cell-row' style='width:100%'><h3>") + dtstr  + F("</h3></div>"
-      "<p>LED Display Language is set to ") + String(getLanguageName(getCurrentLanguageId())) + F(" (") + String(getLanguageCode(getCurrentLanguageId())) + F(")</p><hr>");
+      "<p>LED Display Language is set to ") + String(getLanguageName(getCurrentLanguageId())) + F(" (") + String(getLanguageCode(getCurrentLanguageId())) +
+      F(")<br>");
+
+    if (ESP_WiFiManager->isConfigMode() == false) {
+      html += F("Connected to WiFi AP: ") + WiFi.SSID();
+      //html += F(" with Signal Strength ") + String(getWifiQuality()) + F("%");
+      // Show which profile we are connected to
+      for (int i=0; i<NUM_WIFI_CREDENTIALS; i++) {
+        if (ESP_WiFiManager->getWiFiSSID(i).length() > 0 && ESP_WiFiManager->getWiFiSSID(i) == WiFi.SSID()) {
+          html += F(" (Profile ") + String(i+1) + F(")");
+          break;
+        }
+      }
+      #if 1 //def DEBUG
+      // Show AP profiles configured
+      html += F(" <span class='w3-tiny'> (");
+      for (int i = 0; i < NUM_WIFI_CREDENTIALS; i++) {
+        if (ESP_WiFiManager->getWiFiSSID(i).length() > 0) {
+          html += String((i > 0 && i < NUM_WIFI_CREDENTIALS - 1) ? "," : "")
+            + F(" P") + String(i + 1) + "=" + ESP_WiFiManager->getWiFiSSID(i);
+        }
+      }
+      html += F(" )</span><br>");
+      #endif
+
+
+    }
+    html += F("</p><hr>");
   }
 
 

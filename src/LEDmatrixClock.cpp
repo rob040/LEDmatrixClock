@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include "Settings.h"
 
-#define VERSION "3.5.1"  // software version
+#define VERSION "3.5.2"  // software version
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -588,9 +588,14 @@ void setup() {
       Serial.println(msg);
       scrollMessageWait(msg);
       centerPrint(F("wifi"));
+    } else {
+      String msg = F("Connected to ") + WiFi.SSID();
+      Serial.println(msg);
+      scrollMessageWait(msg);
+
+      // Start NTP , although it can't do anything while in config mode or when no WiFi AP connected
+      timeNTPsetup();
     }
-    // Start NTP , although it can't do anything while in config mode or when no WiFi AP connected
-    timeNTPsetup();
 
   } else {
     // webserver disabled (not possible runtime; compiletime constant, see top of this file )
@@ -1350,16 +1355,17 @@ Serial.printf_P(PSTR("Timestatus=%d\n"), timeStatus());  // status timeNeedsSync
 
     // Explicitly get the NTP time
     time_t t = getNtpTime();
-    if (t > TIME_VALID_MIN) {
+    if ((t > TIME_VALID_MIN) && (t < TIME_VALID_MAX) && (t != now())) {
       // warning: adding ctime() causes 5kB extra codesize!
       //Serial.printf_P(PSTR("setTime %u=%s"), uint32_t(t), ctime(&t));
-      Serial.printf_P(PSTR("setTime %u\n"), uint32_t(t));
+      //Serial.printf_P(PSTR("setTime %u\n"), uint32_t(t));
+      Serial.printf_P(PSTR("setTime %u = %d-%02d-%02d %02d:%02d:%02d\n"), uint32_t(t), year(t), month(t), day(t), hour(t), minute(t), second(t));
       setTime(t);
     }
     if (firstTimeSync == 0) {
       firstTimeSync = now();
       if (firstTimeSync > TIME_VALID_MIN) {
-        setSyncInterval(222); // used for testing, value doesn't really matter
+        //setSyncInterval(222); // used for testing, value doesn't really matter
         Serial.printf_P(PSTR("firstTimeSync is: %d\n"), firstTimeSync);
       } else {
         // on a failed ntp sync we have seen that firstTimeSync was set to a low value: reset firstTimeSync

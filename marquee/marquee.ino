@@ -7,7 +7,7 @@
 
 #include "Settings.h"
 
-#define VERSION "3.5.0"  // software version
+#define VERSION "3.5.1"  // software version
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -1240,7 +1240,6 @@ void handleConfigure() {
   form.replace(F("%PM_CB%"), (isPmIndicator) ? "checked" : "");
   form.replace(F("%FLASH_CB%"), (flashOnSeconds) ? "checked" : "");
   form.replace(F("%STATDISP_CB%"), (isStaticDisplay) ? "checked" : "");
-  form.replace(F("%END_TM%"), String(quietTimeStart));
   String qtmode = String(quietTimeMode);
   String qtmOptions = F("<option value='0'>Disabled</option><option value='1'>Display Off</option><option value='2'>Dimmed</option><option value='3'>Dimmed and No Motion</option>");
   qtmOptions.replace(qtmode + "'", qtmode + "' selected");
@@ -1782,41 +1781,33 @@ void enableDisplay(bool enable) {
 // Toggle on and off the display if user defined times
 void checkDisplay()
 {
-  if ((quietTimeMode == QTM_DISABLED) || (quietTimeStart <= 0) || (quietTimeEnd <= 0)) {
+  if ((quietTimeMode == QTM_DISABLED) || (quietTimeStart < 0) || (quietTimeEnd < 0)) {
     return; // nothing to do
   }
   int currentTime = TIME_HHMM(hour(), minute());
-  if (quietTimeMode == QTM_DISPLAYOFF) {
-    if (currentTime == quietTimeEnd && !displayOn) {
-      Serial.print(F("Time to turn display on: ")); Serial.println(currentTime);
-      flashLED(1, 500);
-      enableDisplay(true);
+  if (((quietTimeStart > quietTimeEnd) && ((currentTime >= quietTimeStart) || (currentTime <= quietTimeEnd))) ||
+      ((quietTimeEnd > quietTimeStart) && ((currentTime >= quietTimeStart) && (currentTime <= quietTimeEnd))) )
+  {
+    // We are in the quiet period
+    isQuietPeriod = true;
+    if (quietTimeMode == QTM_DIMMED_NOSCROLL) {
+      isQuietPeriodNoBlinkNoscroll = true;
     }
-
-    if (currentTime == quietTimeStart && displayOn) {
-      Serial.print(F("Time to turn display off: ")); Serial.println(currentTime);
-      flashLED(2, 500);
+    if ((quietTimeMode == QTM_DISPLAYOFF) && (displayOn)) {
       enableDisplay(false);
-    }
-  }
-  else { //if (quietTimeMode == QTM_DIMMED || quietTimeMode == QTM_DIMMED_NOSCROLL)
-    if (((quietTimeStart > quietTimeEnd) && ((currentTime>=quietTimeStart)||(currentTime<=quietTimeEnd))) ||
-        ((quietTimeEnd > quietTimeStart) && ((currentTime>=quietTimeStart)&&(currentTime<=quietTimeEnd))) )
-    {
-      // We are in the quiet period
-      matrix.setIntensity(quietTimeDimlevel);
-      isQuietPeriod = true;
-      if (quietTimeMode == QTM_DIMMED_NOSCROLL) {
-        isQuietPeriodNoBlinkNoscroll = true;
-      }
     } else {
-      // We are outside the quiet period
+      matrix.setIntensity(quietTimeDimlevel);
+    }
+  } else {
+    // We are outside the quiet period
+    isQuietPeriod = false;
+    isQuietPeriodNoBlinkNoscroll = false;
+    if ((quietTimeMode == QTM_DISPLAYOFF) && (!displayOn)) {
+      enableDisplay(true);
+    } else {
       matrix.setIntensity(displayIntensity);
-      isQuietPeriod = false;
-      isQuietPeriodNoBlinkNoscroll = false;
     }
   }
-
 }
 
 void writeConfiguration() {

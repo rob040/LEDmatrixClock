@@ -1,10 +1,10 @@
 /**
  * @file Utf8toCP437.cpp
- * @author rob040@users.github.com
  * @brief Convert UTF-8 strings to ASCII with CP437 extension for LED matrix display
+ * @author rob040@users.github.com,  https://github.com/rob040
  * @date 2025-09-20
  * @copyright Copyright (c) 2025
- * Licensed under the MIT license. See LICENSE file in the project root for details.
+ * @license Licensed under the MIT license. See LICENSE file in the project root for details.
  *
  * Here we convert UTF8 encoded character string to a UNICODE wide char codepoint and is then converted to an ASCII-extended code page 437.
  * CP437 is the original IBM PC character set with some tweaks (e.g. Pasetas symbol is replaced with Euro symbol).

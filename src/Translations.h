@@ -1,15 +1,15 @@
 /**
  * @file Translations.cpp
- * @author rob040@users.github.com
  * @brief Language translation support
+ * @author rob040@users.github.com,  https://github.com/rob040
  * @date 2025-09-20
  * @copyright Copyright (c) 2025 rob040@users.github.com
- * This code is licensed under MIT license (see LICENSE.txt for details)
+ * @license This code is licensed under MIT license (see LICENSE.txt for details)
  */
 
 #pragma once
 #include <Arduino.h>
-#include "pgmspace.h"
+//#include "pgmspace.h"
 //#include "TranslationStrings.h"
 
 /* enum of supported languages */
@@ -21,9 +21,13 @@ typedef enum lang_e {
 } lang_t;
 #undef X
 
+// Dummy definition to satisfy VCcode Intellisense
+#define TR(msg, ...)
+
 /* enum of message IDs */
-#define TR(msg, ...) msg,
 typedef enum msgid_e {
+  #undef TR
+  #define TR(msg, ...) msg,
   #include "TranslationStrings.h"
   NUM_MESSAGES
 } msgid_t;

@@ -1,7 +1,9 @@
 /**
- * parts Copyright (c) 2018 David Payne
- * Copyright (c) 2025 rob040@users.github.com
- * This code is licensed under MIT license (see LICENSE.txt for details)
+ * @file OpenWeatherMapClient.cpp
+ * @brief OpenWeatherMap Client to get current weather data from OWM server
+ * @copyright parts Copyright (c) 2018 David Payne
+ * @copyright Copyright (c) 2025 rob040@users.github.com
+ * @license This code is licensed under MIT license (see LICENSE.txt for details)
  *
  *
  * Change History:

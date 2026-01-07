@@ -145,43 +145,9 @@ Pictures:
 
 
 ## Compiling and Loading to Wemos D1 Mini (ESP8266)
-### Using Arduino 2.x IDE
-It is no longer recommended to use the Arduino IDE. It might be difficult to get the right library versions together, especially when using it also for other Arduino projects.<br>
-Still, the main sketch filename (marquee.ino) and source directory name (marquee) is kept such that this project can be build in the Arduino IDE. This might change in the future.
-* Support for ESP8266 Boards is included in Arduino v2.x
-* Select Board:  "ESP8266" --> "LOLIN(WEMOS) D1 R2 & mini"
-* Set Flash Size: 4MB (FS:1MB OTA:~1019KB)
-* Select the **Port** from the tools menu.
 
-### Loading Supporting Library Files in Arduino
-Use the Arduino guide for details on how to install and manage libraries https://www.arduino.cc/en/Guide/Libraries
-
-**Packages** -- the following packages and libraries are used (download and install):
-* <TimeLib.h> --> https://github.com/PaulStoffregen/Time v1.6.1+
-* <Adafruit_BusIO_Register.h> --> https://github.com/adafruit/Adafruit_BusIO  version 1.17.2
-* <ArduinoJson.h> -->  https://github.com/bblanchon/ArduinoJson v7.4.2+
-* <PubSubClient.h> --> https://github.com/hmueller01/pubsubclient3 v3.2.0+
-
-**Local libraries** --
-This project has local libraries in the lib directory.
-Having project local libraries is not supported by Arduino IDE.
-Therefore you must copy these manually to your Arduino sketchbook library directory.
-This is the directory where all libraries managed by the Arduino library manager are located.<br>
-By default this is `C:\Users\<userName>\Documents\Arduino\libraries` on Windows machines.<br>
-Be aware that the `lib/Arduino GFX Library` contains a modified glcdfont.c for this project, that is required for proper operation.
-
-Copy local libraries:
-* in command terminal, change to marquee directory,
-* `xcopy/s ..\lib\* C:\Users\<userName>\Documents\Arduino\libraries`
-
-After copy do restart the Arduino IDE.
-
-Assure there are no similarly named libaries (/packages) with higher version numbers.<br>
-Use library manager to check. At end of compilation in the IDE, a list of used libraries is shown. Check these.
-
-
-## Building with PlatformIO.
-Use [**VScode**](https://code.visualstudio.com/docs) with [**PlatformIO**](https://platformio.org/) or better, its descendant fork [**PIOarduino**](https://marketplace.visualstudio.com/items?itemName=pioarduino.pioarduino-ide) extension.
+## Building with VScode PlatformIO.
+Use [**VScode**](https://code.visualstudio.com/docs) with [**PlatformIO**](https://platformio.org/).
 
 Please refer to the provided links on how to install VScode on your OS.
 

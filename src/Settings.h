@@ -1,8 +1,8 @@
 /**
-* Parts Copyright (c) 2018 David Payne
-* Parts Copyright (c) 2025 rob040@users.github.com
-* This code is licensed under MIT license (see LICENSE.txt for details)
-*/
+ * @copyright Parts Copyright (c) 2018 David Payne
+ * @copyright Copyright (c) 2025 rob040@users.github.com,  https://github.com/rob040
+ * @license This code is licensed under MIT license (see LICENSE.txt for details)
+ */
 
 /******************************************************************************
  * This is designed for the Wemos D1 ESP8266, but other ESP8266 boards work as well.
@@ -29,11 +29,12 @@
 
 #include <ESP8266mDNS.h>
 #include <ArduinoOTA.h>
-#include "LittleFS.h"
+#include <LittleFS.h>
 #define FS LittleFS
 #include <SPI.h>
 #include <Adafruit_GFX.h> // --> https://github.com/adafruit/Adafruit-GFX-Library
 #include <Max72xxPanel.h> // --> https://github.com/markruys/arduino-Max72xxPanel, fixed locally lib/arduino-Max72xxPanel
+#include <TimeLib.h> // --> https://github.com/PaulStoffregen/Time
 #include <pgmspace.h>
 #include "OpenWeatherMapClient.h"
 #include "TimeNTP.h"
@@ -88,7 +89,7 @@ String owmApiKey = ""; // Your free API Key from http://openweathermap.org/ (reg
 // Default GEO Location (use http://openweathermap.org/find to find location name being "cityname,countrycode" or "city ID" or GPS "latitude,longitude")
 String geoLocation = "Amsterdam,NL";
 String marqueeMessage = "";
-String language = "en"; // Default language is English, other supported languages are nl,de,fr,it,es,pt,no,se,pl (see TranslationStrings.h for details)
+String language = "en"; // Default language is English, other supported languages are nl,de,fr,it,es,pt,no,se,pl,cz,sk,... (see TranslationStrings.h for details)
 lang_t language_id = LANG_EN; // default language is English
 String hostname;
 

@@ -1,10 +1,10 @@
 /**
  * @file Utf8ConvTable.h
- * @author rob040@users.github.com
  * @brief Lookup table for Unicode to CP437 conversion
+ * @author rob040@users.github.com,  https://github.com/rob040
  * @date 2025-09-20
  * @copyright Copyright (c) 2025
- * Licensed under the MIT license. See LICENSE file in the project root for details.
+ * @license Licensed under the MIT license. See LICENSE file in the project root for details.
  *
  */
 #pragma once

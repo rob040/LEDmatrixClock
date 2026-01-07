@@ -1,10 +1,10 @@
 /**
  * @file Utf8toCP437.h
- * @author rob040@users.github.com
  * @brief Convert UTF-8 strings to CP437 for LED matrix display
+ * @author rob040@users.github.com,  https://github.com/rob040
  * @date 2025-09-20
  * @copyright Copyright (c) 2025
- * Licensed under the MIT license. See LICENSE file in the project root for details.
+ * @license Licensed under the MIT license. See LICENSE file in the project root for details.
  */
 #pragma once
 

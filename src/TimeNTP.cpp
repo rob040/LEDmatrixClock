@@ -1,8 +1,9 @@
 /**
- * Time NTP - Synchronize time with Network Time Protocol
+ * @file TimeNTP.cpp
+ * @brief Time NTP - Synchronize time with Network Time Protocol
  *
- * Copyright (c) 2025 rob040@users.github.com
- * This code is licensed under MIT license (see LICENSE.txt for details)
+ * @copyright Copyright (c) 2025 rob040@users.github.com
+ * @license This code is licensed under MIT license (see LICENSE.txt for details)
  *
  * Based on example code from TimeLib
  *
@@ -11,7 +12,7 @@
  */
 
 #include <Arduino.h>
-#include <TimeLib.h>
+#include <TimeLib.h> // https://github.com/PaulStoffregen/Time
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 #include "TimeNTP.h"

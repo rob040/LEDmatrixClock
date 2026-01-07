@@ -1,10 +1,10 @@
 /**
  * @file TimeStr.cpp
- * @author rob040@users.github.com
+ * @author rob040@users.github.com,  https://github.com/rob040
  * @brief Time Str - Support functions For Arduino String
  * @date 2025-09-20
  * @copyright Copyright (c) 2025 rob040@users.github.com
- * This code is licensed under MIT license (see LICENSE.txt for details)
+ * @license This code is licensed under MIT license (see LICENSE.txt for details)
  */
 
 #include <Arduino.h>

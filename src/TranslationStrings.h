@@ -1,10 +1,10 @@
 /**
- * @file languages.h
- * @author  rob040@user.github.com
+ * @file TranslationStrings.h
  * @brief Language definitions X-macros
+ * @author rob040@user.github.com,  https://github.com/rob040
  * @date 2025-09-29
  * @copyright Copyright (c) 2025
- * Licensed under the MIT license. See LICENSE file in the project root for details.
+ * @license Licensed under the MIT license. See LICENSE file in the project root for details.
  *
  * This file contains the language definitions for the supported languages.
  *
@@ -34,8 +34,6 @@
 
   // Other languages, not yet supported in this project:
   // Eastern european languages: (unlikely to show well with CP437 on 8x8 matrix)
-  //X(CZ, "cz", "Čeština")
-  //X(SL, "sl", "Slovenščina")
   //X(HU, "hu", "Magyar")
   //X(TR, "tr", "Türkçe")
 

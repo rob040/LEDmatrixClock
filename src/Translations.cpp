@@ -1,7 +1,7 @@
 /**
  * @file Translations.cpp
- * @author rob040@users.github.com
  * @brief Provides language translation support for messages in the application.
+ * @author rob040@users.github.com,  https://github.com/rob040
  *
  * This module manages translation strings for multiple languages, allowing
  * retrieval of translated messages by message ID and language. It stores
@@ -25,8 +25,11 @@
  * @copyright Copyright (c) 2025 rob040@users.github.com
  * @license MIT License (see LICENSE.txt for details)
  */
+
 #include <Arduino.h>
-#include "pgmspace.h"
+#include <pgmspace.h>
+#include <TimeLib.h> // --> https://github.com/PaulStoffregen/Time
+
 #include "Translations.h"
 #include "Timestr.h"
 

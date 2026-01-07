@@ -1,7 +1,10 @@
-/*
- * Definitions for ESP_WiFiManager_lite.h
- *
- *
+/**
+ * @file WmlSettings.h
+ * @brief Definitions for ESP WiFiManager lite
+ * @author rob040@users.github.com,  https://github.com/rob040
+ * @date 2025-09-20
+ * @copyright Copyright (c) 2025
+ * @license Licensed under the MIT license. See LICENSE file in the project root for details.
  */
 #pragma once
 
@@ -9,7 +12,7 @@
 // ESP Accesspoint hostname by ESP_WifiManager_Lite; The device MAC address will be added
 #define AP_HOSTNAME_BASE                          "CLOCK-"
 #define ESP_WM_LITE_DEBUG_OUTPUT                  Serial
-#define _ESP_WM_LITE_LOGLEVEL_                    3   // 0-3
+#define _ESP_WM_LITE_LOGLEVEL_                    0   // 0-3
 #define USE_LED_BUILTIN                           true
 #define USE_DYNAMIC_PARAMETERS                    false
 #define USING_CUSTOM_STYLE                        false

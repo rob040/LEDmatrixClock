@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include "Settings.h"
 
-#define VERSION "3.5.2"  // software version
+#define VERSION "3.5.3"  // software version
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -570,32 +570,33 @@ void setup() {
     } else {
       Serial.print(F("Server started but NO WIFI "));
     }
-    // Print the IP address
-    {
-      char webAddress[64];
-      sprintf_P(webAddress, PSTR("v" VERSION "  IP: %s  %s.local  "),
-        (ESP_WiFiManager->isConfigMode()) ? WiFi.softAPIP().toString().c_str() : WiFi.localIP().toString().c_str(),
-        hostname.c_str());
-      Serial.println(webAddress);
-      scrollMessageWait(webAddress);
-    }
+    char scollmsg[128] = {0};
+    int orgDisplayScrollSpeed = displayScrollSpeed;
+    displayScrollSpeed = 35; // slow scroll long messages below
+
+    // Show product version
+    strcpy_P(scollmsg, PSTR("v" VERSION "  "));
+
     if (ESP_WiFiManager->isConfigMode()) {
-      // Show the SSID and Password of the access point
-      //String msg = F("Wifi Manager Started... Please Connect to AP: ") + WiFi.softAPSSID() + F(" password: My") + WiFi.softAPSSID();
-      char msg[100];
+      // Show the SSID and Password of the Wifi Manager access point
       // fmt = ("Wifi Manager Started... Please Connect to AP: %s password: My%s")
-      sprintf(msg, getTranslation(TR_WMSTARTED), WiFi.softAPSSID().c_str(), String("My"+WiFi.softAPSSID()).c_str());
-      Serial.println(msg);
-      scrollMessageWait(msg);
+      sprintf(scollmsg+strlen(scollmsg), getTranslation(TR_WMSTARTED), WiFi.softAPSSID().c_str(), String("My"+WiFi.softAPSSID()).c_str());
+      sprintf(scollmsg+strlen(scollmsg), " IP: %s", WiFi.softAPIP().toString().c_str());
+      Serial.println(scollmsg);
+      scrollMessageWait(scollmsg);
       centerPrint(F("wifi"));
     } else {
-      String msg = F("Connected to ") + WiFi.SSID();
-      Serial.println(msg);
-      scrollMessageWait(msg);
-
-      // Start NTP , although it can't do anything while in config mode or when no WiFi AP connected
+      // Start NTP time synchronization
       timeNTPsetup();
+
+      // Show my IP address and the WiFi SSID I am connected to
+      sprintf(scollmsg+strlen(scollmsg), "Connected to WiFi AP %s  Connect to http://%s.local IP: %s",
+        WiFi.SSID().c_str(), hostname.c_str(), WiFi.localIP().toString().c_str());
+      Serial.println(scollmsg);
+      scrollMessageWait(scollmsg);
     }
+    // restore original scroll speed
+    displayScrollSpeed = orgDisplayScrollSpeed;
 
   } else {
     // webserver disabled (not possible runtime; compiletime constant, see top of this file )

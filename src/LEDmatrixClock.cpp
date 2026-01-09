@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include "Settings.h"
 
-#define VERSION "3.5.4"  // software version
+#define VERSION "3.5.5"  // software version
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -74,6 +74,7 @@ int getMinutesFromLastDisplay();
 int getMinutesFromLastDisplayScroll();
 void enableDisplay(bool enable);
 void checkDisplay();
+void checkRestart();
 bool publishMqttStatus();
 void writeConfiguration();
 void readConfiguration();
@@ -919,6 +920,8 @@ void processEverySecond()
     newMqttMessage = mqttClient.getNewMqttMessage();
   }
   #endif
+
+  checkRestart(); // check if a restart was scheduled
 
   checkDisplay(); // check if we need to turn display on or off for night mode.
 
@@ -1799,6 +1802,7 @@ int getMinutesFromLastDisplayScroll() {
   return minutes;
 }
 
+// Turn the display on or off
 void enableDisplay(bool enable) {
   displayOn = enable;
   if (enable) {
@@ -1817,7 +1821,7 @@ void enableDisplay(bool enable) {
   }
 }
 
-// Toggle on and off the display if user defined times
+// Check if we need to turn display on or off for night mode.
 void checkDisplay()
 {
   if ((quietTimeMode == QTM_DISABLED) || (quietTimeStart < 0) || (quietTimeEnd < 0)) {
@@ -1846,6 +1850,15 @@ void checkDisplay()
     } else {
       matrix.setIntensity(displayIntensity);
     }
+  }
+}
+
+// Restart the ESP daily at 04:00am to resolve memory leaks or other issues
+void checkRestart() {
+  if ((daylyRestart) && (hour() == 4) && (minute() == 0) && (second() <= 5)) {
+    Serial.println(F("Restarting now..."));
+    delay(1000);
+    ESP.restart();
   }
 }
 

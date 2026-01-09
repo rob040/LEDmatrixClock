@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include "Settings.h"
 
-#define VERSION "3.5.3"  // software version
+#define VERSION "3.5.4"  // software version
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -590,8 +590,9 @@ void setup() {
       timeNTPsetup();
 
       // Show my IP address and the WiFi SSID I am connected to
-      sprintf(scollmsg+strlen(scollmsg), "Connected to WiFi AP %s  Connect to http://%s.local IP: %s",
-        WiFi.SSID().c_str(), hostname.c_str(), WiFi.localIP().toString().c_str());
+      // fmt = "Connected to WiFi AP %s  Connect to" + " http://CLOCK-XXXXXX.local  IP: 192.168.0.1"
+      sprintf(scollmsg+strlen(scollmsg), getTranslation(TR_CONNECTEDWIFI), WiFi.SSID().c_str());
+      sprintf(scollmsg+strlen(scollmsg), " http://%s.local  IP: %s", hostname.c_str(), WiFi.localIP().toString().c_str());
       Serial.println(scollmsg);
       scrollMessageWait(scollmsg);
     }

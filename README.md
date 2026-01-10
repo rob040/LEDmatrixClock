@@ -30,7 +30,7 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 * Update to new OpenWeatherMap.org API. Newly requested Free Service API-keys can no longer use the older call and structure.
 * Reduce RAM usage. The ESP8266 is an older WiFi processor with limited RAM (80kB), especially when compared to its newer ESP32 members.
 * Added MQTT support with basic Authentication, to get message to be displayed. Message is displayed immediately when display shows the time, and repeated every minute with default configuration.
-* Use VScode IDE with PlatformIO / PIOarduino, for better development and maintenance experience and much better build environment and library version control.
+* Use VScode IDE with PlatformIO, for better development and maintenance experience and much better build environment and library version control.
 * Improved start-up on time synchronisation and weather data update.
 * Improved weather data display on webpage (minor changes).
 * Automatic timezone (from Local weather), hence no need for TimeZoneDB.
@@ -53,7 +53,7 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 
 **NEW**
 * As of version 3.4.0, there is **multiple language support** for texts on the LED Matrix display. The web server pages will remain in English.
-* There is Language support for following 14 languages:
+* There is Language support for following languages:
 * => English
 * => Nederlands  (Dutch)
 * => Deutsch  (German)
@@ -155,7 +155,7 @@ Then, open this project with `Visual Studio Code`, via File --> Open Folder: sel
 
 The `platformio.ini` file contains the references to the required external libraries and version numbers.
 
-To build, open the `pioarduino` or `platformio` extension (icon on left hand side bar), then under *PROJECT TASKS* -> *Default* -> *General* : select **Build** and then **Upload**
+To build, open the `platformio` extension (icon on left hand side bar), then under *PROJECT TASKS* -> *Default* -> *General* : select **Build** and then **Upload**
 
 ## Initial Configuration
 Editing the **Settings.h** file is not required but optional to get different default values.

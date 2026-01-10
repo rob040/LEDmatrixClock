@@ -17,56 +17,59 @@ Read the [feature enhancements below](#feature-enhancements)
 * Configurable scroll speed and LED brightness
 * Configurable data display and data update interval frequency
 * Configurable sleep / wake times
-* Configurable number of LED-matrix tiles (4 to >8) (compile option) and
+* Configurable number of LED-matrix tiles (4 to >8) and
   types of Clock Displays on larger panels, e.g. also display seconds or temperature
 * Video: https://youtu.be/DsThufRpoiQ
 * Build Video by Chris Riley: https://youtu.be/KqBiqJT9_lE
 
 ## Feature Enhancements
 Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixClock) [by rob040](https://github.com/rob040/) :
-* Removed the TimeZoneDB.com registration requirement.
-* Actual time zone information is used from OpenWeatherMap API.
-* Added Time NTP and more efficient time strings instead.
-* Update to new OpenWeatherMap.org API. Newly requested Free Service API-keys can no longer use the older call and structure.
+
+* Updated to new OpenWeatherMap.org API. Newly requested Free Service API-keys can no longer use the older call and structure.
+* **Automatic timezone** is obtained from OpenWeatherMap API, using your configured location.
+* It is no longer required to register for TimeZoneDB.com. This provider has been removed from the code.
+* Add **Time NTP** to obtain regular time updates (original did not use NTP Network Time Protocol).
+* Use more efficient time strings. Also, all text strings are stored in program flash (PROGMEM).
 * Reduce RAM usage. The ESP8266 is an older WiFi processor with limited RAM (80kB), especially when compared to its newer ESP32 members.
-* Added MQTT support with basic Authentication, to get message to be displayed. Message is displayed immediately when display shows the time, and repeated every minute with default configuration.
-* Use VScode IDE with PlatformIO, for better development and maintenance experience and much better build environment and library version control.
+* Add **MQTT support** with basic Authentication, to get message to be displayed. Message is displayed immediately when display shows the time, and repeated every minute with default configuration.
+* Use **VS-Code IDE** with **PlatformIO**, for better development and maintenance experience and much better build environment and library version control.
 * Improved start-up on time synchronisation and weather data update.
 * Improved weather data display on webpage (minor changes).
-* Automatic timezone (from Local weather), hence no need for TimeZoneDB.
-* Added a favicon for easy recognition in your browser.
-* Support for different display sizes without re-compilation, via configuration page (device will reboot upon change).
-* Using the 'LittleFS' filesystem in stead of the deprecated 'SPIFFS' filesystem
-* Using ArduinoJson upgraded to version 7
-* Webpage now has switchable dark-mode view
-* Webpage now has switchable automatic page update
-* Instead of scrolling text, there is also a static display mode for short messages, date, temperature or humidity only next to the time display.
-* Weather Location lookup has been made simpler; there is no longer the need to lookup the City-ID code; just enter a (valid) city name with optional 2-letter country code. Also GPS coordinates are now allowed as location input.
-* Added a display QUIET time config option, where the display can be Off or Dimmed or Dimmed with no Motion (ie. no scrolling, no blinking)
-* Replaced Wifi_manager with ESP_WiFiManager_Lite library, which allows multiple WiFi Accesspoints (SSID's) to be (pre-)configured, which is handy for a portable device. It also provides a fallback if one WiFi station goes down.
-* Added user configurable temperature, wind speed and air pressure unit and conversions.
+* Add a **favicon** for easy recognition in your browser.
+* Support for **different matrix display sizes** without re-compilation, via configuration page (device will reboot upon change).
+* Using the 'LittleFS' filesystem in stead of the deprecated 'SPIFFS' filesystem.
+* Using ArduinoJson upgraded to version 7.
+* Webpage now has switchable **dark-mode view**.
+* Webpage now has switchable **automatic page update**.
+* Instead of scrolling text, there is also a **static display** mode for short messages, date, temperature or humidity, next to the time display.
+* Weather **Location** lookup has been made simpler; there is no longer the need to lookup the City-ID code; just enter a (valid) **city name** with optional 2-letter state or country code. Also **GPS coordinates** are now allowed as location input.
+* Added a display **QUIET time** config option, where the display can be Off or Dimmed or Dimmed with no Motion (ie. no scrolling, no blinking)
+* Replaced Wifi_manager with **ESP_WiFiManager_Lite** library, which allows **multiple WiFi Access Points** (SSID's) to be (pre-)configured, which is handy for a portable device. It also provides a fallback if one WiFi station goes down.
+* User **configurable units** for temperature (°C,°F,K), wind speed (m/s,kmh,mph,kn,Bft) and air pressure (mb,hPa,mmHg,inHg,psi,atm).
 * Removed the Imperial / Metric choice , with more customization freedom to the user.
 * The LED Display character font has been overhauled for more consistency and readability.
-* The hostname is now configurable. This hostname was "CLOCK-XXXXXX", where "XXXXXX" are device specific hex characters, which is still the default. A change will cause reboot, an empty entry will return to the default hostname.
-* The hostname is used for mDNS to access the webpage at <br>`  http://hostname.local`
+* The hostname is now configurable. This hostname was "CLOCK-XXXXXX", where "XXXXXX" are device specific hex characters, which is still the default. An empty entry will return to the default hostname. A change will cause a reboot.
+* The hostname is used for mDNS to access the webpage at <br>`  http://hostname.local`. This is shown at power-up.
 * The MQTT status message was changed and the publish frequency was reduced to once every hour, and after startup and after connection error recovery.
+* The used WiFi Access Point is shown at start-up and on main webpage.
+* The list of configured alternative WiFi Access Points, there can be 4, is shown on the main webpage.
+* The 'Forget Wifi' menu entry will enter the WifiManager, but the configured WiFi Access Points will NOT be forgotten, nor erased, meaning that when nothing is changed and all is still valid, a power-cycle will connect to the best available WiFi Access Point.
 
-**NEW**
 * As of version 3.4.0, there is **multiple language support** for texts on the LED Matrix display. The web server pages will remain in English.
 * There is Language support for following languages:
-* => English
-* => Nederlands  (Dutch)
-* => Deutsch  (German)
-* => Français  (French)
-* => Italiano  (Italian)
-* => Español  (Spanish)
-* => Português  (Portuguese)
-* => Dansk  (Danish)
-* => Norsk  (Norwegian)
-* => Svenska  (Swedish)
-* => Polski  (Polish)
-* => Čeština   (Czech)
-* => Slovenčina  (Slovak)
+  * => English
+  * => Nederlands  (Dutch)
+  * => Deutsch  (German)
+  * => Français  (French)
+  * => Italiano  (Italian)
+  * => Español  (Spanish)
+  * => Português  (Portuguese)
+  * => Dansk  (Danish)
+  * => Norsk  (Norwegian)
+  * => Svenska  (Swedish)
+  * => Polski  (Polish)
+  * => Čeština   (Czech)
+  * => Slovenčina  (Slovak)
 
 
 ### known issues
@@ -76,9 +79,14 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 
 
 ## Required Parts:
-* Wemos LOLIN D1 Mini ESP8266: https://www.wemos.cc/en/latest/d1/d1_mini.html
-  Other EXP8266 boards based on [ESP12(-E,-F)](https://components101.com/sites/default/files/component_pin/ESP12E-Pinout.png) module, such as the NodeMCU, shall work equally well, only the 3D print models are more or less bound to the D1-mini physical dimensions.
-* MAX7219 LED Dot Matrix Module 4-in-1 Display (FC16) for Arduino. Commonly available from Chinese webshops, or Ebay or Amazon.com.
+* Wemos LOLIN D1 Mini ESP8266: https://www.wemos.cc/en/latest/d1/d1_mini.html <br>
+  Other ESP8266 boards based on [ESP12(-E,-F)](https://components101.com/sites/default/files/component_pin/ESP12E-Pinout.png) module, such as the NodeMCU, shall work equally well, only the 3D print models are more or less bound to the D1-mini physical dimensions. <br>
+  Get the D1 mini board from reputable source!
+  There are clones around with sub-standard voltage regulators on board, that cannot supply the required 500mA. This can lead to unexpected hangups or resets when WiFi transmission is initiated. [See this](https://www.letscontrolit.com/forum/viewtopic.php?t=6603) and [this](https://github.com/bbqkees/Wemos-the-Clone-Wars#underpowered-ldo)
+* MAX7219 LED Dot Matrix Module 4-in-1 Display (FC16) for Arduino. Commonly available from Chinese webshops, or Ebay or Amazon.
+* A good 5V USB power supply
+* Optional Electrolytic Capacitor on the 5V rail of LED display. Capacity: 100 uF -- 1000 uF, Voltage: > 6 Volts, Low ESR.<br>
+  This can be salvaged from disused electronic equipment, such as a power-supply or PC mother board. It must be of good quality though; at minimum, the top should not be bulged or broken.
 
 
 ## Wiring for the Wemos D1 Mini to the MAX7218 LED Dot Matrix Display
@@ -96,6 +104,8 @@ The Connections in a picture:
   <img src="/images/marquee_scroller_pins.png" width="400"/>
 </p>
 Be aware that the display in above picture is actually upside-down. When viewed from front, the data input DIN is at the right hand side; the text on the PCB is usually upside-down.
+
+Solder the Electrolytic Capacitor directly on the back of the LED display board, with (+) on VCC and (-) on GND.
 
 
 ## 3D Printed Case by David Payne:
@@ -127,7 +137,7 @@ Double Wide LED version: https://www.thingiverse.com/thing:2989552
 
 From the .stl files posted on Thingiverse.com, a SketchUp model was re-created and new .stl with wider dotmatrix display module area was made. <br>
 Many [complained](https://www.thingiverse.com/thing:2867294/comments) that their dotmatrix display module didn't fit; some enlarged the X-axis in their slicer program to make it fit. Just too bad they needed to print it at least twice. <br>
-That was caused by the fact that the original .stl can only fit a matrix display module of 128.4 mm wide. <br>
+That was caused by the fact that the original .stl can only fit a matrix display module of 128.4 mm wide. (4x 32mm tight together) <br>
 The models available here will fit up to 132.0 mm wide display module. <br>
 Most other characteristics, such as the loosely fitting backplate, were left unchanged; the unmatched screw holes were fixed though.
 

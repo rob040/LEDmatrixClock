@@ -96,9 +96,9 @@ TR(TR_WMCONFIGURED,
 //"Connected to WiFi AP %s  Connect to" + " http://CLOCK-XXXXXX.local IP: 192.168.0.1"
 TR(TR_CONNECTEDWIFI,
   "Connected to WiFi AP %s  Connect to ",                     // English
-  "Verbonden met WiFi AP %s  Verbinden met ",                 // Dutch
-  "Verbunden mit WiFi AP %s  Verbinden mit ",                 // German
-  "Connecté au WiFi AP %s  Connecter à ",                     // French
+  "Verbonden met WiFi AP %s  Verbind met ",                   // Dutch
+  "Verbunden mit WiFi AP %s  Verbinde mit ",                  // German
+  "Connecté au WiFi AP %s  Connectez à ",                     // French
   "Connesso a WiFi AP %s  Collegati a ",                      // Italian
   "Conectado a WiFi AP %s  Conéctese a ",                     // Spanish
   "Conectado ao WiFi AP %s  Conecte-se a ",                   // Portuguese
@@ -106,8 +106,8 @@ TR(TR_CONNECTEDWIFI,
   "Koblet til WiFi AP %s  Koble til ",                        // Norwegian
   "Ansluten till WiFi AP %s  Anslut till ",                   // Swedish
   "Połączono z WiFi AP %s  Połącz z ",                        // Polish
-  "Připojeno k WiFi AP %s  Připojit k ",                      // Czech
-  "Pripojené k WiFi AP %s  Pripojiť k ",                      // Slovak
+  "Připojeno k WiFi AP %s  Připoj k ",                        // Czech
+  "Pripojené k WiFi AP %s  Pripoj k ",                        // Slovak
   "Connected to WiFi AP %s  Connect to " )                    // minimal (English) language
 
   TR(TR_TEMPERATURE,

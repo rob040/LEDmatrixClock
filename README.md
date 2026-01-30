@@ -74,8 +74,8 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 
 ### known issues
 * Webpage update does halt the scrolling display for a moment. See [discussion #34](https://github.com/rob040/LEDmatrixClock/discussions/34) for more details.
-* Scrolling text appears to have some 'flex' in it. See [discussion #35](https://github.com/rob040/LEDmatrixClock/discussions/35) for more details.
 * When using the LED display at lowest intensity, some pixel flicker might be visible. See [discussion #36](https://github.com/rob040/LEDmatrixClock/discussions/36) for more details.
+* Occasional lockup (ESP8266-Arduino core) and slow-down to a crawl (wifi-connection loss and difficulty to reconnect) are known to occur at some builds without clear cause nor solution. See issue [#24](https://github.com/rob040/LEDmatrixClock/issues/24).
 
 
 ## Required Parts:
@@ -86,7 +86,7 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 * MAX7219 LED Dot Matrix Module 4-in-1 Display (FC16) for Arduino. Commonly available from Chinese webshops, or Ebay or Amazon.
 * A good 5V USB power supply
 * Optional Electrolytic Capacitor on the 5V rail of LED display. Capacity: 100 uF -- 1000 uF, Voltage: > 6 Volts, Low ESR.<br>
-  This can be salvaged from disused electronic equipment, such as a power-supply or PC mother board. It must be of good quality though; at minimum, the top should not be bulged or broken.
+  This can be salvaged from disused electronic equipment, such as a power-supply or PC mother board. It must be of good quality though; at bare minimum, the top should not be bulged or broken.
 
 
 ## Wiring for the Wemos D1 Mini to the MAX7218 LED Dot Matrix Display

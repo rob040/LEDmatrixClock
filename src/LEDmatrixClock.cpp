@@ -1828,8 +1828,8 @@ void checkDisplay()
     return; // nothing to do
   }
   int currentTime = TIME_HHMM(hour(), minute());
-  if (((quietTimeStart > quietTimeEnd) && ((currentTime >= quietTimeStart) || (currentTime <= quietTimeEnd))) ||
-      ((quietTimeEnd > quietTimeStart) && ((currentTime >= quietTimeStart) && (currentTime <= quietTimeEnd))) )
+  if (((quietTimeStart > quietTimeEnd) && ((currentTime >= quietTimeStart) || (currentTime < quietTimeEnd))) ||
+      ((quietTimeEnd > quietTimeStart) && ((currentTime >= quietTimeStart) && (currentTime < quietTimeEnd))) )
   {
     // We are in the quiet period
     isQuietPeriod = true;

@@ -99,9 +99,10 @@ const char* getLanguageCode(lang_t lang) {
 lang_t getLanguageIdFromCode(const char* code) {
   if (code != nullptr) {
     String codes = FPSTR(languageCodeTable);
+    String codeStr(code);
     for (int i = 0; i < NUM_LANGUAGES; i++) {
       String langcode = codes.substring(i*3, i*3+2);
-      if (langcode.equalsIgnoreCase(String(code))) {
+      if (langcode == codeStr) {
         return static_cast<lang_t>(i);
       }
     }
@@ -189,7 +190,7 @@ lang_t getCurrentLanguageId() {
 
 String getLocaleLongDateStr(time_t t, lang_t lang, bool addweekday, bool addyear, bool imperial_US) {
   String dateStr;
-  if (addweekday) {
+  if (addweekday && (LANG_MIN != lang) /* note: MIN-English doesn't have weekday spelled out */) {
     dateStr = getDayName(weekday(t)) + ", ";
   }
   if (imperial_US && ((lang == LANG_EN)||(lang == LANG_MIN))) {

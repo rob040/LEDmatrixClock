@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include "Settings.h"
 
-#define VERSION "3.6.3"  // software version
+#define VERSION "3.6.4"  // software version
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -1769,7 +1769,10 @@ int8_t getWifiQuality() {
 String getTimeTillUpdate() {
   char hms[10];
   long timeToUpdate = (((refreshDataInterval * 60) + lastRefreshDataTimestamp) - now());
-
+  bool timeValid = now() > TIME_VALID_MIN;
+  if (!timeValid || timeToUpdate < 0) {
+    return F("N/A");
+  }
   int hours = numberOfHours(timeToUpdate);
   int minutes = numberOfMinutes(timeToUpdate);
   int seconds = numberOfSeconds(timeToUpdate);
@@ -1958,15 +1961,6 @@ void readConfiguration() {
     if ((idx = line.indexOf(F("isPM="))) >= 0) {
       isPmIndicator = line.substring(idx + 5).toInt();
     }
-    if ((idx = line.indexOf(F("wideclockformat="))) >= 0) {
-      /* for backwards compatibility settings migration */
-      //OLD: "1"="hh:mm Temp", "2"="hh:mm:ss", "3"="hh:mm"
-      int n = line.substring(idx + 16).toInt();
-      if (n == 1) wideClockStyle = WIDE_CLOCK_STYLE_HHMM_CF;
-      if (n == 2) wideClockStyle = WIDE_CLOCK_STYLE_HHMMSS;
-      if (n == 3) wideClockStyle = WIDE_CLOCK_STYLE_HHMM;
-      // else: keep default
-    }
     if ((idx = line.indexOf(F("wideClockStyle="))) >= 0) {
       int n = line.substring(idx + 15).toInt();
       if (n < WIDE_CLOCK_STYLE_FIRST || n > WIDE_CLOCK_STYLE_LAST) n = 1;
@@ -1989,9 +1983,6 @@ void readConfiguration() {
       if (refreshDataInterval == 0) {
         refreshDataInterval = 15; // can't be zero
       }
-    }
-    if ((idx = line.indexOf(F("minutesBetweenScrolling="))) >= 0) {  /* for backwards compatibility settings migration */
-      displayScrollingInterval = line.substring(idx + 24).toInt();
     }
     if ((idx = line.indexOf(F("dispInterval="))) >= 0) {
       displayScrollingInterval = line.substring(idx + 13).toInt();

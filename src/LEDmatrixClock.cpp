@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include "Settings.h"
 
-#define VERSION "3.6.0"  // software version
+#define VERSION "3.6.2"  // software version
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -70,7 +70,6 @@ String getTemperatureName(temperatureUnits_t tu);
 
 int8_t getWifiQuality();
 int getMinutesFromLastRefresh();
-int getMinutesFromLastDisplay();
 int getMinutesFromLastDisplayScroll();
 void enableDisplay(bool enable);
 void checkDisplay();
@@ -105,7 +104,6 @@ uint32_t lastDisplayScrollTimestamp;
 uint32_t lastRefreshDataTimestamp;
 uint32_t lastMqttStatusPubTimestamp;
 uint32_t firstTimeSync;
-uint32_t displayOffTimestamp;
 bool displayOn = true;
 bool isDisplayTimeNew;
 bool isDisplayMessageNew;
@@ -676,6 +674,7 @@ void loop() {
   switch (loopState) {
   default:
   case lStateIdle: // Idle: Show time on display, when ON
+    if (displayOn) {
       if (isDisplayScrollErrorMsgNew) {
         scrollMessageSetup(displayScrollErrorMsgStr);
         if (isDisplayScrollErrorMsgOnce) {
@@ -706,12 +705,11 @@ void loop() {
       } else
       if (isDisplayTimeNew) {
         isDisplayTimeNew = false;
-        if (displayOn) {
-          matrix.fillScreen(CLEARSCREEN);
-          centerPrint(displayTime, true);
-        }
+        matrix.fillScreen(CLEARSCREEN);
+        centerPrint(displayTime, true);
       }
-      break;
+    }
+    break;
   case lStateScrollMsgPix:
       if (!scrlBusy) loopState = lStateIdle;
       break;
@@ -761,7 +759,7 @@ void processEveryMinute()
 {
 
     // Get some Weather Data to serve
-    if ((getMinutesFromLastRefresh() >= refreshDataInterval) || lastRefreshDataTimestamp == 0) {
+    if ((getMinutesFromLastRefresh() >= refreshDataInterval) || (lastRefreshDataTimestamp == 0)) {
       getWeatherData();
       lastRefreshDataTimestamp = now();
       if (weatherClient.getErrorMessage() != "") {
@@ -776,6 +774,9 @@ void processEveryMinute()
        ((uint32_t)now() > TIME_VALID_MIN) &&
        ((uint32_t)now() - lastMqttStatusPubTimestamp) >= 60*60 )
     {
+      // Check display state after weather data update
+      checkDisplay();
+
       // publish status at least every hour, when everything else is stable
       if (publishMqttStatus()) {
         Serial.println(F("MQTT status published"));
@@ -784,7 +785,7 @@ void processEveryMinute()
     }
 
     // Check to see if we need to Scroll some weather Data
-    if ((getMinutesFromLastDisplayScroll() >= displayScrollingInterval) && weatherClient.getWeatherDataValid() && (weatherClient.getErrorMessage().length() == 0)) {
+    if (displayOn && (getMinutesFromLastDisplayScroll() >= displayScrollingInterval) && weatherClient.getWeatherDataValid() && (weatherClient.getErrorMessage().length() == 0)) {
       String msg = " ";
       String temperature = getTemperature();
       String weatherDescription = weatherClient.getWeatherDescription();
@@ -1316,12 +1317,12 @@ void handleDisplay() {
 //***********************************************************************
 void getWeatherData() //client function to send/receive GET request data.
 {
-  onBoardLed(LED_ON);
-  matrix.fillScreen(CLEARSCREEN);
-  Serial.println();
 
   if (displayOn) {
-    // only pull the weather data if display is on
+    onBoardLed(LED_ON);
+    matrix.fillScreen(CLEARSCREEN);
+    Serial.println();
+
     if (firstTimeSync != 0) {
       centerPrint(displayTime, true);
     } else {
@@ -1331,7 +1332,7 @@ void getWeatherData() //client function to send/receive GET request data.
     matrix.drawPixel(0, 6, HIGH);
     matrix.drawPixel(0, 5, HIGH);
     matrix.write();
-
+  }
     weatherClient.updateWeather();
     if (weatherClient.getErrorMessage() != "") {
       displayScrollErrorMessage(weatherClient.getErrorMessage(), true);
@@ -1343,7 +1344,7 @@ void getWeatherData() //client function to send/receive GET request data.
         setSyncProvider(NULL);
       }
     }
-  }
+
 
 // With time sync provider (timeNTP) set, the time sync may happen at inconvenient moments, like
 // when scrolling the display causing that to stall.
@@ -1353,11 +1354,12 @@ Serial.printf_P(PSTR("Timestatus=%d\n"), timeStatus());  // status timeNeedsSync
   if (1) { //ALWAYS;   (timeStatus() != timeSet || updateTime) { // when timeNotSet OR timeNeedsSync
     Serial.println(F("Updating Time..."));
     //Update the Time
-    matrix.drawPixel(0, 4, HIGH);
-    matrix.drawPixel(0, 3, HIGH);
-    matrix.drawPixel(0, 2, HIGH);
-    matrix.write();
-
+    if (displayOn) {
+      matrix.drawPixel(0, 4, HIGH);
+      matrix.drawPixel(0, 3, HIGH);
+      matrix.drawPixel(0, 2, HIGH);
+      matrix.write();
+    }
     // Explicitly get the NTP time
     time_t t = getNtpTime();
     if ((t > TIME_VALID_MIN) && (t < TIME_VALID_MAX) && (t != now())) {
@@ -1779,18 +1781,9 @@ int getMinutesFromLastRefresh() {
   int minutes = (now() - lastRefreshDataTimestamp) / 60;
   if (minutes < 0) { // system time must have changed
     minutes = 0;
-    lastRefreshDataTimestamp = now();
+    if (lastRefreshDataTimestamp) lastRefreshDataTimestamp = now();
   }
   return minutes;
-}
-
-int getMinutesFromLastDisplay() {
-  int minutes = (now() - displayOffTimestamp) / 60;
-   if (minutes < 0) { // system time must have changed
-    minutes = 0;
-    lastRefreshDataTimestamp = now();
-  }
- return minutes;
 }
 
 int getMinutesFromLastDisplayScroll() {
@@ -1806,18 +1799,12 @@ int getMinutesFromLastDisplayScroll() {
 void enableDisplay(bool enable) {
   displayOn = enable;
   if (enable) {
-    if (getMinutesFromLastDisplay() >= refreshDataInterval) {
-      // The display has been off longer than the minutes between refresh -- need to get fresh data
-      lastRefreshDataTimestamp = 0; // this should force a data pull of the weather
-      displayOffTimestamp = 0;  // reset
-    }
     matrix.shutdown(false);
     matrix.fillScreen(CLEARSCREEN);
     Serial.println(F("Display was turned ON: ") + get24HrColonMin(now()));
   } else {
     matrix.shutdown(true);
     Serial.println(F("Display was turned OFF: ") + get24HrColonMin(now()));
-    displayOffTimestamp = lastRefreshDataTimestamp;
   }
 }
 
@@ -1832,24 +1819,29 @@ void checkDisplay()
       ((quietTimeEnd > quietTimeStart) && ((currentTime >= quietTimeStart) && (currentTime < quietTimeEnd))) )
   {
     // We are in the quiet period
-    isQuietPeriod = true;
     if (quietTimeMode == QTM_DIMMED_NOSCROLL) {
       isQuietPeriodNoBlinkNoscroll = true;
     }
-    if ((quietTimeMode == QTM_DISPLAYOFF) && (displayOn)) {
-      enableDisplay(false);
+    if ((quietTimeMode == QTM_DISPLAYOFF)) {
+      if (isQuietPeriod == false) {
+        Serial.println(F("Entering quiet time period: Display OFF"));
+        enableDisplay(false);
+      }
     } else {
       matrix.setIntensity(quietTimeDimlevel);
     }
+    isQuietPeriod = true;
   } else {
     // We are outside the quiet period
-    isQuietPeriod = false;
     isQuietPeriodNoBlinkNoscroll = false;
-    if ((quietTimeMode == QTM_DISPLAYOFF) && (!displayOn)) {
-      enableDisplay(true);
-    } else {
-      matrix.setIntensity(displayIntensity);
+    if (quietTimeMode == QTM_DISPLAYOFF) {
+      if (isQuietPeriod) {
+        Serial.println(F("Quiet time period is over: Display ON"));
+        enableDisplay(true);
+      }
     }
+    matrix.setIntensity(displayIntensity);
+    isQuietPeriod = false;
   }
 }
 

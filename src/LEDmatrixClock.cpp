@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include "Settings.h"
 
-#define VERSION "3.6.2"  // software version
+#define VERSION "3.6.3"  // software version
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -39,7 +39,7 @@ void restartEsp();
 void handleForgetWifi();
 void handleMqttConfigure();
 void handleConfigure();
-void handleDisplay();
+void handleDisplayToggle();
 void getWeatherData();
 void webDisplayMessage(const String &message);
 void redirectHome();
@@ -310,7 +310,7 @@ static const char webActions1[] PROGMEM =
   "<a class='w3-bar-item w3-button' href='/configuremqtt'><i class='fas fa-network-wired'></i> MQTT</a>"
   #endif
   "<a class='w3-bar-item w3-button' href='/pull'><i class='fas fa-cloud-download-alt'></i> Refresh Data</a>"
-  "<a class='w3-bar-item w3-button' href='/display'>";
+  "<a class='w3-bar-item w3-button' href='/displayToggle'>";
 
 static const char webActions2_ON[] PROGMEM =
   "<i class='fas fa-eye-slash'></i> Turn Display OFF";
@@ -557,7 +557,7 @@ void setup() {
     #if COMPILE_MQTT
     server.on("/configuremqtt", handleMqttConfigure);
     #endif
-    server.on("/display", handleDisplay);
+    server.on("/displayToggle", handleDisplayToggle);
     server.onNotFound(redirectHome);
     serverUpdater.setup(&server, "/update", www_username, www_password);
     // Start the server
@@ -1304,13 +1304,14 @@ void handleConfigure() {
   onBoardLed(LED_OFF);
 }
 
-void handleDisplay() {
+void handleDisplayToggle() {
   if (!authentication()) {
     return server.requestAuthentication();
   }
-  enableDisplay(!displayOn);
-  webDisplayMessage(F("Display is now ") + String((displayOn) ? "ON" : "OFF"));
-  delay(1000);
+  displayOn = !displayOn;
+  enableDisplay(displayOn);
+  Serial.println(F("Display turned ") + String((displayOn) ? "ON" : "OFF"));
+
   redirectHome();
 }
 

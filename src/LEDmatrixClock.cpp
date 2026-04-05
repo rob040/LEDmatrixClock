@@ -336,6 +336,10 @@ static const char webChangeForm1[] PROGMEM =
   "<input class='w3-input w3-border' type='text' name='gloc' value='%GLOC%'>"
   "<label>%CTYNM%</label></p>"
   "</fieldset>\n"
+  "<fieldset><legend>NTP Time Server</legend>"
+  "<p><label>NTP Server hostname <small>(e.g. pool.ntp.org, au.pool.ntp.org, time.cloudflare.com)</small></label>"
+  "<input class='w3-input w3-border' type='text' name='ntpServer' value='%NTPSVR%' maxlength='64'></p>"
+  "</fieldset>\n"
   "<fieldset><legend>Display weather data options</legend>"
   "<p><input name='showtemp' class='w3-check' type='checkbox' %TEMP_CB%> Display Temperature</p>"
   "<p><input name='showdate' class='w3-check' type='checkbox' %DATE_CB%> Display Date</p>"
@@ -1049,6 +1053,11 @@ void handleSaveConfig() {
     }
     owmApiKey = server.arg(F("openWeatherMapApiKey"));
     geoLocation = server.arg(F("gloc"));
+    String newNtpServer = server.arg(F("ntpServer"));
+    newNtpServer.trim();
+    if (newNtpServer.length() == 0) newNtpServer = "pool.ntp.org";
+    bool ntpServerChanged = (ntpServer != newNtpServer);
+    ntpServer = newNtpServer;
     flashOnSeconds = server.hasArg(F("flashseconds")); // flashOnSeconds means blinking ':' on clock
     is24hour = server.hasArg(F("is24hour"));
     isPmIndicator = server.hasArg(F("isPM"));
@@ -1103,6 +1112,10 @@ void handleSaveConfig() {
     matrix.fillScreen(CLEARSCREEN);
     writeConfiguration();
     Serial.println(F("handleSaveConfig: saved"));
+    if (ntpServerChanged) {
+      Serial.println(F("NTP server changed, re-initialising NTP..."));
+      timeNTPsetup();
+    }
     getWeatherData(); // this will force a data pull for new weather
   }
   redirectHome();
@@ -1177,6 +1190,7 @@ void handleConfigure() {
   String form = FPSTR(webChangeForm1);
   form.reserve(2400); // this form gets larger by about 440 with all replaces
   form.replace(F("%OWMKEY%"), owmApiKey);
+  form.replace(F("%NTPSVR%"), ntpServer);
   form.replace(F("%CTYNM%"), (weatherClient.getCity() != "") ?
       weatherClient.getCity() + ", " + weatherClient.getCountry() + " @ " + String(weatherClient.getLat(),6) + "," + String(weatherClient.getLon(),6)  : "");
   form.replace(F("%GLOC%"), geoLocation);
@@ -1866,6 +1880,7 @@ void writeConfiguration() {
   } else {
     Serial.println(F("Saving settings now..."));
     f.println(F("APIKEY=") + owmApiKey);
+    f.println(F("ntpServer=") + ntpServer);
     f.println(F("CityID=") + geoLocation); // using CityID for backwards compatibility
     f.println(F("language=") + language);
     f.println(F("marqueeMessage=") + marqueeMessage);
@@ -1947,6 +1962,10 @@ void readConfiguration() {
     }
     if ((idx = line.indexOf(F("APIKEY="))) >= 0) {
       owmApiKey = line.substring(idx + 7);
+    }
+    if ((idx = line.indexOf(F("ntpServer="))) >= 0) {
+      ntpServer = line.substring(idx + 10);
+      if (ntpServer.length() == 0) ntpServer = "pool.ntp.org";
     }
     if ((idx = line.indexOf(F("CityID="))) >= 0) {
        // using CityID for backwards compatibility

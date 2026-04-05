@@ -11,6 +11,6 @@
 #define TIME_VALID_MAX  2081869200UL  // 2036-01-01
 
 void timeNTPsetup();
-void set_ntpServerName(const char* serverName);
+const char* set_ntpServerName(const char* serverName);
 bool set_timeZoneSec(int timeZoneSeconds);
 time_t getNtpTime();

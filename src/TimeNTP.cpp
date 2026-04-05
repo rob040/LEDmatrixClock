@@ -28,7 +28,8 @@ const unsigned int localPort = 8888;  // local port to listen for UDP packets
 
 static void sendNTPpacket(IPAddress &address);
 
-
+/* setup the NTP client
+ */
 void timeNTPsetup()
 {
   if (ntpServerName[0] == 0) {
@@ -44,7 +45,11 @@ void timeNTPsetup()
   setSyncInterval(20);
 }
 
-void set_ntpServerName(const char* serverName) {
+/* set the NTP server name to use for time synchronization
+ * serverName: null or empty string to reset to default, otherwise the new server name (max 31 chars)
+ * returns pointer to current NTP server name
+ */
+const char* set_ntpServerName(const char* serverName) {
   memset(ntpServerName, 0, sizeof(ntpServerName)); // clear buffer
   if ((serverName == 0) || serverName[0] == 0) {
     // if serverName is not set, initialize it with default value
@@ -54,8 +59,13 @@ void set_ntpServerName(const char* serverName) {
   }
   Serial.print(F("NTP server set to: "));
   Serial.println(ntpServerName);
+  return ntpServerName;
 }
 
+/* set the time zone offset in seconds for NTP time synchronization
+ * timeZoneSeconds: UTC offset in seconds (e.g. 3600 for UTC+1, -18000 for UTC-5)
+ * returns true if the time zone was changed, false if it was the same as before
+ */
 bool set_timeZoneSec(int timeZoneSeconds)
 {
   bool timechange = false;
@@ -79,7 +89,10 @@ bool set_timeZoneSec(int timeZoneSeconds)
 const int NTP_PACKET_SIZE = 48; // NTP time is in the first 48 bytes of message
 uint8_t packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming & outgoing packets
 
-// Verify an incoming NTP packet for basic validity
+/* Verify an incoming NTP packet for basic validity
+ * Returns true if the packet looks like a valid NTP response, false otherwise.
+ * Note: this is not a full NTP implementation, just some basic checks to filter out invalid responses.
+ */
 static bool verifyNtpPacket(const uint8_t *buf, size_t len)
 {
   if (len < NTP_PACKET_SIZE) {
@@ -123,6 +136,9 @@ static bool verifyNtpPacket(const uint8_t *buf, size_t len)
   return true;
 }
 
+/* Get the current time from the NTP server
+ * Returns the current time as a time_t value (seconds since Jan 1, 1970), or 0 if unable to get the time.
+ */
 time_t getNtpTime()
 {
   IPAddress ntpServerIP; // NTP server's ip address

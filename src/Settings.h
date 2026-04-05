@@ -86,6 +86,7 @@ const int ledRotation = 3;
 //******************************
 
 String owmApiKey = ""; // Your free API Key from http://openweathermap.org/ (registration required; use Free Access for everyone )
+String ntpServer = "pool.ntp.org"; // NTP server hostname (configurable via web UI)
 // Default GEO Location (use http://openweathermap.org/find to find location name being "cityname,countrycode" or "city ID" or GPS "latitude,longitude")
 String geoLocation = "Amsterdam,NL";
 String marqueeMessage = "";

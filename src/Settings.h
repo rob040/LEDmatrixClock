@@ -52,10 +52,6 @@
 #include "ESP_WiFiManager_Lite.h"
 #include "DynamicParams.h"
 
-// NTP Server
-#define NTP_SERVER_DEFAULT "pool.ntp.org"
-extern String ntpServer;
-
 //******************************
 // Hard(-ware related) settings
 //******************************

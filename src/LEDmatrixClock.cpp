@@ -329,11 +329,11 @@ static const char webChangeForm1[] PROGMEM =
   "<form class='w3-container' action='/saveconfig' method='get'><h2>Configure:</h2>"
   "<fieldset><legend>OpenWeatherMap configuration</legend>"
   "<label>OpenWeatherMap API Key (get free access from <a href='https://openweathermap.org/price#freeaccess' target='_BLANK'>openweathermap.org</a>)</label>"
-  "<input class='w3-input w3-border' type='text' name='openWeatherMapApiKey' value='%OWMKEY%' maxlength='70'>"
+  "<input class='w3-input w3-border' type='text' name='openWeatherMapApiKey' value='%OWMKEY%' maxlength='40'>"
   "<p><label>Geo Location "
   "<small>Enter one of `City-name,2-letter-country-code` OR `City-ID` OR GPS `Latitude,Longitude`</small> "
   "(<a href='http://openweathermap.org/find' target='_BLANK'><i class='fas fa-search'></i> Search for Geo Location</a>) </label>"
-  "<input class='w3-input w3-border' type='text' name='gloc' value='%GLOC%'>"
+  "<input class='w3-input w3-border' type='text' name='gloc' value='%GLOC%' maxlength='40'>"
   "<label>%CTYNM%</label></p>"
   "</fieldset>\n"
   "<fieldset><legend>NTP Time Server</legend>"
@@ -390,7 +390,7 @@ static const char webChangeForm3[] PROGMEM =
   "<p>Theme Color <select class='w3-option w3-padding' name='theme'>%THEME_OPT%</select></p>"
   "<p><input name='isBasicAuth' class='w3-check' type='checkbox' %AUTH_CB%> Use Security Credentials for Configuration Changes</p>"
   "<p><label>Configure User ID (for this web interface)</label><input class='w3-input w3-border' type='text' name='userid' value='%CFGUID%' maxlength='20'></p>"
-  "<p><label>Configure Password </label><input class='w3-input w3-border' type='password' name='stationpassword' value='%CFGPW%'></p>"
+  "<p><label>Configure Password </label><input class='w3-input w3-border' type='password' name='stationpassword' value='%CFGPW%' maxlength='32'></p>"
   // mDNS hostname; change will cause reboot, zerolength returns to default hostname, XXXXXX will be replaced by last 6 digits of MAC, max 24 chars
   "<p><label>mDNS hostname (http://&lt;hostname&gt;.local/)</label><input class='w3-input w3-border' type='text' value='%CFGHN%' maxlength='24' name='hostname'></p>"
   "</fieldset>\n"
@@ -403,9 +403,9 @@ static const char webMQTTform[] PROGMEM =
   "<p><input name='displaymqtt' class='w3-check' type='checkbox' %MQTT_CB%> Enable MQTT</p>"
   "<label>MQTT Address (do not include http://)</label><input class='w3-input w3-border' type='text' name='mqttAddress' id='mqttAddress' value='%MQTT_ADR%' maxlength='60'>"
   "<label>MQTT Port</label><input class='w3-input w3-border' type='text' name='mqttPort' id='mqttPort' value='%MQTT_PRT%' maxlength='5'  onkeypress='return isNumberKey(event)'>"
-  "<label>MQTT Topic</label><input class='w3-input w3-border' type='text' name='mqttTopic' id='mqttTopic' value='%MQTT_TOP%' maxlength='128'>"
-  "<label>MQTT server User (leave empty when not required) </label><input class='w3-input w3-border' type='text' name='mqttUser' value='%MQTT_USR%' maxlength='30'>"
-  "<label>MQTT server Password </label><input class='w3-input w3-border' type='password' name='mqttPass' value='%MQTT_PW%'>"
+  "<label>MQTT Topic</label><input class='w3-input w3-border' type='text' name='mqttTopic' id='mqttTopic' value='%MQTT_TOP%' maxlength='64'>"
+  "<label>MQTT server User (leave empty when not required) </label><input class='w3-input w3-border' type='text' name='mqttUser' value='%MQTT_USR%' maxlength='20'>"
+  "<label>MQTT server Password </label><input class='w3-input w3-border' type='password' name='mqttPass' value='%MQTT_PW%' maxlength='32'>"
   "<button class='w3-button w3-block w3-green w3-section w3-padding' type='submit'>Save</button></form>"
   "<script>function isNumberKey(e){var h=e.which?e.which:event.keyCode;return!(h>31&&(h<48||h>57))}</script>";
 #endif
@@ -1927,7 +1927,6 @@ void writeConfiguration() {
   f.close();
 
   readConfiguration();
-  weatherClient.setGeoLocation(geoLocation);
 }
 
 void readConfiguration() {
@@ -1984,9 +1983,6 @@ void readConfiguration() {
         wideClockStyle = n;
       }
     }
-    //if ((idx = line.indexOf(F("isMetric="))) >= 0) {
-    //  isMetric = line.substring(idx + 9).toInt();
-    //}
     if ((idx = line.indexOf(F("isStatDisp="))) >= 0) {
       isStaticDisplay = line.substring(idx + 11).toInt();
     }

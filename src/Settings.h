@@ -92,6 +92,7 @@ String marqueeMessage = "";
 String language = "en"; // Default language is English, other supported languages are nl,de,fr,it,es,pt,no,se,pl,cz,sk,... (see TranslationStrings.h for details)
 lang_t language_id = LANG_EN; // default language is English
 String hostname;
+String ntpServer; // default NTP server is set in TimeNTP.cpp to "1.pool.ntp.org"
 
 // Default Weather Settings
 bool showTemperature = true;

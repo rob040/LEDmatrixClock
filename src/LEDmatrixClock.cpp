@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include "Settings.h"
 
-#define VERSION "3.6.4"  // software version
+#define VERSION "3.6.5"  // software version
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -335,6 +335,10 @@ static const char webChangeForm1[] PROGMEM =
   "(<a href='http://openweathermap.org/find' target='_BLANK'><i class='fas fa-search'></i> Search for Geo Location</a>) </label>"
   "<input class='w3-input w3-border' type='text' name='gloc' value='%GLOC%'>"
   "<label>%CTYNM%</label></p>"
+  "</fieldset>\n"
+  "<fieldset><legend>NTP Time Server</legend>"
+  "<p><label>NTP Server hostname <small>(e.g. pool.ntp.org, time.cloudflare.com, time1.google.com)</small></label>"
+  "<input class='w3-input w3-border' type='text' name='ntpServer' value='%NTPSVR%' maxlength='32'></p>"
   "</fieldset>\n"
   "<fieldset><legend>Display weather data options</legend>"
   "<p><input name='showtemp' class='w3-check' type='checkbox' %TEMP_CB%> Display Temperature</p>"
@@ -1035,6 +1039,7 @@ void handleSaveConfig() {
   // test that some important args are present to accept new config
   if (server.hasArg(F("openWeatherMapApiKey")) &&
       server.hasArg(F("gloc")) &&
+      server.hasArg(F("ntpServer")) &&
       server.hasArg(F("marqueeMsg")) &&
       server.hasArg(F("displaywidth")) &&
       server.hasArg(F("userid")) &&
@@ -1100,6 +1105,11 @@ void handleSaveConfig() {
       configChangedMustRestart = true;
     }
     weatherClient.setGeoLocation(geoLocation);
+    temp = server.arg(F("ntpServer"));
+    temp.trim();
+    if (ntpServer != temp) {
+      ntpServer = String(set_ntpServerName(temp.c_str()));
+    }
     matrix.fillScreen(CLEARSCREEN);
     writeConfiguration();
     Serial.println(F("handleSaveConfig: saved"));
@@ -1177,6 +1187,7 @@ void handleConfigure() {
   String form = FPSTR(webChangeForm1);
   form.reserve(2400); // this form gets larger by about 440 with all replaces
   form.replace(F("%OWMKEY%"), owmApiKey);
+  form.replace(F("%NTPSVR%"), ntpServer);
   form.replace(F("%CTYNM%"), (weatherClient.getCity() != "") ?
       weatherClient.getCity() + ", " + weatherClient.getCountry() + " @ " + String(weatherClient.getLat(),6) + "," + String(weatherClient.getLon(),6)  : "");
   form.replace(F("%GLOC%"), geoLocation);
@@ -1866,6 +1877,7 @@ void writeConfiguration() {
   } else {
     Serial.println(F("Saving settings now..."));
     f.println(F("APIKEY=") + owmApiKey);
+    f.println(F("ntpServer=") + ntpServer);
     f.println(F("CityID=") + geoLocation); // using CityID for backwards compatibility
     f.println(F("language=") + language);
     f.println(F("marqueeMessage=") + marqueeMessage);
@@ -1947,6 +1959,9 @@ void readConfiguration() {
     }
     if ((idx = line.indexOf(F("APIKEY="))) >= 0) {
       owmApiKey = line.substring(idx + 7);
+    }
+    if ((idx = line.indexOf(F("ntpServer="))) >= 0) {
+      ntpServer = line.substring(idx + 10);
     }
     if ((idx = line.indexOf(F("CityID="))) >= 0) {
        // using CityID for backwards compatibility
@@ -2106,6 +2121,7 @@ void readConfiguration() {
   setCurrentLanguageId(language_id);
   Serial.printf_P(PSTR("Language set to %s (%s)\n"), getLanguageName(language_id), getLanguageCode(language_id));
   weatherClient.setLanguage(language);
+  ntpServer = String(set_ntpServerName(ntpServer.c_str()));
   // USA Imperial date format is determined from configuration: lang=EN & clock=12h & temp=F
   isUsImperial = (language_id == LANG_EN) && !is24hour && (temperatureUnitCfg == TU_FAHRENHEIT);
 }

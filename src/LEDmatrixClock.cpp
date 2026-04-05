@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include "Settings.h"
 
-#define VERSION "3.6.5"  // software version
+#define VERSION "3.6.6"  // software version
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -1826,20 +1826,30 @@ void enableDisplay(bool enable) {
 // Check if we need to turn display on or off for night mode.
 void checkDisplay()
 {
-  if ((quietTimeMode == QTM_DISABLED) || (quietTimeStart < 0) || (quietTimeEnd < 0)) {
-    return; // nothing to do
+  static int lastQuietTimeMode;
+  if ((quietTimeMode == QTM_DISABLED) || (quietTimeMode != lastQuietTimeMode) || (quietTimeStart < 0) || (quietTimeEnd < 0)) {
+    // When changing quiet mode while we are in the quiet period, the display may be unresponsive. Here we reset states.
+    if (isQuietPeriod) {
+      //Serial.println(F("Quiet time mode changed, resetting quiet time state"));
+      isQuietPeriodNoBlinkNoscroll = false;
+      isQuietPeriod = false;
+      matrix.setIntensity(displayIntensity);
+      enableDisplay(true);
+    }
+    if (quietTimeMode == lastQuietTimeMode) {
+      return; // nothing else to do
+    }
   }
+  lastQuietTimeMode = quietTimeMode;
   int currentTime = TIME_HHMM(hour(), minute());
   if (((quietTimeStart > quietTimeEnd) && ((currentTime >= quietTimeStart) || (currentTime < quietTimeEnd))) ||
       ((quietTimeEnd > quietTimeStart) && ((currentTime >= quietTimeStart) && (currentTime < quietTimeEnd))) )
   {
     // We are in the quiet period
-    if (quietTimeMode == QTM_DIMMED_NOSCROLL) {
-      isQuietPeriodNoBlinkNoscroll = true;
-    }
+    isQuietPeriodNoBlinkNoscroll = (quietTimeMode == QTM_DIMMED_NOSCROLL);
     if ((quietTimeMode == QTM_DISPLAYOFF)) {
       if (isQuietPeriod == false) {
-        Serial.println(F("Entering quiet time period: Display OFF"));
+        //Serial.println(F("Entering quiet time period: Display OFF"));
         enableDisplay(false);
       }
     } else {
@@ -1849,11 +1859,9 @@ void checkDisplay()
   } else {
     // We are outside the quiet period
     isQuietPeriodNoBlinkNoscroll = false;
-    if (quietTimeMode == QTM_DISPLAYOFF) {
-      if (isQuietPeriod) {
-        Serial.println(F("Quiet time period is over: Display ON"));
-        enableDisplay(true);
-      }
+    if ((isQuietPeriod) && (quietTimeMode == QTM_DISPLAYOFF)) {
+      //Serial.println(F("Quiet time period is over: Display ON"));
+      enableDisplay(true);
     }
     matrix.setIntensity(displayIntensity);
     isQuietPeriod = false;

@@ -18,28 +18,23 @@
 #include "TimeNTP.h"
 
 
-// NTP Servers:
-static const char ntpServerName[] = "1.pool.ntp.org";
-//static const char ntpServerName[] = "time.nist.gov";
-//static const char ntpServerName[] = "time-a.timefreq.bldrdoc.gov";
-//static const char ntpServerName[] = "time-b.timefreq.bldrdoc.gov";
-//static const char ntpServerName[] = "time-c.timefreq.bldrdoc.gov";
-
-int timeZoneSec = 0;     // UTC
-//int timeZoneSec = 1*SECS_PER_HOUR;     // Central European Time
-//const int timeZoneSec = -5*SECS_PER_HOUR;  // Eastern Standard Time (USA)
-//const int timeZoneSec = -4*SECS_PER_HOUR;  // Eastern Daylight Time (USA)
-//const int timeZoneSec = -8*SECS_PER_HOUR;  // Pacific Standard Time (USA)
-//const int timeZoneSec = -7*SECS_PER_HOUR;  // Pacific Daylight Time (USA)
+// NTP Server settings:
+static const char ntpServerNameDefault[] PROGMEM = "1.pool.ntp.org";
+static char ntpServerName[32]; // buffer to hold NTP server name (max 31 chars + null terminator)
+static int timeZoneSec;     // UTC TZ offset in seconds (e.g. 3600 for UTC+1, -18000 for UTC-5)
 
 WiFiUDP Udp;
-unsigned int localPort = 8888;  // local port to listen for UDP packets
+const unsigned int localPort = 8888;  // local port to listen for UDP packets
 
-time_t getNtpTime();
-void sendNTPpacket(IPAddress &address);
+static void sendNTPpacket(IPAddress &address);
+
 
 void timeNTPsetup()
 {
+  if (ntpServerName[0] == 0) {
+    // if ntpServerName is not set, initialize it with default value
+    set_ntpServerName(0);
+  }
   Serial.println(F("NTP: Starting UDP"));
   Udp.begin(localPort);
   Serial.print(F("Local port: "));
@@ -47,6 +42,18 @@ void timeNTPsetup()
   Serial.println(F("waiting for sync"));
   setSyncProvider(getNtpTime);
   setSyncInterval(20);
+}
+
+void set_ntpServerName(const char* serverName) {
+  memset(ntpServerName, 0, sizeof(ntpServerName)); // clear buffer
+  if ((serverName == 0) || serverName[0] == 0) {
+    // if serverName is not set, initialize it with default value
+    strcpy_P(ntpServerName, ntpServerNameDefault); // copy default server name from PROGMEM
+  } else {
+    strncpy(ntpServerName, serverName, sizeof(ntpServerName) - 1); // copy serverName to buffer, ensuring length limit and null termination
+  }
+  Serial.print(F("NTP server set to: "));
+  Serial.println(ntpServerName);
 }
 
 bool set_timeZoneSec(int timeZoneSeconds)
@@ -72,6 +79,50 @@ bool set_timeZoneSec(int timeZoneSeconds)
 const int NTP_PACKET_SIZE = 48; // NTP time is in the first 48 bytes of message
 uint8_t packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming & outgoing packets
 
+// Verify an incoming NTP packet for basic validity
+static bool verifyNtpPacket(const uint8_t *buf, size_t len)
+{
+  if (len < NTP_PACKET_SIZE) {
+    Serial.println(F("NTP: packet too small"));
+    return false;
+  }
+  // LI (2 bits), VN (3 bits), Mode (3 bits)
+  uint8_t li   = (buf[0] >> 6) & 0x03;
+  uint8_t vn   = (buf[0] >> 3) & 0x07;
+  uint8_t mode = buf[0] & 0x07;
+  uint8_t stratum = buf[1];
+
+  // Expect a server response (mode 4) and a reasonable version (>=3)
+  if (mode != 4) {
+    //Serial.print(F("NTP: invalid mode ")); Serial.println(mode);
+    return false;
+  }
+  if (vn < 3) {
+    //Serial.print(F("NTP: unsupported version ")); Serial.println(vn);
+    return false;
+  }
+  // LI == 3 indicates unsynchronized / alarm condition
+  if (li == 3) {
+    //Serial.println(F("NTP: leap indicator = alarm (unsynchronized)"));
+    return false;
+  }
+  // Stratum 0 is a Kiss-o'-Death or unsynchronized server
+  if (stratum == 0) {
+    //Serial.println(F("NTP: stratum 0 (KOD or unsynchronized)"));
+    return false;
+  }
+  // Ensure transmit timestamp (bytes 40..43) is non-zero
+  bool txZero = true;
+  for (int i = 40; i <= 43; ++i) {
+    if (buf[i] != 0) { txZero = false; break; }
+  }
+  if (txZero) {
+    //Serial.println(F("NTP: transmit timestamp is zero"));
+    return false;
+  }
+  return true;
+}
+
 time_t getNtpTime()
 {
   IPAddress ntpServerIP; // NTP server's ip address
@@ -85,18 +136,22 @@ time_t getNtpTime()
   Serial.println(ntpServerIP);
   sendNTPpacket(ntpServerIP);
   uint32_t beginWait = millis();
-  while (millis() - beginWait < 1500) {
+  while ((millis() - beginWait) < 1500) {
     int size = Udp.parsePacket();
     if (size >= NTP_PACKET_SIZE) {
       Serial.println(F("Receive NTP Response"));
       Udp.read(packetBuffer, NTP_PACKET_SIZE);  // read packet into the buffer
       unsigned long secsSince1900;
+      if (!verifyNtpPacket(packetBuffer, size)) {
+        Serial.println(F("NTP: invalid packet"));
+        return 0;
+      }
       // convert four bytes starting at location 40 to a long integer
       secsSince1900 =  (unsigned long)packetBuffer[40] << 24;
       secsSince1900 |= (unsigned long)packetBuffer[41] << 16;
       secsSince1900 |= (unsigned long)packetBuffer[42] << 8;
       secsSince1900 |= (unsigned long)packetBuffer[43];
-      secsSince1900 -= 2208988800UL;
+      secsSince1900 -= NTP_UNIXEPOCH; // convert NTP time to Unix time (seconds since Jan 1, 1970)
       secsSince1900 += timeZoneSec;
       Serial.print(F("NTP timezone ")); Serial.println(timeZoneSec);
       Serial.flush();

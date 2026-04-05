@@ -18,12 +18,8 @@
 #include "TimeNTP.h"
 
 
-// NTP Servers:
-static const char ntpServerName[] = "1.pool.ntp.org";
-//static const char ntpServerName[] = "time.nist.gov";
-//static const char ntpServerName[] = "time-a.timefreq.bldrdoc.gov";
-//static const char ntpServerName[] = "time-b.timefreq.bldrdoc.gov";
-//static const char ntpServerName[] = "time-c.timefreq.bldrdoc.gov";
+// NTP Server is configurable via the web UI (stored in ntpServer in Settings.h)
+extern String ntpServer;
 
 int timeZoneSec = 0;     // UTC
 //int timeZoneSec = 1*SECS_PER_HOUR;     // Central European Time
@@ -79,8 +75,8 @@ time_t getNtpTime()
   while (Udp.parsePacket() > 0) ; // discard any previously received packets
   Serial.println(F("Transmit NTP Request"));
   // get a random server from the pool
-  WiFi.hostByName(ntpServerName, ntpServerIP);
-  Serial.print(ntpServerName);
+  WiFi.hostByName(ntpServer.c_str(), ntpServerIP);
+  Serial.print(ntpServer);
   Serial.print(": ");
   Serial.println(ntpServerIP);
   sendNTPpacket(ntpServerIP);

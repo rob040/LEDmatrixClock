@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include "Settings.h"
 
-#define VERSION "3.6.6"  // software version
+#define VERSION "3.6.7"  // software version
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -71,6 +71,7 @@ String getTemperatureName(temperatureUnits_t tu);
 int8_t getWifiQuality();
 int getMinutesFromLastRefresh();
 int getMinutesFromLastDisplayScroll();
+const char * getDateTimeString(uint32_t timestamp);
 void enableDisplay(bool enable);
 void checkDisplay();
 void checkRestart();
@@ -104,6 +105,7 @@ uint32_t lastDisplayScrollTimestamp;
 uint32_t lastRefreshDataTimestamp;
 uint32_t lastMqttStatusPubTimestamp;
 uint32_t firstTimeSync;
+uint8_t ntpFailCount;
 bool displayOn = true;
 bool isDisplayTimeNew;
 bool isDisplayMessageNew;
@@ -765,12 +767,12 @@ void processEveryMinute()
     // Get some Weather Data to serve
     if ((getMinutesFromLastRefresh() >= refreshDataInterval) || (lastRefreshDataTimestamp == 0)) {
       getWeatherData();
-      lastRefreshDataTimestamp = now();
       if (weatherClient.getErrorMessage() != "") {
         displayScrollErrorMessage(weatherClient.getErrorMessage(), true);
         lastMqttStatusPubTimestamp = 0; // publish mqtt status after weather data recovery
         return;
       }
+      lastRefreshDataTimestamp = now();
     }
 
     if (weatherClient.getWeatherDataValid() &&
@@ -789,7 +791,11 @@ void processEveryMinute()
     }
 
     // Check to see if we need to Scroll some weather Data
-    if (displayOn && (getMinutesFromLastDisplayScroll() >= displayScrollingInterval) && weatherClient.getWeatherDataValid() && (weatherClient.getErrorMessage().length() == 0)) {
+    if (displayOn &&
+        (getMinutesFromLastDisplayScroll() >= displayScrollingInterval) &&
+        weatherClient.getWeatherDataValid() &&
+        (weatherClient.getErrorMessage().length() == 0))
+    {
       String msg = " ";
       String temperature = getTemperature();
       String weatherDescription = weatherClient.getWeatherDescription();
@@ -813,7 +819,7 @@ void processEveryMinute()
       }
       if (showTemperature) {
         if (!isStaticDisplay) {
-          Serial.printf_P(PSTR("Temp: %s %s\n"), temperature.c_str(), getTemperatureUnit().c_str());
+          Serial.printf_P(PSTR("Temp: %s %s @ %s\n"), temperature.c_str(), getTemperatureUnit().c_str(), displayTime.c_str());
 
           if (language_id != LANG_MIN)
             msg += getTranslationStr(TR_TEMPERATURE) + ':';
@@ -1327,7 +1333,14 @@ void handleDisplayToggle() {
 }
 
 //***********************************************************************
-void getWeatherData() //client function to send/receive GET request data.
+/*  getWeatherData() is the main function to get weather data from the
+ *  configured weather provider, currently OpenWeatherMap, but in the
+ *  future maybe also others like Weatherbit or MeteoBlue.
+ *  It is called every x minutes as set by refreshDataInterval, but can
+ *  also be called manually from the web interface to force a data refresh,
+ *  and is also called at startup to get initial weather data and time sync.
+ */
+void getWeatherData()
 {
 
   if (displayOn) {
@@ -1345,25 +1358,28 @@ void getWeatherData() //client function to send/receive GET request data.
     matrix.drawPixel(0, 5, HIGH);
     matrix.write();
   }
-    weatherClient.updateWeather();
-    if (weatherClient.getErrorMessage() != "") {
-      displayScrollErrorMessage(weatherClient.getErrorMessage(), true);
-    } else {
-      // Set current timezone (adapts to DST when region supports that)
-      // when time was potentially changed, stop quick auto sync
-      if (set_timeZoneSec(weatherClient.getTimeZoneSeconds())) {
-        // Stop automatic NTP sync and do it explicitly below
-        setSyncProvider(NULL);
-      }
+
+  weatherClient.updateWeather();
+  if (weatherClient.getErrorMessage() != "") {
+    displayScrollErrorMessage(weatherClient.getErrorMessage(), true);
+  }
+  else {
+    Serial.println(F("Weather data updated"));
+
+    // Set current timezone (adapts to DST when region supports that)
+    // when time was potentially changed, stop quick auto sync
+    if (weatherClient.getWeatherDataValid() && set_timeZoneSec(weatherClient.getTimeZoneSeconds())) {
+      Serial.println(F("Timezone updated"));
+      // Stop automatic NTP sync after call to set_timeZoneSec()
+      setSyncProvider(NULL);
     }
 
+    // With time sync provider (timeNTP) set, the time sync may happen at inconvenient moments, like
+    // when scrolling the display, causing that to stall.
+    // Solution is to cancel setup sync provider, and call getNtpTime() here explicitly,
+    // then the time update is visualized on the LED display.
+    setSyncProvider(NULL);
 
-// With time sync provider (timeNTP) set, the time sync may happen at inconvenient moments, like
-// when scrolling the display causing that to stall.
-// Solution: cancel setup sync provider, and call getNtpTime() here explicitly,
-// then the time update is visualized on the LED display.
-Serial.printf_P(PSTR("Timestatus=%d\n"), timeStatus());  // status timeNeedsSync(1) is NEVER set
-  if (1) { //ALWAYS;   (timeStatus() != timeSet || updateTime) { // when timeNotSet OR timeNeedsSync
     Serial.println(F("Updating Time..."));
     //Update the Time
     if (displayOn) {
@@ -1373,13 +1389,29 @@ Serial.printf_P(PSTR("Timestatus=%d\n"), timeStatus());  // status timeNeedsSync
       matrix.write();
     }
     // Explicitly get the NTP time
-    time_t t = getNtpTime();
+    uint32_t t = getNtpTime();
     if ((t > TIME_VALID_MIN) && (t < TIME_VALID_MAX) && (t != now())) {
-      // warning: adding ctime() causes 5kB extra codesize!
-      //Serial.printf_P(PSTR("setTime %u=%s"), uint32_t(t), ctime(&t));
-      //Serial.printf_P(PSTR("setTime %u\n"), uint32_t(t));
-      Serial.printf_P(PSTR("setTime %u = %d-%02d-%02d %02d:%02d:%02d\n"), uint32_t(t), year(t), month(t), day(t), hour(t), minute(t), second(t));
+      Serial.print(F("setTime delta ")); Serial.println(t - now());
+      Serial.printf_P(PSTR("setTime %u = %s\n"), uint32_t(t), getDateTimeString(t));
+      ntpFailCount = 0; // reset failure count on successful sync
       setTime(t);
+    } else {
+      ntpFailCount++;
+      Serial.printf_P(PSTR("NTP failed, try %d\n"), ntpFailCount);
+
+      if ((firstTimeSync == 0) || (ntpFailCount >= 3)) {
+        // when NTP fails, we use the header time from the weather report as the current time,
+        // even though that is not very accurate, at least it is better than nothing and allows
+        // the clock to show something other than 00:00 until the next successful NTP sync.
+        uint32_t t = weatherClient.getHdrDate();
+        if (t > TIME_VALID_MIN) {
+          t += weatherClient.getTimeZoneSeconds();
+          Serial.println(F("Using weather header time as fallback"));
+          Serial.print(F("setTime delta ")); Serial.println(t - now());
+          Serial.printf_P(PSTR("setTime %u = %s\n"), uint32_t(t), getDateTimeString(t));
+          setTime(t);
+        }
+      }
     }
     if (firstTimeSync == 0) {
       firstTimeSync = now();
@@ -1529,7 +1561,7 @@ void webDisplayWeatherData() {
   //Serial.print(F("SunSetTime: "));
   //Serial.println(get24HrColonMin(weatherClient.getSunSet() + weatherClient.getTimeZoneSeconds()));
 
-  if (timeStatus() == timeNotSet) {
+  if (firstTimeSync == 0) {
     html += F("<p>waiting for first time sync...</p>");
   }
   if (weatherClient.getCity().length() == 0) {
@@ -1675,7 +1707,7 @@ String getWindDirectionString(int windDirectionDegrees) {
   int val = ((windDirectionDegrees*16 + 180) / 360) % 16;
 
   String retv = findWordInCommaList(dirstr, val, 16);
-  Serial.printf_P(PSTR("WindDir: %d deg = seg %d = %s\n"), windDirectionDegrees,val, retv.c_str());
+  //Serial.printf_P(PSTR("WindDir: %d deg = seg %d = %s\n"), windDirectionDegrees,val, retv.c_str());
   return retv;
 }
 
@@ -1808,6 +1840,16 @@ int getMinutesFromLastDisplayScroll() {
     lastDisplayScrollTimestamp = now();
   }
   return minutes;
+}
+
+// Convert a timestamp into a date time string in the format "YYYY-MM-DD HH:MM:SS"
+// This is used for debugging and logging purposes, to show human readable date time instead of just a timestamp
+const char * getDateTimeString(uint32_t timestamp) {
+  static char buf[24];
+  tmElements_t tm;
+  breakTime(timestamp, tm);
+  sprintf_P(buf, PSTR("%d-%02d-%02d %02d:%02d:%02d"), tmYearToCalendar(tm.Year), tm.Month, tm.Day, tm.Hour, tm.Minute, tm.Second);
+  return buf;
 }
 
 // Turn the display on or off

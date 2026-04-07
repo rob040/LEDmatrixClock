@@ -28,7 +28,7 @@ const unsigned int localPort = 8888;  // local port to listen for UDP packets
 
 static void sendNTPpacket(IPAddress &address);
 
-/* setup the NTP client
+/* setup the NTP client and start time synchronization
  */
 void timeNTPsetup()
 {
@@ -41,7 +41,7 @@ void timeNTPsetup()
   Serial.print(F("Local port: "));
   Serial.println(Udp.localPort());
   Serial.println(F("waiting for sync"));
-  setSyncProvider(getNtpTime);
+  setSyncProvider(getNtpTime); // note: this will start NTP synchronization immediately
   setSyncInterval(20);
 }
 

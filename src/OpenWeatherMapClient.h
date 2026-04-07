@@ -68,6 +68,7 @@ private:
     String condition;   // Group of weather parameters (Rain, Snow, Extreme etc.)
     String description; // Weather condition within the group. (language translated)
     String icon;        // Weather icon id
+    String hdrdate;     // Date and time of the weather report in RFC822 format, e.g. "Wed, 13 May 2020 14:00:00 GMT"
     float lat;          // City geo Location coordinate Latitude
     float lon;          // City geo Location coordinate Longitude
     float temperature;  // Temperature, Celsius
@@ -127,6 +128,8 @@ public:
   inline int getTimeZoneSeconds() {return weather.timeZone;};
   inline uint32_t getSunRise() {return weather.sunRise;};
   inline uint32_t getSunSet() {return weather.sunSet;};
+  inline String getHdrDateStr() {return weather.hdrdate;};
+  time_t getHdrDate();
   String getWeatherIcon();
 
   float convTemperature(float temp_celcius, temperatureUnits_t tu);

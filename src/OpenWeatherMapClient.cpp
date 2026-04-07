@@ -14,7 +14,8 @@
  */
 
 #include "OpenWeatherMapClient.h"
-#include "TimeStr.h"
+#include "TimeLib.h"
+//#include "TimeStr.h"
 #include "Translations.h"
 
 OpenWeatherMapClient::OpenWeatherMapClient() {
@@ -111,6 +112,7 @@ void OpenWeatherMapClient::updateWeather() {
   String apiGetData;
   apiGetData.reserve(260);
   apiGetData += F("GET /data/2.5/weather?");
+  weather.hdrdate = "";
   if (myApiKey == "") {
     //errorMsg = F("Please provide an API key for weather.");
     errorMsg = getTranslationStr(TR_PLEASESETOWMKEY);
@@ -133,9 +135,9 @@ void OpenWeatherMapClient::updateWeather() {
     break;
   case LOC_LATLON:
     apiGetData += F("lat=");
-    apiGetData += String(myGeoLocation_lat);
+    apiGetData += String(myGeoLocation_lat, 6);
     apiGetData += F("&lon=");
-    apiGetData += String(myGeoLocation_lon);
+    apiGetData += String(myGeoLocation_lon, 6);
     break;
   case LOC_NAME:
     apiGetData += F("q=");
@@ -188,7 +190,7 @@ void OpenWeatherMapClient::updateWeather() {
   //}
 
   // Check HTTP status
-  char status[32] = {0};
+  char status[40] = {0};
   weatherClient.readBytesUntil('\r', status, sizeof(status));
   Serial.println(F("Response Header: ") + String(status));
   if (strcmp(status, "HTTP/1.1 200 OK") != 0) {
@@ -196,6 +198,16 @@ void OpenWeatherMapClient::updateWeather() {
     Serial.println(errorMsg);
     if (++dataGetRetryCount > dataGetRetryCountError) weather.isValid = false;
     return;
+  }
+  // get the "Date: " header, which is the first header line in the response and should always be present; if not found after 10 lines, we assume an invalid response
+  for (int i=0; i < 10; i++) { // read up to 10 header lines, looking for "Date: " header, which is the first header line in the response and should always be present; if not found after 10 lines, we assume an invalid response
+    weatherClient.readBytes(status, 1); // read '\n'
+    weatherClient.readBytesUntil('\r', status, sizeof(status));
+    Serial.println(F("Response Header: ") + String(status));
+    if (strncmp(status, "Date: ", 6) == 0) {
+      weather.hdrdate = String(status + 6);
+      break;
+    }
   }
 
   // Skip HTTP headers
@@ -272,6 +284,25 @@ void OpenWeatherMapClient::updateWeather() {
   Serial.print(F("timezone: ")); Serial.println(getTimeZone());
   Serial.println();
 #endif
+}
+
+// parse weather.hdrdate, which is in RFC822 format, e.g. "Wed, 13 May 2020 14:00:00 GMT"
+// and return it as time_t (UTC)
+time_t OpenWeatherMapClient::getHdrDate()
+{
+  if (weather.hdrdate == "") return 0;
+  // since strptime is not available in Arduino, we use TimeLib.h and will parse the date manually
+  // expected format: "Wed, 13 May 2020 14:00:00 GMT"
+  tmElements_t tm;
+  tm.Day = weather.hdrdate.substring(5, 7).toInt();
+  tm.Year = weather.hdrdate.substring(12, 16).toInt() - 1970;
+  tm.Hour = weather.hdrdate.substring(17, 19).toInt();
+  tm.Minute = weather.hdrdate.substring(20, 22).toInt();
+  tm.Second = weather.hdrdate.substring(23, 25).toInt();
+  tm.Month = 1;
+  String monthStr = weather.hdrdate.substring(8, 11);
+  while (!monthStr.equals(monthShortStr(tm.Month)) && tm.Month <= 12) tm.Month++;
+  return makeTime(tm);
 }
 
 String OpenWeatherMapClient::getWeatherIcon() {

@@ -96,7 +96,7 @@ uint8_t packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming & outgoing pack
 static bool verifyNtpPacket(const uint8_t *buf, size_t len)
 {
   if (len < NTP_PACKET_SIZE) {
-    Serial.println(F("NTP: packet too small"));
+    //Serial.println(F("NTP: packet too small"));
     return false;
   }
   // LI (2 bits), VN (3 bits), Mode (3 bits)
@@ -144,18 +144,26 @@ time_t getNtpTime()
   IPAddress ntpServerIP; // NTP server's ip address
 
   while (Udp.parsePacket() > 0) ; // discard any previously received packets
-  Serial.println(F("Transmit NTP Request"));
+  Serial.println(F("NTP: Transmit Request"));
+  if (strlen(ntpServerName) <= 3) {
+    Serial.println(F("NTP: no server name set"));
+    return 0;
+  }
   // get a random server from the pool
   WiFi.hostByName(ntpServerName, ntpServerIP);
   Serial.print(ntpServerName);
   Serial.print(": ");
   Serial.println(ntpServerIP);
+  if (!ntpServerIP) {
+    Serial.println(F("NTP: unable to resolve server name"));
+    return 0;
+  }
   sendNTPpacket(ntpServerIP);
   uint32_t beginWait = millis();
-  while ((millis() - beginWait) < 1500) {
+  while ((millis() - beginWait) < 600) { // only accept Time responses well within a second
     int size = Udp.parsePacket();
     if (size >= NTP_PACKET_SIZE) {
-      Serial.println(F("Receive NTP Response"));
+      Serial.println(F("NTP: Received Response"));
       Udp.read(packetBuffer, NTP_PACKET_SIZE);  // read packet into the buffer
       unsigned long secsSince1900;
       if (!verifyNtpPacket(packetBuffer, size)) {
@@ -169,13 +177,18 @@ time_t getNtpTime()
       secsSince1900 |= (unsigned long)packetBuffer[43];
       secsSince1900 -= NTP_UNIXEPOCH; // convert NTP time to Unix time (seconds since Jan 1, 1970)
       secsSince1900 += timeZoneSec;
-      Serial.print(F("NTP timezone ")); Serial.println(timeZoneSec);
-      Serial.flush();
+  // I would like to see the time delta on every call, however, TimeLib 1.6.1 now() and timeStatus() cause recursive calls to getNtpTime() when calling now() here, which causes a stack overflow. So I will not print the time delta for now.
+  //    if (timeStatus() == timeSet) {
+  //      // only when time was previously set, we can call now() and calculate the time delta and print it
+  //      Serial.print(F("NTP time delta ")); Serial.println(secsSince1900 - now());
+  //    }
+      //Serial.print(F("NTP timezone ")); Serial.println(timeZoneSec);
+      //Serial.flush();
       // NOTE: implicit conversion from 32-bit to 64-bit return value
       return secsSince1900;
     }
   }
-  Serial.println("No NTP Response :-(");
+  Serial.println(F("NTP: no response"));
   return 0; // return 0 if unable to get the time
 }
 

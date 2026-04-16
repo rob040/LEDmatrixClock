@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include "Settings.h"
 
-#define VERSION "3.6.7"  // software version
+#define VERSION "3.6.8"  // software version
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -591,8 +591,6 @@ void setup() {
       scrollMessageWait(scollmsg);
       centerPrint(F("wifi"));
     } else {
-      // Start NTP time synchronization
-      timeNTPsetup();
 
       // Show my IP address and the WiFi SSID I am connected to
       // fmt = "Connected to WiFi AP %s  Connect to" + " http://CLOCK-XXXXXX.local  IP: 192.168.0.1"
@@ -600,6 +598,18 @@ void setup() {
       sprintf(scollmsg+strlen(scollmsg), " http://%s.local  IP: %s", hostname.c_str(), WiFi.localIP().toString().c_str());
       Serial.println(scollmsg);
       scrollMessageWait(scollmsg);
+      
+      // Start NTP time synchronization
+      timeNTPsetup();
+      displayOn = false; // do not change display
+      // try to get weather data at startup, if fails, will retry in loop() every minute
+      getWeatherData();
+      displayOn = true; // restore display state
+      if (weatherClient.getWeatherDataValid()) {
+        Serial.println(F("Weather data retrieved at startup"));
+      } else {
+        Serial.println(F("Failed to get weather data at startup"));
+      }
     }
     // restore original scroll speed
     displayScrollSpeed = orgDisplayScrollSpeed;
@@ -1425,9 +1435,11 @@ void getWeatherData()
     }
   }
 
-  Serial.println(F("Version: " VERSION));
-  Serial.println();
-  onBoardLed(LED_OFF);
+  if (displayOn) {
+    Serial.println(F("Version: " VERSION));
+    Serial.println();
+    onBoardLed(LED_OFF);
+  }
 }
 
 bool publishMqttStatus() {

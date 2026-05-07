@@ -151,20 +151,34 @@ void OpenWeatherMapClient::updateWeather() {
   Serial.println(F("Getting Weather Data"));
   Serial.println(apiGetData);
   errorMsg = "";
-  if (weatherClient.connect(servername, 80)) {  //starts client connection, checks for connection
-    weatherClient.println(apiGetData);
-    weatherClient.println(F("Host: ") + String(servername));
-    weatherClient.println(F("User-Agent: ArduinoWiFi/1.1"));
-    weatherClient.println(F("Connection: close"));
-    weatherClient.println();
+  int retries = 3; // we will try to connect 3 times before giving up, with a short timeout for each connection attempt; if we fail, we will retry the whole process after a delay, until we reach dataGetRetryCountError, at which point we will invalidate all data and stop retrying until next updateWeather() call
+  unsigned long orgtimeout = weatherClient.getTimeout();
+  weatherClient.setTimeout(2000); // set a shorter timeout for retries in connection
+  while (retries) {  //starts client connection, checks for connection
+    if (weatherClient.connect(servername, 80)) {  //starts client connection, checks for connection
+      weatherClient.println(apiGetData);
+      weatherClient.println(F("Host: ") + String(servername));
+      weatherClient.println(F("User-Agent: ArduinoWiFi/1.1"));
+      weatherClient.println(F("Connection: close"));
+      weatherClient.println();
+      break;
+    }
+    else if (--retries == 0) {
+      dataGetRetryCount++;
+      if (dataGetRetryCount > dataGetRetryCountWarn) {
+        //errorMsg = F("Connection for weather data failed");
+        errorMsg = getTranslationStr(TR_CONNECTIONFORWEATHERFAILED);
+        Serial.println(errorMsg);
+        if (dataGetRetryCount > dataGetRetryCountError) {
+          weather.isValid = false;
+          Serial.println(F("Weather data invalidated"));
+        }
+      }
+      weatherClient.setTimeout(orgtimeout); // restore original timeout
+      return; // bail out; can't continue if we can't connect to server
+    }
   }
-  else {
-    //errorMsg = F("Connection for weather data failed");
-    errorMsg = getTranslationStr(TR_CONNECTIONFORWEATHERFAILED);
-    Serial.println(errorMsg);
-    if (++dataGetRetryCount > dataGetRetryCountError) weather.isValid = false;
-    return;
-  }
+  weatherClient.setTimeout(orgtimeout); // restore original timeout
 
   Serial.println(F("Waiting for data"));
 
@@ -178,11 +192,17 @@ void OpenWeatherMapClient::updateWeather() {
           delay(1); //waits for data
   }
   if ((millis()-start) >= timeout_ms) {
+    dataGetRetryCount++;
+    if (dataGetRetryCount > dataGetRetryCountWarn) {
     //errorMsg = F("TIMEOUT on weatherClient data receive");
-    errorMsg = getTranslationStr(TR_TIMEOUTONWEATHERCLIENTDATARECEIVE);
-    Serial.println(errorMsg);
-    if (++dataGetRetryCount > dataGetRetryCountError) weather.isValid = false;
-    return;
+      errorMsg = getTranslationStr(TR_TIMEOUTONWEATHERCLIENTDATARECEIVE);
+      Serial.println(errorMsg);
+      if (dataGetRetryCount > dataGetRetryCountError) {
+        weather.isValid = false;
+        Serial.println(F("Weather data invalidated"));
+      }
+    }
+    return; // bail out; can't continue if we didn't receive any data within timeout
   }
   //else { //FIXME DEBUG
   //  Serial.print("Wait for data took ");

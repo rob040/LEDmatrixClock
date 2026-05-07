@@ -87,6 +87,7 @@ private:
     bool isValid;       // Weather report is valid
   } weather;
 
+  const int dataGetRetryCountWarn = 3; // Amount of data get timeouts until we issue warning
   const int dataGetRetryCountError = 10; // Amount of data get timeouts until we invalidate all data
   int dataGetRetryCount;
   String errorMsg; // Weather request error message

@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include "Settings.h"
 
-#define VERSION "3.6.9"  // software version
+#define VERSION "3.6.10"  // software version
 
 // Refresh main web page every x seconds. The mainpage has button to activate its auto-refresh
 #define WEBPAGE_AUTOREFRESH   30
@@ -634,39 +634,45 @@ void setup() {
 // Main Loop
 //************************************************************
 void loop() {
+  #if LOOP_DEBUG
+  static int scrlBusyCnt = 0;
+  #endif // LOOP_DEBUG
 
   if (lastSecond != second()) {
     lastSecond = second();
 
     if (!ESP_WiFiManager->isConfigMode()) {
-      #if LOOP_DEBUG
-      static int scrlBusyCnt = 0;
       if (!scrlBusy) {
+        #if LOOP_DEBUG
         uint32_t t = millis();
         if (scrlBusyCnt != 0) {
           Serial.printf_P(PSTR("scroll busy for %d s\n"), scrlBusyCnt);
         }
         scrlBusyCnt = 0;
         #endif // LOOP_DEBUG
+
         processEverySecond();
+
         #if LOOP_DEBUG
         t = millis() - t;
         if (t > 100) Serial.printf_P(PSTR("proc1s took %u ms\n"), t);
         #endif // LOOP_DEBUG
 
         if (lastMinute != minute()) {
-          #if LOOP_DEBUG
-          uint32_t t = millis();
           lastMinute = minute();
+          #if LOOP_DEBUG
+          t = millis();
           #endif // LOOP_DEBUG
+
           processEveryMinute();
+
           #if LOOP_DEBUG
           t = millis() - t;
           if (t > 100) Serial.printf_P(PSTR("proc1m took %u ms\n"), t);
           #endif // LOOP_DEBUG
         }
-      #if LOOP_DEBUG
       }
+      #if LOOP_DEBUG
       else {
         if ((++scrlBusyCnt % 60) == 0) { // every 60 seconds
           Serial.printf_P(PSTR("scroll long busy %d s\n"), scrlBusyCnt);

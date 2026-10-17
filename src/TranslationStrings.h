@@ -61,7 +61,8 @@ TR(TR_HELLO,
   "ahoj",       // Slovak
   "hello" )     // minimal (English) language
 
-TR(TR_WMSTARTED,
+/* no longer used */
+/*TR(TR_WMSTARTED,
   "Wifi Manager Started... Please Connect to AP: %s password: %s",                     // English
   "Wifi Manager gestart... Maak verbinding met AP: %s wachtwoord: %s",                 // Dutch
   "Wifi Manager gestartet... Bitte verbinden Sie sich mit AP: %s Passwort: %s",        // German
@@ -76,8 +77,9 @@ TR(TR_WMSTARTED,
   "Správce WiFi spuštěn... Připojte se prosím k AP: %s heslo: %s",                     // Czech
   "Správca WiFi spustený... Pripojte sa prosím k AP: %s heslo: %s",                    // Slovak
   "Connect to AP: %s password: %s" )                                                   // minimal (English) language
-
-TR(TR_WMCONFIGURED,
+*/
+/* no longer used */
+/*TR(TR_WMCONFIGURED,
   "Wifi Manager Configured... Rebooting",                     // English
   "Wifi Manager geconfigureerd... Herstarten",                // Dutch
   "Wifi Manager konfiguriert... Neustart",                    // German
@@ -92,6 +94,7 @@ TR(TR_WMCONFIGURED,
   "Správce WiFi nakonfigurován... Restartuji",                // Czech
   "Správca WiFi nakonfigurovaný... Reštartujem",              // Slovak
   "Configured... Rebooting" )                                 // minimal (English) language
+*/
 
 //"Connected to WiFi AP %s  Connect to" + " http://CLOCK-XXXXXX.local IP: 192.168.0.1"
 TR(TR_CONNECTEDWIFI,

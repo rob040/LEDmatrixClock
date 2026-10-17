@@ -23,13 +23,6 @@
 #define COMPILE_MQTT 1  // tried and tested
 #endif
 
-//Compilation option for using the ESP_WiFiManager_Lite library versus the original ESP_WiFiManager library.
-// The Lite version is smaller and faster, but has less features. The original version is more feature rich, but larger and slower.
-// The Lite version is used by default, but you can change this to 0 to use the original ESP_WiFiManager library.
-#ifndef COMPILE_WIFIMGR_LITE
-#define COMPILE_WIFIMGR_LITE 0
-#endif
-
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPUpdateServer.h>
@@ -52,19 +45,10 @@
 #include "Utf8toCP437.h"
 #include "Translations.h"
 
-#if COMPILE_WIFIMGR_LITE==0 // use original WiFiManager library
-#define AP_HOSTNAME_BASE                          "CLOCK-"
+#define AP_HOSTNAME_BASE        "CLOCK-"
 #include <WiFiManager.h> // --> https://github.com/tzapu/WiFiManager v2.0.17 (2024-03-02)
 //#include <WiFiManager.h> // --> https://github.com/alexhopeoconnor/WiFiManager v3.1.0 (2026-09-01)
 //#include <ESP_WiFiManager.h> // --> https://github.com/khoih-prog/ESP_WiFiManager v1.12.1 (2022-10-26)
-#endif
-#if COMPILE_WIFIMGR_LITE
-// For ESP_WiFiManager_Lite, the include sequence does matter!
-//#include <ESP_WiFiManager_Lite.h> // --> https://github.com/khoih-prog/ESP_WiFiManager_Lite, now updated local version
-#include "WmlSettings.h"
-#include "ESP_WiFiManager_Lite.h"
-#include "DynamicParams.h"
-#endif
 
 //******************************
 // Hard(-ware related) settings

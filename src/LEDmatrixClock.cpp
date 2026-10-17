@@ -165,14 +165,7 @@ MqttClient mqttClient(MqttServer, MqttPort, MqttTopic, MqttAuthUser, MqttAuthPas
 ESP8266WebServer server(WEBSERVER_PORT);
 ESP8266HTTPUpdateServer serverUpdater;
 
-#if COMPILE_WIFIMGR_LITE==0 // use original WiFiManager library
 void configModeCallback(WiFiManager* myWiFiManager);
-#endif
-#if COMPILE_WIFIMGR_LITE
-ESP_WiFiManager_Lite* ESP_WiFiManager;
-
-ESP_WM_LITE_Configuration defaultConfig = WML_DEFAULT_CONFIG;//{0};
-#endif
 
 
 static const char webHeaderHtml[] PROGMEM = "<!DOCTYPE HTML>"
@@ -488,7 +481,6 @@ void setup() {
 #endif
 
   // WiFiManager
-#if COMPILE_WIFIMGR_LITE==0 // use original WiFiManager library
   //Local initialization. Once its business is done, there is no need to keep it around
   WiFiManager wifiManager;
 
@@ -496,11 +488,6 @@ void setup() {
   //wifiManager.resetSettings();
 
   wifiManager.setAPCallback(configModeCallback);
-#endif
-#if COMPILE_WIFIMGR_LITE
-  // ESP_WiFiManager_Lite (multiWifi, Activation on multi reset detect):
-  ESP_WiFiManager = new ESP_WiFiManager_Lite();
-#endif
 
   // default hostname for mDNS web access is http://CLOCK-XXXXXX.local, Where XXXXXX is last 3 bytes of MAC address
   if (hostname == "") hostname = AP_HOSTNAME_BASE "XXXXXX";
@@ -511,20 +498,12 @@ void setup() {
   Serial.printf_P(PSTR("Device Hostname: %s\n"), hostname.c_str());
   WiFi.hostname(hostname.c_str());
 
-#if COMPILE_WIFIMGR_LITE==0 // use original WiFiManager library
   if (!wifiManager.autoConnect((const char *)hostname.c_str())) {
     delay(3000);
     WiFi.disconnect(true);
     ESP.reset();
     delay(5000);
   }
-#endif
-#if COMPILE_WIFIMGR_LITE
-  // Setup Config Portal hostname, without access password
-  ESP_WiFiManager->setConfigPortal(hostname);
-  // Set customized DHCP HostName
-  ESP_WiFiManager->begin(hostname.c_str());
-#endif
 
   // print the received signal strength:
   Serial.printf_P(PSTR("Signal Strength (RSSI): %d%%\n"), getWifiQuality());
@@ -554,9 +533,6 @@ void setup() {
     ArduinoOTA.begin();
   }
 
-  #if COMPILE_WIFIMGR_LITE
-  if (!ESP_WiFiManager->isConfigMode())
-  #endif
   {
     // Continue welcome 'hello' for 4.5 to 6 seconds
     centerPrint(hello);
@@ -597,11 +573,8 @@ void setup() {
     serverUpdater.setup(&server, "/update", www_username, www_password);
     // Start the server
     server.begin();
-    #if COMPILE_WIFIMGR_LITE
-    if (ESP_WiFiManager->isConfigMode())
-    #else
+
     if (WiFi.status() != WL_CONNECTED)
-    #endif
     {
       Serial.print(F("Config portal started "));
     } else if (WiFi.status() == WL_CONNECTED) {
@@ -616,19 +589,7 @@ void setup() {
     // Show product version
     strcpy_P(scollmsg, PSTR("v" VERSION "  "));
 
-    #if COMPILE_WIFIMGR_LITE
-    if (ESP_WiFiManager->isConfigMode()) {
-      // Show the SSID and Password of the Wifi Manager access point
-      // fmt = ("Wifi Manager Started... Please Connect to AP: %s password: My%s")
-      sprintf(scollmsg+strlen(scollmsg), getTranslation(TR_WMSTARTED), WiFi.softAPSSID().c_str(), String("My"+WiFi.softAPSSID()).c_str());
-      sprintf(scollmsg+strlen(scollmsg), " IP: %s", WiFi.softAPIP().toString().c_str());
-      Serial.println(scollmsg);
-      scrollMessageWait(scollmsg);
-      centerPrint(F("wifi"));
-    } else {
-    #else
     {
-    #endif
 
       // Show my IP address and the WiFi SSID I am connected to
       // fmt = "Connected to WiFi AP %s  Connect to" + " http://CLOCK-XXXXXX.local  IP: 192.168.0.1"
@@ -679,9 +640,6 @@ void loop() {
   if (lastSecond != second()) {
     lastSecond = second();
 
-    #if COMPILE_WIFIMGR_LITE
-    if (!ESP_WiFiManager->isConfigMode())
-    #endif
     {
       if (!scrlBusy) {
         #if LOOP_DEBUG
@@ -800,9 +758,6 @@ void loop() {
     ArduinoOTA.handle();
   }
 
-  #if COMPILE_WIFIMGR_LITE
-  ESP_WiFiManager->run();
-  #endif
 }
 
 void displayScrollMessage(const String &msg)
@@ -1206,16 +1161,11 @@ void handleForgetWifi() {
   }
   redirectHome();
 
-  #if COMPILE_WIFIMGR_LITE==0 // use original WiFiManager library
-  //WiFiManager
-  //Local initialization. Once its business is done, there is no need to keep it around
+  // WiFiManager
+  // Local initialization. Once its business is done, there is no need to keep it around
   WiFiManager wifiManager;
   wifiManager.resetSettings();
   ESP.restart();
-  #endif
-  #if COMPILE_WIFIMGR_LITE
-  ESP_WiFiManager->resetAndEnterConfigPortal();
-  #endif
 }
 
 #if COMPILE_MQTT
@@ -1685,30 +1635,6 @@ void webDisplayWeatherData() {
       "<p>LED Display Language is set to ") + String(getLanguageName(getCurrentLanguageId())) + F(" (") + String(getLanguageCode(getCurrentLanguageId())) +
       F(")<br>");
 
-    #if COMPILE_WIFIMGR_LITE
-    if (ESP_WiFiManager->isConfigMode() == false) {
-      html += F("Connected to WiFi AP: ") + WiFi.SSID();
-      //html += F(" with Signal Strength ") + String(getWifiQuality()) + F("%");
-      // Show which profile we are connected to
-      for (int i=0; i<NUM_WIFI_CREDENTIALS; i++) {
-        if (ESP_WiFiManager->getWiFiSSID(i).length() > 0 && ESP_WiFiManager->getWiFiSSID(i) == WiFi.SSID()) {
-          html += F(" (Profile ") + String(i+1) + F(")");
-          break;
-        }
-      }
-      #if 1 //def DEBUG
-      // Show AP profiles configured
-      html += F(" <span class='w3-tiny'> (");
-      for (int i = 0; i < NUM_WIFI_CREDENTIALS; i++) {
-        if (ESP_WiFiManager->getWiFiSSID(i).length() > 0) {
-          html += String((i > 0 && i < NUM_WIFI_CREDENTIALS - 1) ? "," : "")
-            + F(" P") + String(i + 1) + "=" + ESP_WiFiManager->getWiFiSSID(i);
-        }
-      }
-      html += F(" )</span><br>");
-      #endif
-    }
-    #endif
     html += F("</p><hr>");
   }
 
@@ -1739,7 +1665,6 @@ void webDisplayWeatherData() {
   onBoardLed(LED_OFF);
 }
 
-#if COMPILE_WIFIMGR_LITE==0 // use original WiFiManager library
 void configModeCallback(WiFiManager* myWiFiManager) {
   Serial.println(F("Entered config mode"));
   Serial.println(WiFi.softAPIP());
@@ -1750,7 +1675,6 @@ void configModeCallback(WiFiManager* myWiFiManager) {
   scrollMessageWait(F("Please Connect to AP: ") + String(myWiFiManager->getConfigPortalSSID()));
   centerPrint("wifi");
 }
-#endif
 
 void onBoardLed(bool on) {
   if (isSysLed) {

@@ -45,12 +45,10 @@
 #include "Utf8toCP437.h"
 #include "Translations.h"
 
-// For ESP_WiFiManager_Lite, the include sequence does matter!
-//#include <WiFiManager.h> // --> https://github.com/tzapu/WiFiManager
-//#include <ESP_WiFiManager_Lite.h> // --> https://github.com/khoih-prog/ESP_WiFiManager_Lite, now updated local version
-#include "WmlSettings.h"
-#include "ESP_WiFiManager_Lite.h"
-#include "DynamicParams.h"
+#define AP_HOSTNAME_BASE        "CLOCK-"
+#include <WiFiManager.h> // --> https://github.com/tzapu/WiFiManager v2.0.17 (2024-03-02)
+//#include <WiFiManager.h> // --> https://github.com/alexhopeoconnor/WiFiManager v3.1.0 (2026-09-01)
+//#include <ESP_WiFiManager.h> // --> https://github.com/khoih-prog/ESP_WiFiManager v1.12.1 (2022-10-26)
 
 //******************************
 // Hard(-ware related) settings

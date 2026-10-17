@@ -44,7 +44,7 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 * Instead of scrolling text, there is also a **static display** mode for short messages, date, temperature or humidity, next to the time display.
 * Weather **Location** lookup has been made simpler; there is no longer the need to lookup the City-ID code; just enter a (valid) **city name** with optional 2-letter state or country code. Also **GPS coordinates** are now allowed as location input.
 * Added a display **QUIET time** config option, where the display can be Off or Dimmed or Dimmed with no Motion (ie. no scrolling, no blinking)
-* Replaced Wifi_manager with **ESP_WiFiManager_Lite** library, which allows **multiple WiFi Access Points** (SSID's) to be (pre-)configured, which is handy for a portable device. It also provides a fallback if one WiFi station goes down.
+* ~~Replaced WifiManager with **ESP_WiFiManager_Lite** library, which allows **multiple WiFi Access Points** (SSID's) to be (pre-)configured, which is handy for a portable device. It also provides a fallback if one WiFi station goes down.~~ (as of version 3.7.0, we are back to original WifiManager for more stable connection and scrolling display)
 * User **configurable units** for temperature (°C,°F,K), wind speed (m/s,kmh,mph,kn,Bft) and air pressure (mb,hPa,mmHg,inHg,psi,atm).
 * Removed the Imperial / Metric choice , with more customization freedom to the user.
 * The LED Display character font has been overhauled for more consistency and readability.
@@ -53,7 +53,7 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 * The MQTT status message was changed and the publish frequency was reduced to once every hour, and after startup and after connection error recovery.
 * The used WiFi Access Point is shown at start-up and on main webpage.
 * The list of configured alternative WiFi Access Points, there can be 4, is shown on the main webpage.
-* The 'Forget Wifi' menu entry will enter the WifiManager, but the configured WiFi Access Points will NOT be forgotten, nor erased, meaning that when nothing is changed and all is still valid, a power-cycle will connect to the best available WiFi Access Point.
+* ~~The 'Forget Wifi' menu entry will enter the WifiManager, but the configured WiFi Access Points will NOT be forgotten, nor erased, meaning that when nothing is changed and all is still valid, a power-cycle will connect to the best available WiFi Access Point.~~ (this was actually a bug in the 'lite' wifi manager)
 
 * As of version 3.4.0, there is **multiple language support** for texts on the LED Matrix display. The web server pages will remain in English.
 * There is Language support for following languages:
@@ -81,7 +81,7 @@ Enhancements included in [THIS repository](https://github.com/rob040/LEDmatrixCl
 ## Required Parts:
 * Wemos LOLIN D1 Mini ESP8266: https://www.wemos.cc/en/latest/d1/d1_mini.html <br>
   Other ESP8266 boards based on [ESP12(-E,-F)](https://components101.com/sites/default/files/component_pin/ESP12E-Pinout.png) module, such as the NodeMCU, shall work equally well, only the 3D print models are more or less bound to the D1-mini physical dimensions. <br>
-  Get the D1 mini board from reputable source!
+  Get the D1 mini board from reputable source!<br>
   There are clones around with sub-standard voltage regulators on board, that cannot supply the required 500mA. This can lead to unexpected hangups or resets when WiFi transmission is initiated. [See this](https://www.letscontrolit.com/forum/viewtopic.php?t=6603) and [this](https://github.com/bbqkees/Wemos-the-Clone-Wars#underpowered-ldo)
 * MAX7219 LED Dot Matrix Module 4-in-1 Display (FC16) for Arduino. Commonly available from Chinese webshops, or Ebay or Amazon.
 * A good 5V USB power supply
@@ -168,22 +168,19 @@ The `platformio.ini` file contains the references to the required external libra
 To build, open the `platformio` extension (icon on left hand side bar), then under *PROJECT TASKS* -> *Default* -> *General* : select **Build** and then **Upload**
 
 ## Initial Configuration
-Editing the **Settings.h** file is not required but optional to get different default values.
+Editing the **Settings.h** file is not advised but optional to get different default values.
 All settings and API Keys are managed from the Web Interface.
 
-* Open Weather Map free service API key: http://openweathermap.org/  -- this is used to get weather data and the current time zone from the set Geo Location. This API key is required for correct time. Registration is required to obtain the API key.
+* Open Weather Map free service API key: http://openweathermap.org/  -- this is used to get weather data and the current time zone from the set Geo Location. This API key is required for correct time display. Registration is required to obtain the free API key.
 
 **NOTE:** The settings in the Settings.h are the default settings for the first loading. After loading you will manage changes to the settings via the Web Interface. If you want to change settings again in the settings.h, you will need to erase the file system on the Wemos or use the `Reset Settings` option in the Web Interface.
 
 ## Web Interface
 The Marquee Scroller uses the **WiFiManager** when it can't find the last network it was connected to,
 it will become an **Access Point Hotspot** -- connect to it with your phone at http://192.168.4.1/ and you can then enter your WiFi connection information.<br>
-When the **WiFiManager** is activated after power-up, the scrolling LED display shows the following message:<br>
-`   v1.2.3  IP: 192.168.4.1  Wifi Manager Started... Please Connect to AP: ESP-XXXXXX password: MyESP-XXXXXX`<br>
-And finally it displays:<br>
+When the **WiFiManager** is activated after power-up, it displays:<br>
 `   wifi`<br>
 While the WiFiManager Access Point is active.<br>
-The above "XXXXXX" are device specific hex characters.
 
 After connected to your WiFi network it will, after power-up, display the IP address assigned to it and that can be
 used to open a browser to the Web Interface.  You will be able to manage your API Keys through the web interface.
